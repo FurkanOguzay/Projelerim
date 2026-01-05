@@ -1,0 +1,188 @@
+@model IEnumerable<UpexTech.Entity.Category>
+@{
+    ViewData["Title"] = "Kategoriler";
+}
+
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
+    <div>
+        <h1>Kategoriler</h1>
+        <p>Ürün kategorilerini görüntüleyin ve yönetin</p>
+    </div>
+    <a href="@Url.Action("Create")" class="btn-new">
+        <i class="fas fa-plus"></i>
+        Yeni Kategori
+    </a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success" style="background: var(--success-50); border: 1px solid var(--success-200); color: var(--success-700); padding: 12px 16px; border-radius: 8px; margin-bottom: 20px;">
+        <i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]
+    </div>
+}
+
+<div class="data-table-container">
+    <div style="overflow-x: auto;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th style="width: 60px;">Sıra</th>
+                    <th>Kategori Adı</th>
+                    <th>Açıklama</th>
+                    <th>İkon</th>
+                    <th>Durum</th>
+                    <th>Oluşturulma</th>
+                    <th style="width: 150px;">Aksiyonlar</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 40px; color: var(--gray-500);">
+                            <i class="fas fa-folder-open" style="font-size: 48px; margin-bottom: 16px; display: block;"></i>
+                            Henüz kategori bulunmuyor
+                        </td>
+                    </tr>
+                }
+                @foreach (var category in Model)
+                {
+                    <tr>
+                        <td style="text-align: center; color: var(--gray-500);">@category.DisplayOrder</td>
+                        <td>
+                            <span style="font-weight: 500; color: var(--gray-900);">@category.Name</span>
+                        </td>
+                        <td style="color: var(--gray-600); max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            @(category.Description ?? "-")
+                        </td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(category.Icon))
+                            {
+                                <i class="@category.Icon" style="font-size: 20px; color: var(--primary-500);"></i>
+                            }
+                            else
+                            {
+                                <span style="color: var(--gray-400);">-</span>
+                            }
+                        </td>
+                        <td>
+                            <button class="status-toggle @(category.IsActive ? "active" : "")" 
+                                    onclick="toggleStatus(@category.Id, this)"
+                                    title="@(category.IsActive ? "Aktif" : "Pasif")">
+                                <span class="status-dot"></span>
+                                <span class="status-text">@(category.IsActive ? "Aktif" : "Pasif")</span>
+                            </button>
+                        </td>
+                        <td style="color: var(--gray-500); font-size: 13px;">
+                            @category.CreatedAt.ToString("dd.MM.yyyy")
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <a href="@Url.Action("Edit", new { id = category.Id })" class="btn-icon" title="Düzenle">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <form asp-action="Delete" asp-route-id="@category.Id" method="post" style="display: inline;" onsubmit="return confirm('Bu kategoriyi silmek istediğinize emin misiniz?');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn-icon danger" title="Sil">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+    .btn-new {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        background: var(--primary-500);
+        color: white;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: background 0.2s;
+    }
+    .btn-new:hover {
+        background: var(--primary-600);
+        color: white;
+    }
+    .status-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 13px;
+        border: none;
+        cursor: pointer;
+        background: var(--gray-100);
+        color: var(--gray-600);
+        transition: all 0.2s;
+    }
+    .status-toggle.active {
+        background: var(--success-100);
+        color: var(--success-700);
+    }
+    .status-toggle .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: currentColor;
+    }
+    .btn-icon.danger {
+        color: var(--danger-500);
+    }
+    .btn-icon.danger:hover {
+        background: var(--danger-50);
+    }
+</style>
+
+@section Scripts {
+    <script>
+        function toggleStatus(id, btn) {
+            // AntiForgeryToken'ı al
+            const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+            if (!token) {
+                console.error('AntiForgeryToken bulunamadı');
+                return;
+            }
+            
+            fetch('/Category/ToggleStatus', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'RequestVerificationToken': token
+                },
+                body: `id=${id}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Buton class'ını güncelle
+                    btn.classList.toggle('active', data.isActive);
+                    
+                    // Durum metnini güncelle
+                    const statusText = btn.querySelector('.status-text');
+                    if (statusText) {
+                        statusText.textContent = data.isActive ? 'Aktif' : 'Pasif';
+                    }
+                    
+                    // Title'ı güncelle
+                    btn.title = data.isActive ? 'Aktif' : 'Pasif';
+                } else {
+                    console.error('ToggleStatus başarısız');
+                }
+            })
+            .catch(error => {
+                console.error('Hata:', error);
+            });
+        }
+    </script>
+}

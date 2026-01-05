@@ -1,0 +1,325 @@
+@model DashboardViewModel
+@{
+    ViewData["Title"] = "Kontrol Paneli";
+}
+
+<div class="page-header">
+    <h1>Kontrol Paneli</h1>
+    <p>Sistemin genel durumu ve performans metrikleri</p>
+</div>
+
+<!-- KPI Cards -->
+<div class="kpi-grid">
+    <!-- Günlük Ciro -->
+    <div class="kpi-card">
+        <div class="kpi-card-header">
+            <div class="kpi-icon blue">
+                <i class="fas fa-dollar-sign"></i>
+            </div>
+            <div class="kpi-change positive">
+                <i class="fas fa-trending-up"></i>
+                12.5%
+            </div>
+        </div>
+        <h3 class="kpi-title">Günlük Ciro</h3>
+        <p class="kpi-value">₺@Model.DailyRevenue.ToString("N0")</p>
+        <div class="kpi-breakdown">
+            <span>B2B: ₺@Model.B2BRevenue.ToString("N0")</span>
+            <span>•</span>
+            <span>B2C: ₺@Model.B2CRevenue.ToString("N0")</span>
+        </div>
+    </div>
+
+    <!-- Bekleyen Siparişler -->
+    <div class="kpi-card">
+        <div class="kpi-card-header">
+            <div class="kpi-icon orange">
+                <i class="fas fa-shopping-cart"></i>
+            </div>
+            <div class="kpi-change negative">
+                <i class="fas fa-trending-down"></i>
+                5.2%
+            </div>
+        </div>
+        <h3 class="kpi-title">Bekleyen Siparişler</h3>
+        <p class="kpi-value">@Model.PendingOrders</p>
+        <p class="kpi-subtitle">18 B2B, 16 B2C</p>
+    </div>
+
+    <!-- İade Talepleri -->
+    <div class="kpi-card">
+        <div class="kpi-card-header">
+            <div class="kpi-icon red">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="kpi-change negative">
+                <i class="fas fa-trending-up"></i>
+                8.3%
+            </div>
+        </div>
+        <h3 class="kpi-title">İade Talepleri</h3>
+        <p class="kpi-value">@Model.ReturnRequests</p>
+        <p class="kpi-subtitle">Son 24 saat</p>
+    </div>
+
+    <!-- Bayi Başvuruları -->
+    <div class="kpi-card">
+        <div class="kpi-card-header">
+            <div class="kpi-icon green">
+                <i class="fas fa-user-check"></i>
+            </div>
+            <div class="kpi-change positive">
+                <i class="fas fa-trending-up"></i>
+                15.0%
+            </div>
+        </div>
+        <h3 class="kpi-title">Bayi Başvuruları</h3>
+        <p class="kpi-value">@Model.PendingDealers</p>
+        <p class="kpi-subtitle">Onay bekliyor</p>
+    </div>
+</div>
+
+<!-- Charts Section -->
+<div class="chart-grid">
+    <!-- Haftalık Satış Grafiği - 2/3 genişlik -->
+    <div class="card chart-card-lg">
+        <div class="card-header">
+            <h2 class="card-title">Haftalık Satış Grafiği</h2>
+        </div>
+        <div class="chart-container">
+            <canvas id="weeklySalesChart"></canvas>
+        </div>
+    </div>
+
+    <!-- En Çok Satan Kategoriler - 1/3 genişlik -->
+    <div class="card chart-card-sm">
+        <div class="card-header">
+            <h2 class="card-title">En Çok Satan Kategoriler</h2>
+        </div>
+        <div class="chart-container-pie">
+            <canvas id="categoryChart"></canvas>
+        </div>
+        <div class="category-legend">
+            @foreach (var category in Model.TopCategories)
+            {
+                <div class="legend-item">
+                    <span class="legend-color" style="background: @category.Color;"></span>
+                    <span class="legend-label">@category.CategoryName</span>
+                    <span class="legend-value">@category.Percentage%</span>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Tables Section -->
+<div class="grid-2">
+    <!-- Son Gelen Siparişler -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Son Gelen Siparişler</h2>
+            <a href="#" class="card-action">
+                Tümünü Gör
+                <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Sipariş No</th>
+                    <th>Müşteri</th>
+                    <th>Tutar</th>
+                    <th>Durum</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var order in Model.RecentOrders)
+                {
+                    var statusClass = order.Status switch
+                    {
+                        UpexTech.Entity.OrderStatus.Pending => "pending",
+                        UpexTech.Entity.OrderStatus.Confirmed => "approved",
+                        UpexTech.Entity.OrderStatus.Shipped => "shipping",
+                        UpexTech.Entity.OrderStatus.Delivered => "delivered",
+                        UpexTech.Entity.OrderStatus.Cancelled => "cancelled",
+                        UpexTech.Entity.OrderStatus.Returned => "returned",
+                        _ => "pending"
+                    };
+                    
+                    var statusText = order.Status switch
+                    {
+                        UpexTech.Entity.OrderStatus.Pending => "Bekliyor",
+                        UpexTech.Entity.OrderStatus.Confirmed => "Onaylandı",
+                        UpexTech.Entity.OrderStatus.Shipped => "Kargoda",
+                        UpexTech.Entity.OrderStatus.Delivered => "Teslim Edildi",
+                        UpexTech.Entity.OrderStatus.Cancelled => "İptal Edildi",
+                        UpexTech.Entity.OrderStatus.Returned => "İade Edildi",
+                        _ => "Bekliyor"
+                    };
+
+                    var userBadge = order.User.Role == UpexTech.Entity.UserRole.B2B ? "b2b" : "b2c";
+                    var userBadgeText = order.User.Role == UpexTech.Entity.UserRole.B2B ? "B2B" : "B2C";
+                    var userName = order.User.Role == UpexTech.Entity.UserRole.B2B 
+                        ? order.User.CompanyName ?? order.User.FullName 
+                        : order.User.FullName;
+
+                    <tr>
+                        <td>@order.OrderNumber</td>
+                        <td>@userName <span class="badge-type @userBadge">@userBadgeText</span></td>
+                        <td>₺@order.TotalAmount.ToString("N0")</td>
+                        <td><span class="badge-status @statusClass">@statusText</span></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Kritik Stok Uyarıları -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Kritik Stok Uyarıları</h2>
+            <span class="badge-status" style="background: #fee2e2; color: #b91c1c;">@Model.LowStockProducts.Count() Ürün</span>
+        </div>
+        <div class="alert-list">
+            @foreach (var product in Model.LowStockProducts)
+            {
+                <div class="alert-item">
+                    <div class="alert-item-left">
+                        <div class="alert-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="alert-info">
+                            <h4>@product.ProductName</h4>
+                            <p>Kritik seviyede</p>
+                        </div>
+                    </div>
+                    <div class="alert-count">
+                        <span class="count">@product.Stock adet</span>
+                        <p class="label">kaldı</p>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Haftalık Satış Line Chart
+        const weeklySalesCtx = document.getElementById('weeklySalesChart').getContext('2d');
+        
+        // Model'den gelen gerçek veriler
+        const weeklySalesLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.WeeklySalesLabels));
+        const weeklySalesB2B = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.WeeklySalesB2B));
+        const weeklySalesB2C = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.WeeklySalesB2C));
+        
+        new Chart(weeklySalesCtx, {
+            type: 'line',
+            data: {
+                labels: weeklySalesLabels,
+                datasets: [
+                    {
+                        label: 'B2B Satış',
+                        data: weeklySalesB2B,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#3b82f6',
+                        pointRadius: 4
+                    },
+                    {
+                        label: 'B2C Satış',
+                        data: weeklySalesB2C,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#10b981',
+                        pointRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 20
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ₺' + context.parsed.y.toLocaleString('tr-TR');
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '₺' + value.toLocaleString('tr-TR');
+                            }
+                        },
+                        grid: {
+                            color: '#f0f0f0'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+
+        // Kategori Pie Chart
+        const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+        
+        // Model'den gelen gerçek veriler
+        const categoryLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.TopCategories.Select(c => c.CategoryName)));
+        const categoryData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.TopCategories.Select(c => c.Percentage)));
+        const categoryColors = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.TopCategories.Select(c => c.Color)));
+        
+        new Chart(categoryCtx, {
+            type: 'doughnut',
+            data: {
+                labels: categoryLabels,
+                datasets: [{
+                    data: categoryData,
+                    backgroundColor: categoryColors,
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '60%',
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.label + ': ' + context.parsed + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+}
+

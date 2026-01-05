@@ -1,0 +1,462 @@
+@model IEnumerable<UpexTech.Entity.Order>
+@using UpexTech.Entity
+@{
+    ViewData["Title"] = "Sipariş Yönetimi";
+    var statusCounts = ViewBag.StatusCounts as Dictionary<OrderStatus, int> ?? new Dictionary<OrderStatus, int>();
+    var allCount = ViewBag.AllCount as int? ?? 0;
+}
+
+<div class="page-header">
+    <h1>Sipariş Yönetimi</h1>
+    <p>Tüm siparişlerinizi görüntüleyin, filtreleyin ve yönetin</p>
+</div>
+
+<!-- Tabs -->
+<div class="tabs-container">
+    <div class="tabs-nav">
+        <a href="@Url.Action("Index")" class="tab-btn @(ViewBag.CurrentStatus == null ? "active" : "")">
+            Tüm Siparişler
+            <span class="tab-count">@allCount</span>
+        </a>
+        <a href="@Url.Action("Index", new { status = OrderStatus.Pending })" class="tab-btn @(ViewBag.CurrentStatus?.ToString() == "Pending" ? "active" : "")">
+            Beklemede
+            <span class="tab-count">@(statusCounts.GetValueOrDefault(OrderStatus.Pending, 0))</span>
+        </a>
+        <a href="@Url.Action("Index", new { status = OrderStatus.Confirmed })" class="tab-btn @(ViewBag.CurrentStatus?.ToString() == "Confirmed" ? "active" : "")">
+            Onaylandı
+            <span class="tab-count">@(statusCounts.GetValueOrDefault(OrderStatus.Confirmed, 0))</span>
+        </a>
+        <a href="@Url.Action("Index", new { status = OrderStatus.Shipped })" class="tab-btn @(ViewBag.CurrentStatus?.ToString() == "Shipped" ? "active" : "")">
+            Kargoda
+            <span class="tab-count">@(statusCounts.GetValueOrDefault(OrderStatus.Shipped, 0))</span>
+        </a>
+        <a href="@Url.Action("Index", new { status = OrderStatus.Delivered })" class="tab-btn @(ViewBag.CurrentStatus?.ToString() == "Delivered" ? "active" : "")">
+            Teslim Edildi
+            <span class="tab-count">@(statusCounts.GetValueOrDefault(OrderStatus.Delivered, 0))</span>
+        </a>
+        <a href="@Url.Action("Index", new { status = OrderStatus.Cancelled })" class="tab-btn @(ViewBag.CurrentStatus?.ToString() == "Cancelled" ? "active" : "")">
+            İptal/İade
+            <span class="tab-count">@(statusCounts.GetValueOrDefault(OrderStatus.Cancelled, 0) + statusCounts.GetValueOrDefault(OrderStatus.Returned, 0))</span>
+        </a>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="tabs-container">
+    <form asp-action="Index" method="get" class="filter-section">
+        @if (ViewBag.CurrentStatus != null)
+        {
+            <input type="hidden" name="status" value="@((int)ViewBag.CurrentStatus)" />
+        }
+        <div class="filter-grid">
+            <div class="filter-group">
+                <label>Sipariş Numarası / Müşteri</label>
+                <div class="filter-input-wrapper">
+                    <i class="fas fa-search"></i>
+                    <input type="text" name="search" class="filter-input" placeholder="Sipariş no, müşteri adı veya telefon" value="@ViewBag.CurrentSearch" />
+                </div>
+            </div>
+            <div class="filter-group">
+                <label>Başlangıç Tarihi</label>
+                <div class="filter-input-wrapper">
+                    <i class="fas fa-calendar"></i>
+                    <input type="date" name="fromDate" class="filter-input" value="@(ViewBag.CurrentFromDate?.ToString("yyyy-MM-dd"))" />
+                </div>
+            </div>
+            <div class="filter-group">
+                <label>Bitiş Tarihi</label>
+                <div class="filter-input-wrapper">
+                    <i class="fas fa-calendar"></i>
+                    <input type="date" name="toDate" class="filter-input" value="@(ViewBag.CurrentToDate?.ToString("yyyy-MM-dd"))" />
+                </div>
+            </div>
+        </div>
+        <div class="filter-actions">
+            <button type="submit" class="btn-filter primary">Filtrele</button>
+            <a href="@Url.Action("Index")" class="btn-filter secondary">
+                <i class="fas fa-times"></i>
+                Temizle
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Data Table -->
+<div class="data-table-container">
+    <!-- Actions Bar -->
+    <div class="table-actions">
+        <div class="table-actions-left">
+            <span class="pagination-info">Toplam @ViewBag.TotalCount sipariş</span>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div style="overflow-x: auto;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Sipariş Bilgisi</th>
+                    <th>Müşteri</th>
+                    <th>Ürünler</th>
+                    <th>Tutar</th>
+                    <th>Durum</th>
+                    <th>Aksiyonlar</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 40px; color: var(--gray-500);">
+                            <i class="fas fa-inbox" style="font-size: 48px; margin-bottom: 16px; display: block;"></i>
+                            Henüz sipariş bulunmuyor
+                        </td>
+                    </tr>
+                }
+                @foreach (var order in Model)
+                {
+                    var firstItem = order.OrderItems.FirstOrDefault();
+                    var itemCount = order.OrderItems.Count;
+                    <tr data-order-id="@order.Id">
+                        <td>
+                            <div>
+                                <p style="color: var(--gray-900); font-weight: 500;">@order.OrderNumber</p>
+                                <p style="color: var(--gray-500); font-size: 13px;">@order.CreatedAt.ToString("dd.MM.yyyy HH:mm")</p>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="customer-cell">
+                                <span>@(order.User?.FullName ?? "Misafir")</span>
+                                <span class="badge-type @(order.User?.Role == UserRole.B2B ? "b2b" : "b2c")">
+                                    @(order.User?.Role == UserRole.B2B ? "B2B Bayi" : "B2C Müşteri")
+                                </span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="product-cell">
+                                @if (firstItem?.Product?.Image != null)
+                                {
+                                    <img src="/images/@firstItem.Product.Image" class="product-image" alt="Product" onerror="this.src='/images/placeholder.png'" />
+                                }
+                                else
+                                {
+                                    <div class="product-image" style="background: var(--gray-100); display: flex; align-items: center; justify-content: center;">
+                                        <i class="fas fa-box" style="color: var(--gray-400);"></i>
+                                    </div>
+                                }
+                                <div class="product-info">
+                                    <p class="product-name">@(firstItem?.Product?.Name ?? "Ürün")</p>
+                                    @if (itemCount > 1)
+                                    {
+                                        <p class="product-sku">+@(itemCount - 1) ürün daha</p>
+                                    }
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <p style="font-weight: 600; color: var(--gray-900);">₺@order.TotalAmount.ToString("N2")</p>
+                        </td>
+                        <td>
+                            @{
+                                var statusClass = order.Status switch
+                                {
+                                    OrderStatus.Pending => "background: var(--orange-100); color: var(--orange-600);",
+                                    OrderStatus.Confirmed => "background: var(--primary-100); color: var(--primary-600);",
+                                    OrderStatus.Shipped => "background: var(--blue-100); color: var(--blue-600);",
+                                    OrderStatus.Delivered => "background: var(--success-100); color: var(--success-600);",
+                                    OrderStatus.Cancelled => "background: var(--danger-100); color: var(--danger-600);",
+                                    OrderStatus.Returned => "background: var(--gray-100); color: var(--gray-600);",
+                                    _ => ""
+                                };
+                                var statusText = order.Status switch
+                                {
+                                    OrderStatus.Pending => "Beklemede",
+                                    OrderStatus.Confirmed => "Onaylandı",
+                                    OrderStatus.Shipped => "Kargoda",
+                                    OrderStatus.Delivered => "Teslim Edildi",
+                                    OrderStatus.Cancelled => "İptal Edildi",
+                                    OrderStatus.Returned => "İade Edildi",
+                                    _ => order.Status.ToString()
+                                };
+                            }
+                            <span class="badge-status" style="@statusClass">@statusText</span>
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn-icon" title="Detay Görüntüle" onclick="showOrderDetails(@order.Id)">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <div class="dropdown" style="position: relative; display: inline-block;">
+                                    <button class="btn-icon" title="Durum Değiştir" onclick="toggleStatusDropdown(this)">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <div class="status-dropdown" style="display: none; position: absolute; right: 0; top: 100%; background: white; border: 1px solid var(--gray-200); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100; min-width: 150px;">
+                                        <button class="status-option" onclick="updateOrderStatus(@order.Id, @((int)OrderStatus.Pending))">Beklemede</button>
+                                        <button class="status-option" onclick="updateOrderStatus(@order.Id, @((int)OrderStatus.Confirmed))">Onaylandı</button>
+                                        <button class="status-option" onclick="updateOrderStatus(@order.Id, @((int)OrderStatus.Shipped))">Kargoda</button>
+                                        <button class="status-option" onclick="updateOrderStatus(@order.Id, @((int)OrderStatus.Delivered))">Teslim Edildi</button>
+                                        <button class="status-option" style="color: var(--danger-500);" onclick="updateOrderStatus(@order.Id, @((int)OrderStatus.Cancelled))">İptal Et</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    @if (ViewBag.TotalPages > 1)
+    {
+        <div class="pagination">
+            <div class="pagination-info">
+                Sayfa @ViewBag.CurrentPage / @ViewBag.TotalPages
+            </div>
+            <div class="pagination-buttons">
+                @if (ViewBag.CurrentPage > 1)
+                {
+                    <a href="@Url.Action("Index", new { page = ViewBag.CurrentPage - 1, status = ViewBag.CurrentStatus, search = ViewBag.CurrentSearch, fromDate = ViewBag.CurrentFromDate, toDate = ViewBag.CurrentToDate })" class="btn-page">Önceki</a>
+                }
+                @for (int i = Math.Max(1, ViewBag.CurrentPage - 2); i <= Math.Min(ViewBag.TotalPages, ViewBag.CurrentPage + 2); i++)
+                {
+                    <a href="@Url.Action("Index", new { page = i, status = ViewBag.CurrentStatus, search = ViewBag.CurrentSearch, fromDate = ViewBag.CurrentFromDate, toDate = ViewBag.CurrentToDate })" class="btn-page @(i == ViewBag.CurrentPage ? "active" : "")">@i</a>
+                }
+                @if (ViewBag.CurrentPage < ViewBag.TotalPages)
+                {
+                    <a href="@Url.Action("Index", new { page = ViewBag.CurrentPage + 1, status = ViewBag.CurrentStatus, search = ViewBag.CurrentSearch, fromDate = ViewBag.CurrentFromDate, toDate = ViewBag.CurrentToDate })" class="btn-page">Sonraki</a>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Order Details Modal -->
+<div id="orderModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 700px;">
+        <div class="modal-header">
+            <h2 id="modalOrderNumber">Sipariş Detayı</h2>
+            <button class="modal-close" onclick="closeOrderModal()">&times;</button>
+        </div>
+        <div class="modal-body" id="modalBody">
+            <!-- Content loaded dynamically -->
+        </div>
+    </div>
+</div>
+
+<style>
+    .status-dropdown {
+        padding: 4px 0;
+    }
+    .status-option {
+        display: block;
+        width: 100%;
+        padding: 8px 16px;
+        text-align: left;
+        border: none;
+        background: none;
+        cursor: pointer;
+        font-size: 14px;
+        color: var(--gray-700);
+    }
+    .status-option:hover {
+        background: var(--gray-50);
+    }
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+    .modal-content {
+        background: white;
+        border-radius: 16px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--gray-200);
+    }
+    .modal-header h2 {
+        margin: 0;
+        font-size: 18px;
+    }
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: var(--gray-500);
+    }
+    .modal-body {
+        padding: 24px;
+    }
+    .order-detail-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--gray-100);
+    }
+    .order-detail-label {
+        color: var(--gray-500);
+        font-size: 14px;
+    }
+    .order-detail-value {
+        color: var(--gray-900);
+        font-weight: 500;
+    }
+    .order-items-table {
+        width: 100%;
+        margin-top: 16px;
+    }
+    .order-items-table th, .order-items-table td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid var(--gray-100);
+    }
+    .order-items-table th {
+        background: var(--gray-50);
+        font-size: 12px;
+        text-transform: uppercase;
+        color: var(--gray-600);
+    }
+</style>
+
+@section Scripts {
+    <script>
+        function toggleStatusDropdown(btn) {
+            // Close all other dropdowns
+            document.querySelectorAll('.status-dropdown').forEach(d => d.style.display = 'none');
+            const dropdown = btn.nextElementSibling;
+            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.dropdown')) {
+                document.querySelectorAll('.status-dropdown').forEach(d => d.style.display = 'none');
+            }
+        });
+
+        function updateOrderStatus(orderId, status) {
+            const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+            
+            fetch('/Order/UpdateStatus', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'RequestVerificationToken': token || ''
+                },
+                body: `id=${orderId}&status=${status}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert(data.message || 'Bir hata oluştu');
+                }
+            })
+            .catch(() => alert('Bir hata oluştu'));
+        }
+
+        function showOrderDetails(orderId) {
+            fetch(`/Order/GetOrderDetails?id=${orderId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const order = data.order;
+                        document.getElementById('modalOrderNumber').textContent = order.orderNumber;
+                        
+                        let itemsHtml = order.items.map(item => `
+                            <tr>
+                                <td>${item.productName}</td>
+                                <td>${item.productSku || '-'}</td>
+                                <td>${item.quantity}</td>
+                                <td>₺${item.unitPrice.toFixed(2)}</td>
+                                <td>₺${item.totalPrice.toFixed(2)}</td>
+                            </tr>
+                        `).join('');
+
+                        document.getElementById('modalBody').innerHTML = `
+                            <div class="order-detail-row">
+                                <span class="order-detail-label">Müşteri</span>
+                                <span class="order-detail-value">${order.customerName} (${order.customerType})</span>
+                            </div>
+                            <div class="order-detail-row">
+                                <span class="order-detail-label">Telefon</span>
+                                <span class="order-detail-value">${order.customerPhone || '-'}</span>
+                            </div>
+                            <div class="order-detail-row">
+                                <span class="order-detail-label">E-posta</span>
+                                <span class="order-detail-value">${order.customerEmail || '-'}</span>
+                            </div>
+                            <div class="order-detail-row">
+                                <span class="order-detail-label">Tarih</span>
+                                <span class="order-detail-value">${order.createdAt}</span>
+                            </div>
+                            <div class="order-detail-row">
+                                <span class="order-detail-label">Durum</span>
+                                <span class="order-detail-value">${order.statusText}</span>
+                            </div>
+                            <div class="order-detail-row">
+                                <span class="order-detail-label">Toplam</span>
+                                <span class="order-detail-value" style="font-size: 18px; color: var(--primary-500);">₺${order.totalAmount.toFixed(2)}</span>
+                            </div>
+                            ${order.shippingAddress ? `
+                            <div style="margin-top: 16px;">
+                                <strong>Teslimat Adresi:</strong>
+                                <p style="color: var(--gray-600); white-space: pre-line; margin-top: 8px;">${order.shippingAddress}</p>
+                            </div>
+                            ` : ''}
+                            ${order.notes ? `
+                            <div style="margin-top: 16px;">
+                                <strong>Notlar:</strong>
+                                <p style="color: var(--gray-600); margin-top: 8px;">${order.notes}</p>
+                            </div>
+                            ` : ''}
+                            <h3 style="margin-top: 24px; margin-bottom: 12px;">Sipariş Kalemleri</h3>
+                            <table class="order-items-table">
+                                <thead>
+                                    <tr>
+                                        <th>Ürün</th>
+                                        <th>SKU</th>
+                                        <th>Adet</th>
+                                        <th>Birim Fiyat</th>
+                                        <th>Toplam</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${itemsHtml}
+                                </tbody>
+                            </table>
+                        `;
+                        
+                        document.getElementById('orderModal').style.display = 'flex';
+                    } else {
+                        alert(data.message || 'Sipariş bulunamadı');
+                    }
+                });
+        }
+
+        function closeOrderModal() {
+            document.getElementById('orderModal').style.display = 'none';
+        }
+
+        // Close modal on outside click
+        document.getElementById('orderModal')?.addEventListener('click', function(e) {
+            if (e.target === this) closeOrderModal();
+        });
+    </script>
+}

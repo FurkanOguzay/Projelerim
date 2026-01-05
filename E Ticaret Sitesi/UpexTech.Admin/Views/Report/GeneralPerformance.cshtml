@@ -1,0 +1,534 @@
+@{
+    ViewData["Title"] = "Genel Performans Özeti";
+}
+
+<div class="performance-page">
+    <!-- Header with Segment Toggle and Date Range -->
+    <div class="performance-header">
+        <div class="performance-header-left">
+            <h1 class="performance-title">Genel Performans Özeti</h1>
+            <p class="performance-subtitle">Satış ve trafik metriklerinizi gerçek zamanlı izleyin</p>
+        </div>
+        
+        <div class="performance-header-center">
+            <div class="segment-toggle">
+                <button type="button" class="segment-btn active" data-segment="all">Tümü</button>
+                <button type="button" class="segment-btn" data-segment="b2b">Sadece B2B</button>
+                <button type="button" class="segment-btn" data-segment="b2c">Sadece B2C</button>
+            </div>
+        </div>
+        
+        <div class="performance-header-right">
+            <div class="date-range-dropdown">
+                <button type="button" class="date-range-btn" id="dateRangeBtn">
+                    <span id="selectedDateRange">Bugün</span>
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="date-range-menu" id="dateRangeMenu">
+                    <button type="button" class="date-range-option active" data-range="today">Bugün</button>
+                    <button type="button" class="date-range-option" data-range="yesterday">Dün</button>
+                    <button type="button" class="date-range-option" data-range="week">Bu Hafta</button>
+                    <button type="button" class="date-range-option" data-range="month">Bu Ay</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="kpi-grid-modern">
+        <!-- Net Ciro -->
+        <div class="kpi-card-modern">
+            <div class="kpi-card-header">
+                <div class="kpi-icon-modern blue">
+                    <i class="fas fa-trending-up"></i>
+                </div>
+                <div class="kpi-change-badge positive" id="revenueChange">
+                    <i class="fas fa-arrow-up"></i>
+                    <span>%12</span>
+                </div>
+            </div>
+            <div class="kpi-label">Net Ciro</div>
+            <div class="kpi-value-modern" id="netRevenue">₺145.000</div>
+            <div class="kpi-subtitle-modern">Düne göre artış</div>
+        </div>
+
+        <!-- Sipariş Adedi -->
+        <div class="kpi-card-modern">
+            <div class="kpi-card-header">
+                <div class="kpi-icon-modern green">
+                    <i class="fas fa-shopping-cart"></i>
+                </div>
+            </div>
+            <div class="kpi-label">Sipariş Adedi</div>
+            <div class="kpi-value-modern" id="orderCount">84 Adet</div>
+            <div class="kpi-subtitle-modern">Toplam sipariş sayısı</div>
+        </div>
+
+        <!-- Görüntülenme -->
+        <div class="kpi-card-modern">
+            <div class="kpi-card-header">
+                <div class="kpi-icon-modern purple">
+                    <i class="fas fa-eye"></i>
+                </div>
+            </div>
+            <div class="kpi-label">Görüntülenme</div>
+            <div class="kpi-value-modern" id="viewCount">1.250</div>
+            <div class="kpi-subtitle-modern">Ürün detay sayfası</div>
+        </div>
+
+        <!-- Dönüşüm Oranı -->
+        <div class="kpi-card-modern">
+            <div class="kpi-card-header">
+                <div class="kpi-icon-modern orange">
+                    <i class="fas fa-mouse-pointer"></i>
+                </div>
+            </div>
+            <div class="kpi-label">Sepete Atma / Satış Oranı</div>
+            <div class="kpi-value-modern" id="conversionRate">%2.8</div>
+            <div class="kpi-subtitle-modern">Dönüşüm performansı</div>
+        </div>
+    </div>
+
+    <!-- Sales Chart Section -->
+    <div class="chart-card">
+        <div class="chart-header">
+            <div class="chart-header-left">
+                <h3 class="chart-title">Satış Grafiği & Ciro Analizi</h3>
+                <p class="chart-subtitle">Detaylı performans karşılaştırması</p>
+                
+                <div class="chart-segment-toggle">
+                    <button type="button" class="chart-segment-btn active" data-segment="all">Tümü</button>
+                    <button type="button" class="chart-segment-btn" data-segment="b2b">B2B</button>
+                    <button type="button" class="chart-segment-btn" data-segment="b2c">B2C</button>
+                </div>
+            </div>
+            
+            <div class="chart-header-right">
+                <!-- Time Breakdown -->
+                <div class="time-breakdown-toggle">
+                    <button type="button" class="time-btn active" data-breakdown="hourly">Saatlik</button>
+                    <button type="button" class="time-btn" data-breakdown="daily">Günlük</button>
+                    <button type="button" class="time-btn" data-breakdown="weekly">Haftalık</button>
+                    <button type="button" class="time-btn" data-breakdown="monthly">Aylık</button>
+                </div>
+                
+                <!-- Comparison Toggle -->
+                <div class="comparison-toggle">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="comparisonToggle" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span class="toggle-label">Karşılaştır</span>
+                </div>
+                
+                <!-- Date Picker -->
+                <div class="chart-date-picker">
+                    <button type="button" class="chart-date-btn">
+                        <i class="fas fa-calendar"></i>
+                        <span>22 Kas - 22 Ara</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Chart Container -->
+        <div class="chart-container">
+            <canvas id="salesChart" height="350"></canvas>
+        </div>
+        
+        <!-- Chart Legend -->
+        <div class="chart-legend">
+            <div class="legend-item">
+                <span class="legend-line primary"></span>
+                <span class="legend-text">Bu Dönem</span>
+            </div>
+            <div class="legend-item" id="previousPeriodLegend">
+                <span class="legend-line secondary dashed"></span>
+                <span class="legend-text">Önceki Dönem</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Summary Blocks -->
+    <div class="summary-grid">
+        <!-- City Sales -->
+        <div class="summary-card">
+            <div class="summary-card-header">
+                <h3 class="summary-title">En Çok Satış Yapan İller</h3>
+                <p class="summary-subtitle">İl bazında satış dağılımı</p>
+            </div>
+            <div class="city-sales-list" id="citySalesList">
+                <!-- City items will be loaded here -->
+            </div>
+        </div>
+        
+        <!-- Platform Distribution -->
+        <div class="summary-card">
+            <div class="summary-card-header">
+                <h3 class="summary-title">Platform Dağılımı</h3>
+                <p class="summary-subtitle">Kullanıcı platformları</p>
+            </div>
+            <div class="platform-chart-container">
+                <canvas id="platformChart" height="250"></canvas>
+            </div>
+            <div class="platform-legend">
+                <div class="platform-item">
+                    <div class="platform-icon blue">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <div class="platform-info">
+                        <div class="platform-label">Mobil Web</div>
+                        <div class="platform-value" id="mobilePercentage">%60</div>
+                    </div>
+                </div>
+                <div class="platform-item">
+                    <div class="platform-icon purple">
+                        <i class="fas fa-desktop"></i>
+                    </div>
+                    <div class="platform-info">
+                        <div class="platform-label">Desktop</div>
+                        <div class="platform-value" id="desktopPercentage">%40</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script>
+        // State
+        let currentSegment = 'all';
+        let currentDateRange = 'today';
+        let currentBreakdown = 'hourly';
+        let comparisonEnabled = true;
+        let salesChart = null;
+        let platformChart = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCharts();
+            loadData();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            // Segment toggle
+            document.querySelectorAll('.segment-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.segment-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    currentSegment = this.dataset.segment;
+                    loadData();
+                });
+            });
+
+            // Date range dropdown
+            document.getElementById('dateRangeBtn').addEventListener('click', function() {
+                document.getElementById('dateRangeMenu').classList.toggle('show');
+            });
+
+            document.querySelectorAll('.date-range-option').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.date-range-option').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    currentDateRange = this.dataset.range;
+                    document.getElementById('selectedDateRange').textContent = this.textContent;
+                    document.getElementById('dateRangeMenu').classList.remove('show');
+                    loadData();
+                });
+            });
+
+            // Chart segment toggle
+            document.querySelectorAll('.chart-segment-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.chart-segment-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    currentSegment = this.dataset.segment;
+                    loadData();
+                });
+            });
+
+            // Time breakdown toggle
+            document.querySelectorAll('.time-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    currentBreakdown = this.dataset.breakdown;
+                    loadChartData();
+                });
+            });
+
+            // Comparison toggle
+            document.getElementById('comparisonToggle').addEventListener('change', function() {
+                comparisonEnabled = this.checked;
+                document.getElementById('previousPeriodLegend').style.display = comparisonEnabled ? 'flex' : 'none';
+                updateChartComparison();
+            });
+
+            // Close dropdown on outside click
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.date-range-dropdown')) {
+                    document.getElementById('dateRangeMenu').classList.remove('show');
+                }
+            });
+        }
+
+        function getDateRange() {
+            const today = new Date();
+            let startDate, endDate;
+
+            switch (currentDateRange) {
+                case 'yesterday':
+                    startDate = new Date(today);
+                    startDate.setDate(startDate.getDate() - 1);
+                    endDate = new Date(startDate);
+                    break;
+                case 'week':
+                    startDate = new Date(today);
+                    startDate.setDate(startDate.getDate() - 7);
+                    endDate = today;
+                    break;
+                case 'month':
+                    startDate = new Date(today);
+                    startDate.setDate(startDate.getDate() - 30);
+                    endDate = today;
+                    break;
+                default: // today
+                    startDate = today;
+                    endDate = today;
+            }
+
+            return {
+                startDate: startDate.toISOString().split('T')[0],
+                endDate: endDate.toISOString().split('T')[0]
+            };
+        }
+
+        function loadData() {
+            loadKPIData();
+            loadChartData();
+            loadCitySalesData();
+            loadPlatformData();
+        }
+
+        async function loadKPIData() {
+            try {
+                const { startDate, endDate } = getDateRange();
+                const response = await fetch(`/Report/GetGeneralPerformanceSummary?segment=${currentSegment}&startDate=${startDate}&endDate=${endDate}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    const data = result.data;
+                    document.getElementById('netRevenue').textContent = formatCurrency(data.netRevenue);
+                    document.getElementById('orderCount').textContent = `${data.orderCount} Adet`;
+                    document.getElementById('viewCount').textContent = data.viewCount.toLocaleString('tr-TR');
+                    document.getElementById('conversionRate').textContent = `%${data.conversionRate}`;
+                    
+                    const changeEl = document.getElementById('revenueChange');
+                    const isPositive = data.revenueChange >= 0;
+                    changeEl.className = `kpi-change-badge ${isPositive ? 'positive' : 'negative'}`;
+                    changeEl.innerHTML = `<i class="fas fa-arrow-${isPositive ? 'up' : 'down'}"></i><span>%${Math.abs(data.revenueChange)}</span>`;
+                }
+            } catch (error) {
+                console.error('KPI data load error:', error);
+            }
+        }
+
+        async function loadChartData() {
+            try {
+                const { startDate, endDate } = getDateRange();
+                const response = await fetch(`/Report/GetSalesChartData?segment=${currentSegment}&startDate=${startDate}&endDate=${endDate}&breakdown=${currentBreakdown}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    updateSalesChart(result.data);
+                }
+            } catch (error) {
+                console.error('Chart data load error:', error);
+            }
+        }
+
+        async function loadCitySalesData() {
+            try {
+                const { startDate, endDate } = getDateRange();
+                const response = await fetch(`/Report/GetCitySalesDistribution?segment=${currentSegment}&startDate=${startDate}&endDate=${endDate}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    renderCitySales(result.data);
+                }
+            } catch (error) {
+                console.error('City sales data load error:', error);
+            }
+        }
+
+        async function loadPlatformData() {
+            try {
+                const { startDate, endDate } = getDateRange();
+                const response = await fetch(`/Report/GetPlatformDistribution?segment=${currentSegment}&startDate=${startDate}&endDate=${endDate}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    updatePlatformChart(result.data);
+                }
+            } catch (error) {
+                console.error('Platform data load error:', error);
+            }
+        }
+
+        function initializeCharts() {
+            // Sales Line Chart
+            const salesCtx = document.getElementById('salesChart').getContext('2d');
+            salesChart = new Chart(salesCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'Bu Dönem',
+                            data: [],
+                            borderColor: '#4318FF',
+                            backgroundColor: 'rgba(67, 24, 255, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: '#4318FF',
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        },
+                        {
+                            label: 'Önceki Dönem',
+                            data: [],
+                            borderColor: '#9CA3AF',
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            fill: false,
+                            tension: 0.4,
+                            pointBackgroundColor: '#9CA3AF',
+                            pointRadius: 3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'white',
+                            titleColor: '#111827',
+                            bodyColor: '#6B7280',
+                            borderColor: '#E5E7EB',
+                            borderWidth: 1,
+                            padding: 12,
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${formatCurrency(context.parsed.y)}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: '#E5E7EB', drawBorder: false },
+                            ticks: {
+                                callback: function(value) {
+                                    return '₺' + (value / 1000) + 'k';
+                                }
+                            }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+
+            // Platform Pie Chart
+            const platformCtx = document.getElementById('platformChart').getContext('2d');
+            platformChart = new Chart(platformCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Mobil Web', 'Desktop'],
+                    datasets: [{
+                        data: [60, 40],
+                        backgroundColor: ['#4318FF', '#A78BFA'],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '60%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.label}: ${context.parsed}%`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateSalesChart(data) {
+            salesChart.data.labels = data.map(d => d.label);
+            salesChart.data.datasets[0].data = data.map(d => d.currentPeriod);
+            salesChart.data.datasets[1].data = data.map(d => d.previousPeriod);
+            salesChart.data.datasets[1].hidden = !comparisonEnabled;
+            salesChart.update();
+        }
+
+        function updateChartComparison() {
+            salesChart.data.datasets[1].hidden = !comparisonEnabled;
+            salesChart.update();
+        }
+
+        function updatePlatformChart(data) {
+            platformChart.data.datasets[0].data = [data.mobileWebPercentage, data.desktopPercentage];
+            platformChart.update();
+            
+            document.getElementById('mobilePercentage').textContent = `%${data.mobileWebPercentage}`;
+            document.getElementById('desktopPercentage').textContent = `%${data.desktopPercentage}`;
+        }
+
+        function renderCitySales(data) {
+            const container = document.getElementById('citySalesList');
+            container.innerHTML = data.map(city => `
+                <div class="city-sales-item">
+                    <div class="city-sales-info">
+                        <div class="city-rank">${city.rank}</div>
+                        <span class="city-name">${city.cityName}</span>
+                    </div>
+                    <div class="city-sales-value">
+                        <span class="city-amount">${formatCurrency(city.sales)}</span>
+                        <span class="city-percentage">%${city.percentage}</span>
+                    </div>
+                    <div class="city-bar-container">
+                        <div class="city-bar" style="width: ${city.percentage}%"></div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('tr-TR', {
+                style: 'currency',
+                currency: 'TRY',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(amount);
+        }
+    </script>
+}

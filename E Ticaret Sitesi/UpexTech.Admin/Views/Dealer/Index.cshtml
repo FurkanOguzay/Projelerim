@@ -1,0 +1,139 @@
+@model IEnumerable<UpexTech.Entity.User>
+@{
+    ViewData["Title"] = "Bayilik Başvuruları";
+}
+
+<div class="page-header">
+    <h1>Bayilik Başvuruları</h1>
+    <p>Bekleyen bayi başvurularını görüntüleyin ve yönetin</p>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success" style="background: var(--success-100); color: var(--success-700); padding: 16px 24px; border-radius: var(--radius-lg); margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
+        <i class="fas fa-check-circle"></i>
+        @TempData["SuccessMessage"]
+    </div>
+}
+
+<!-- KPI Cards -->
+<div class="kpi-grid-3" style="margin-bottom: 24px;">
+    <div class="kpi-simple">
+        <div class="kpi-simple-header">
+            <div class="kpi-simple-icon orange">
+                <i class="fas fa-clock"></i>
+            </div>
+            <span class="kpi-simple-value" style="color: var(--orange-600);">@Model.Count()</span>
+        </div>
+        <h3>Bekleyen Başvuru</h3>
+        <p>Onay bekleyen bayi başvuruları</p>
+    </div>
+    <div class="kpi-simple">
+        <div class="kpi-simple-header">
+            <div class="kpi-simple-icon green">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <span class="kpi-simple-value" style="color: var(--success-500);">-</span>
+        </div>
+        <h3>Onaylanan</h3>
+        <p>Bu ay onaylanan başvurular</p>
+    </div>
+    <div class="kpi-simple">
+        <div class="kpi-simple-header">
+            <div class="kpi-simple-icon red">
+                <i class="fas fa-times-circle"></i>
+            </div>
+            <span class="kpi-simple-value" style="color: var(--danger-500);">-</span>
+        </div>
+        <h3>Reddedilen</h3>
+        <p>Bu ay reddedilen başvurular</p>
+    </div>
+</div>
+
+@if (Model.Any())
+{
+    <div class="data-table-container">
+        <div class="table-actions">
+            <div class="pagination-info">
+                Toplam @Model.Count() bekleyen başvuru
+            </div>
+        </div>
+
+        <div style="overflow-x: auto;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Başvuru Tarihi</th>
+                        <th>Firma Bilgileri</th>
+                        <th>Yetkili Kişi</th>
+                        <th>İletişim</th>
+                        <th>Vergi No</th>
+                        <th>Aksiyonlar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var dealer in Model)
+                    {
+                        <tr>
+                            <td>
+                                <div>
+                                    <p style="color: var(--gray-900); font-weight: 500;">@dealer.CreatedAt.ToString("dd.MM.yyyy")</p>
+                                    <p style="color: var(--gray-500); font-size: 13px;">@dealer.CreatedAt.ToString("HH:mm")</p>
+                                </div>
+                            </td>
+                            <td>
+                                <div>
+                                    <p style="color: var(--gray-900); font-weight: 500;">@(dealer.CompanyName ?? "-")</p>
+                                    <p style="color: var(--gray-500); font-size: 13px;">@(dealer.Address ?? "Adres bilgisi yok")</p>
+                                </div>
+                            </td>
+                            <td>
+                                <div>
+                                    <p style="color: var(--gray-900);">@dealer.FullName</p>
+                                </div>
+                            </td>
+                            <td>
+                                <div>
+                                    <p style="color: var(--gray-900);">@dealer.Email</p>
+                                    <p style="color: var(--gray-500); font-size: 13px;">@(dealer.Phone ?? "-")</p>
+                                </div>
+                            </td>
+                            <td>
+                                <span style="background: var(--gray-100); padding: 4px 12px; border-radius: 8px; font-size: 13px;">
+                                    @(dealer.TaxNumber ?? "-")
+                                </span>
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <form asp-action="Approve" asp-route-id="@dealer.Id" method="post" style="display: inline;">
+                                        <button type="submit" class="btn-icon success" title="Onayla" onclick="return confirm('Bu bayi başvurusunu onaylamak istediğinize emin misiniz?')">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                    </form>
+                                    <form asp-action="Reject" asp-route-id="@dealer.Id" method="post" style="display: inline;">
+                                        <button type="submit" class="btn-icon danger" title="Reddet" onclick="return confirm('Bu bayi başvurusunu reddetmek istediğinize emin misiniz?')">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </form>
+                                    <a href="@Url.Action("Details", new { id = dealer.Id })" class="btn-icon" title="Detay Görüntüle">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+else
+{
+    <div class="card" style="text-align: center; padding: 60px;">
+        <div style="margin-bottom: 24px;">
+            <i class="fas fa-inbox" style="font-size: 64px; color: var(--gray-300);"></i>
+        </div>
+        <h2 style="color: var(--gray-700); margin-bottom: 12px;">Bekleyen Başvuru Yok</h2>
+        <p style="color: var(--gray-500);">Şu anda onay bekleyen bayi başvurusu bulunmamaktadır.</p>
+    </div>
+}

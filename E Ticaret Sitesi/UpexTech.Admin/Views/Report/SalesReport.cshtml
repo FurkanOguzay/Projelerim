@@ -1,0 +1,605 @@
+@{
+    ViewData["Title"] = "Detaylı Satış Raporu";
+}
+
+<div class="performance-page">
+    <!-- Header with Date Range -->
+    <div class="performance-header">
+        <div class="performance-header-left">
+            <h1 class="performance-title">Detaylı Satış Raporu</h1>
+            <p class="performance-subtitle">Tarih aralığına göre ciro, en çok satanlar ve stok devir hızı analizi</p>
+        </div>
+        
+        <div class="performance-header-right">
+            <div class="date-range-dropdown">
+                <button type="button" class="date-range-btn" id="dateRangeBtn">
+                    <span id="selectedDateRange">Bugün</span>
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="date-range-menu" id="dateRangeMenu">
+                    <button type="button" class="date-range-option active" data-range="today">Bugün</button>
+                    <button type="button" class="date-range-option" data-range="week">Bu Hafta</button>
+                    <button type="button" class="date-range-option" data-range="month">Bu Ay</button>
+                    <div class="date-range-custom">
+                        <div class="custom-date-row">
+                            <input type="date" id="startDate" placeholder="Başlangıç" />
+                            <span>-</span>
+                            <input type="date" id="endDate" placeholder="Bitiş" />
+                        </div>
+                        <button type="button" class="apply-custom-btn" id="applyCustomDate">Uygula</button>
+                    </div>
+                </div>
+            </div>
+            
+            <button id="refreshSalesBtn" class="btn-modern outline">
+                <i class="fas fa-sync-alt"></i>
+                <span>Yenile</span>
+            </button>
+            <button id="exportSalesExcelBtn" class="btn-modern success">
+                <i class="fas fa-file-excel"></i>
+                <span>Excel İndir</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="kpi-grid-modern">
+        <!-- Toplam Ciro -->
+        <div class="kpi-card-modern">
+            <div class="kpi-card-header">
+                <div class="kpi-icon-modern blue">
+                    <i class="fas fa-lira-sign"></i>
+                </div>
+            </div>
+            <div class="kpi-label">Toplam Ciro</div>
+            <div class="kpi-value-modern" id="totalRevenue">₺0</div>
+            <div class="kpi-subtitle-modern">Seçili dönem toplam satış</div>
+        </div>
+
+        <!-- Sipariş Sayısı -->
+        <div class="kpi-card-modern">
+            <div class="kpi-card-header">
+                <div class="kpi-icon-modern green">
+                    <i class="fas fa-shopping-cart"></i>
+                </div>
+            </div>
+            <div class="kpi-label">Sipariş Sayısı</div>
+            <div class="kpi-value-modern" id="totalOrders">0</div>
+            <div class="kpi-subtitle-modern">Toplam sipariş adedi</div>
+        </div>
+
+        <!-- Satılan Ürün -->
+        <div class="kpi-card-modern">
+            <div class="kpi-card-header">
+                <div class="kpi-icon-modern purple">
+                    <i class="fas fa-box"></i>
+                </div>
+            </div>
+            <div class="kpi-label">Satılan Ürün</div>
+            <div class="kpi-value-modern" id="totalProductsSold">0</div>
+            <div class="kpi-subtitle-modern">Toplam ürün adedi</div>
+        </div>
+
+        <!-- Ortalama Sepet -->
+        <div class="kpi-card-modern">
+            <div class="kpi-card-header">
+                <div class="kpi-icon-modern orange">
+                    <i class="fas fa-shopping-basket"></i>
+                </div>
+            </div>
+            <div class="kpi-label">Ortalama Sepet</div>
+            <div class="kpi-value-modern" id="averageOrderValue">₺0</div>
+            <div class="kpi-subtitle-modern">Ortalama sipariş tutarı</div>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="summary-grid">
+        <!-- Ciro Trendi Chart -->
+        <div class="chart-card">
+            <div class="chart-header">
+                <div class="chart-header-left">
+                    <h3 class="chart-title">Ciro Trendi</h3>
+                    <p class="chart-subtitle">Dönemsel satış analizi</p>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="salesTrendChart" height="300"></canvas>
+            </div>
+        </div>
+        
+        <!-- Kategori Dağılımı Chart -->
+        <div class="summary-card">
+            <div class="summary-card-header">
+                <h3 class="summary-title">Kategori Dağılımı</h3>
+                <p class="summary-subtitle">Satış kategorileri</p>
+            </div>
+            <div class="platform-chart-container">
+                <canvas id="categoryPieChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tables Section -->
+    <div class="summary-grid" style="margin-top: 24px;">
+        <!-- En Çok Satanlar -->
+        <div class="summary-card">
+            <div class="summary-card-header">
+                <h3 class="summary-title"><i class="fas fa-trophy" style="color: #f59e0b; margin-right: 8px;"></i>En Çok Satanlar</h3>
+                <p class="summary-subtitle">Top 5 ürün</p>
+            </div>
+            <div class="table-container">
+                <table id="topProductsTable" class="performance-table">
+                    <thead>
+                        <tr>
+                            <th class="th-rank">SIRA</th>
+                            <th class="th-product">ÜRÜN ADI</th>
+                            <th>KATEGORİ</th>
+                            <th class="th-count">SATIŞ</th>
+                            <th class="th-revenue">CİRO</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Stok Devir Hızı -->
+        <div class="summary-card">
+            <div class="summary-card-header">
+                <h3 class="summary-title"><i class="fas fa-boxes" style="color: #3b82f6; margin-right: 8px;"></i>Stok Devir Hızı</h3>
+                <p class="summary-subtitle">Ürün hareketliliği</p>
+            </div>
+            <div class="table-container">
+                <table id="stockTurnoverTable" class="performance-table">
+                    <thead>
+                        <tr>
+                            <th class="th-product">ÜRÜN ADI</th>
+                            <th class="th-stock">STOK</th>
+                            <th class="th-count">SATILAN</th>
+                            <th>DEVİR</th>
+                            <th class="th-status">DURUM</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        let salesTrendChart, categoryPieChart;
+        let currentStartDate, currentEndDate;
+
+        $(document).ready(function() {
+            // Başlangıç tarihlerini ayarla (bugün)
+            setDateRange('today');
+            
+            // Date range dropdown toggle
+            $('#dateRangeBtn').click(function(e) {
+                e.stopPropagation();
+                $('#dateRangeMenu').toggleClass('show');
+            });
+            
+            // Date range option selection
+            $('.date-range-option').click(function() {
+                const range = $(this).data('range');
+                
+                // Update active state
+                $('.date-range-option').removeClass('active');
+                $(this).addClass('active');
+                
+                // Update button text
+                $('#selectedDateRange').text($(this).text());
+                
+                // Set date range and load data
+                setDateRange(range);
+                loadSalesData();
+                
+                // Close dropdown
+                $('#dateRangeMenu').removeClass('show');
+            });
+            
+            // Apply custom date
+            $('#applyCustomDate').click(function() {
+                currentStartDate = $('#startDate').val();
+                currentEndDate = $('#endDate').val();
+                if (currentStartDate && currentEndDate) {
+                    $('#selectedDateRange').text(formatDisplayDate(currentStartDate) + ' - ' + formatDisplayDate(currentEndDate));
+                    loadSalesData();
+                    $('#dateRangeMenu').removeClass('show');
+                }
+            });
+
+            // Close dropdown on outside click
+            $(document).click(function() {
+                $('#dateRangeMenu').removeClass('show');
+            });
+
+            $('#refreshSalesBtn').click(() => loadSalesData());
+            
+            $('#exportSalesExcelBtn').click(function() {
+                window.location.href = `/Report/ExportSalesReportToExcel?startDate=${currentStartDate}&endDate=${currentEndDate}`;
+            });
+
+            // İlk yükleme
+            loadSalesData();
+        });
+        
+        function formatDisplayDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' });
+        }
+
+        function setDateRange(range) {
+            const today = new Date();
+            let start, end;
+            
+            switch(range) {
+                case 'today':
+                    start = today;
+                    end = today;
+                    break;
+                case 'week':
+                    start = new Date(today);
+                    start.setDate(today.getDate() - 7);
+                    end = today;
+                    break;
+                case 'month':
+                    start = new Date(today.getFullYear(), today.getMonth(), 1);
+                    end = today;
+                    break;
+                default:
+                    start = new Date(today);
+                    start.setDate(today.getDate() - 30);
+                    end = today;
+            }
+            
+            currentStartDate = formatDate(start);
+            currentEndDate = formatDate(end);
+            
+            $('#startDate').val(currentStartDate);
+            $('#endDate').val(currentEndDate);
+        }
+
+        function formatDate(date) {
+            return date.toISOString().split('T')[0];
+        }
+
+        async function loadSalesData() {
+            try {
+                // Load all sales data in parallel
+                const [summaryRes, trendRes, topProductsRes, categoryRes, stockRes] = await Promise.all([
+                    fetch(`/Report/GetSalesSummary?startDate=${currentStartDate}&endDate=${currentEndDate}`),
+                    fetch(`/Report/GetSalesTrend?startDate=${currentStartDate}&endDate=${currentEndDate}`),
+                    fetch(`/Report/GetTopProducts?startDate=${currentStartDate}&endDate=${currentEndDate}`),
+                    fetch(`/Report/GetCategoryDistribution?startDate=${currentStartDate}&endDate=${currentEndDate}`),
+                    fetch(`/Report/GetStockTurnover`)
+                ]);
+
+                const summary = await summaryRes.json();
+                const trend = await trendRes.json();
+                const topProducts = await topProductsRes.json();
+                const category = await categoryRes.json();
+                const stock = await stockRes.json();
+
+                if (summary.success) updateKpiCards(summary.data);
+                if (trend.success) updateSalesTrendChart(trend.data);
+                if (topProducts.success) updateTopProductsTable(topProducts.data);
+                if (category.success) updateCategoryChart(category.data);
+                if (stock.success) updateStockTurnoverTable(stock.data);
+
+            } catch (error) {
+                console.error('Error loading sales data:', error);
+            }
+        }
+
+        function updateKpiCards(data) {
+            $('#totalRevenue').text(formatCurrency(data.totalRevenue));
+            $('#totalOrders').text(data.totalOrders.toLocaleString('tr-TR'));
+            $('#totalProductsSold').text(data.totalProductsSold.toLocaleString('tr-TR'));
+            $('#averageOrderValue').text(formatCurrency(data.averageOrderValue));
+        }
+
+        function updateSalesTrendChart(data) {
+            const ctx = document.getElementById('salesTrendChart').getContext('2d');
+            
+            if (salesTrendChart) {
+                salesTrendChart.destroy();
+            }
+
+            salesTrendChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(d => d.date),
+                    datasets: [{
+                        label: 'Ciro (₺)',
+                        data: data.map(d => d.revenue),
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '₺' + value.toLocaleString('tr-TR');
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateCategoryChart(data) {
+            const ctx = document.getElementById('categoryPieChart').getContext('2d');
+            
+            if (categoryPieChart) {
+                categoryPieChart.destroy();
+            }
+
+            const colors = [
+                'rgb(59, 130, 246)',
+                'rgb(16, 185, 129)',
+                'rgb(251, 191, 36)',
+                'rgb(239, 68, 68)',
+                'rgb(139, 92, 246)',
+                'rgb(236, 72, 153)'
+            ];
+
+            categoryPieChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: data.map(d => d.categoryName),
+                    datasets: [{
+                        data: data.map(d => d.revenue),
+                        backgroundColor: colors.slice(0, data.length),
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const item = data[context.dataIndex];
+                                    return `${item.categoryName}: ${formatCurrency(item.revenue)} (%${item.percentage})`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateTopProductsTable(data) {
+            const tbody = $('#topProductsTable tbody');
+            tbody.empty();
+
+            if (data.length === 0) {
+                tbody.append('<tr><td colspan="5" style="text-align: center; color: var(--gray-500); padding: 40px;">Veri bulunamadı</td></tr>');
+                return;
+            }
+
+            data.slice(0, 5).forEach((item, index) => {
+                const row = `
+                    <tr>
+                        <td class="td-rank"><div class="rank-badge">${index + 1}</div></td>
+                        <td class="td-product"><span class="product-name">${item.productName}</span></td>
+                        <td style="color: var(--gray-700);">${item.categoryName}</td>
+                        <td class="td-count"><span class="metric-badge info">${item.salesCount}</span></td>
+                        <td class="td-revenue"><strong style="color: var(--success-500);">${formatCurrency(item.revenue)}</strong></td>
+                    </tr>
+                `;
+                tbody.append(row);
+            });
+        }
+
+        function updateStockTurnoverTable(data) {
+            const tbody = $('#stockTurnoverTable tbody');
+            tbody.empty();
+
+            if (data.length === 0) {
+                tbody.append('<tr><td colspan="5" style="text-align: center; color: var(--gray-500); padding: 40px;">Veri bulunamadı</td></tr>');
+                return;
+            }
+
+            data.slice(0, 5).forEach(item => {
+                let statusBadge;
+                switch(item.turnoverStatus) {
+                    case 'Hızlı':
+                        statusBadge = '<span class="status-badge success">Hızlı</span>';
+                        break;
+                    case 'Normal':
+                        statusBadge = '<span class="status-badge warning">Normal</span>';
+                        break;
+                    default:
+                        statusBadge = '<span class="status-badge danger">Yavaş</span>';
+                }
+
+                const row = `
+                    <tr>
+                        <td class="td-product"><span class="product-name">${item.productName}</span></td>
+                        <td class="td-stock">${item.currentStock}</td>
+                        <td class="td-count">${item.totalSold}</td>
+                        <td style="color: var(--gray-700);">${item.turnoverRate}</td>
+                        <td class="th-status" style="text-align: center;">${statusBadge}</td>
+                    </tr>
+                `;
+                tbody.append(row);
+            });
+        }
+
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('tr-TR', {
+                style: 'currency',
+                currency: 'TRY',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(value);
+        }
+    </script>
+
+    <style>
+        /* btn-modern styles */
+        .btn-modern {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: var(--radius-lg);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            border: none;
+        }
+        
+        .btn-modern.outline {
+            background: var(--white);
+            color: var(--primary-500);
+            border: 1px solid var(--primary-500);
+        }
+        
+        .btn-modern.outline:hover {
+            background: var(--primary-50);
+        }
+        
+        .btn-modern.success {
+            background: linear-gradient(135deg, var(--success-500), #059669);
+            color: var(--white);
+        }
+        
+        .btn-modern.success:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        /* Custom date range section */
+        .date-range-custom {
+            padding: 12px;
+            border-top: 1px solid var(--gray-200);
+        }
+        
+        .custom-date-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .custom-date-row input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius);
+            font-size: 13px;
+        }
+        
+        .custom-date-row span {
+            color: var(--gray-400);
+        }
+        
+        .apply-custom-btn {
+            width: 100%;
+            padding: 10px;
+            background: #4318FF;
+            color: var(--white);
+            border: none;
+            border-radius: var(--radius);
+            font-size: 13px;
+            cursor: pointer;
+            transition: background var(--transition-fast);
+        }
+        
+        .apply-custom-btn:hover {
+            background: #3311cc;
+        }
+        
+        /* Metric badges */
+        .metric-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 40px;
+            padding: 6px 12px;
+            border-radius: 9999px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        
+        .metric-badge.info {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+        
+        /* Status badges */
+        .status-badge {
+            display: inline-flex;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .status-badge.success {
+            background: var(--success-100);
+            color: var(--success-700);
+        }
+        
+        .status-badge.warning {
+            background: var(--warning-100);
+            color: var(--warning-700);
+        }
+        
+        .status-badge.danger {
+            background: var(--danger-100);
+            color: var(--danger-700);
+        }
+        
+        /* Rank badge */
+        .rank-badge {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #4318FF, #7c3aed);
+            color: var(--white);
+            border-radius: var(--radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        /* Product name styling */
+        .product-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--gray-900);
+        }
+    </style>
+}

@@ -1,0 +1,218 @@
+@model MyAccountViewModel
+
+<div class="mb-4">
+    <h4 class="fw-semibold mb-3">
+        <i data-lucide="star" class="me-2 text-warning" style="width: 24px; height: 24px;"></i>
+        Değerlendirmelerim
+    </h4>
+    <p class="text-muted">Ürün değerlendirmelerinizi buradan görüntüleyebilirsiniz.</p>
+</div>
+
+@if (Model.Reviews?.Any() == true)
+{
+    <div class="d-flex flex-column gap-3">
+        @foreach (var review in Model.Reviews)
+        {
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <div class="bg-light rounded p-2" style="width: 70px; height: 70px;">
+                                <img src="@review.ProductImage" alt="@review.ProductName" 
+                                     class="w-100 h-100 rounded" style="object-fit: contain;"
+                                     onerror="this.style.display='none'">
+                            </div>
+                        </div>
+                        <div class="col">
+                            <h6 class="mb-1">@review.ProductName</h6>
+                            <div class="mb-2">
+                                @for (int i = 1; i <= 5; i++)
+                                {
+                                    <span class="@(i <= review.Rating ? "text-warning" : "text-muted")">★</span>
+                                }
+                                <small class="text-muted ms-2">@review.CreatedAt.ToString("dd.MM.yyyy")</small>
+                            </div>
+                            <p class="text-muted mb-0 small">@review.Comment</p>
+                        </div>
+                        <div class="col-auto">
+                            <button class="btn btn-outline-primary btn-sm" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#editReviewModal"
+                                    data-review-id="@review.Id"
+                                    data-product-name="@review.ProductName"
+                                    data-rating="@review.Rating"
+                                    data-comment="@review.Comment">
+                                Düzenle
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="text-center py-5">
+        <i data-lucide="star" class="text-muted mb-3" style="width: 48px; height: 48px;"></i>
+        <h5 class="text-muted">Henüz değerlendirme yapmadınız</h5>
+        <p class="text-muted small">Satın aldığınız ürünleri değerlendirerek diğer kullanıcılara yardımcı olabilirsiniz.</p>
+    </div>
+}
+
+<!-- Değerlendirme Düzenleme Modal -->
+<div class="modal fade" id="editReviewModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Değerlendirmeyi Düzenle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editReviewForm">
+                    <input type="hidden" id="editReviewId" name="reviewId">
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Ürün</label>
+                        <p id="editProductName" class="text-muted mb-0"></p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Puanınız</label>
+                        <div id="editRatingStars" class="d-flex gap-1">
+                            @for (int i = 1; i <= 5; i++)
+                            {
+                                <button type="button" class="btn btn-link p-0 rating-star" data-rating="@i">
+                                    <span class="fs-3 text-muted">☆</span>
+                                </button>
+                            }
+                        </div>
+                        <input type="hidden" id="editRating" name="rating" value="5">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Yorumunuz</label>
+                        <textarea id="editComment" name="comment" class="form-control" rows="4"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-danger me-auto" onclick="deleteReview()">
+                    Değerlendirmeyi Sil
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-primary" onclick="saveReview()">Kaydet</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Modal açıldığında verileri doldur
+    var editModal = document.getElementById('editReviewModal');
+    if (editModal) {
+        editModal.addEventListener('show.bs.modal', function(event) {
+            var button = event.relatedTarget;
+            var reviewId = button.getAttribute('data-review-id');
+            var productName = button.getAttribute('data-product-name');
+            var rating = parseInt(button.getAttribute('data-rating'));
+            var comment = button.getAttribute('data-comment');
+            
+            document.getElementById('editReviewId').value = reviewId;
+            document.getElementById('editProductName').textContent = productName;
+            document.getElementById('editComment').value = comment;
+            document.getElementById('editRating').value = rating;
+            
+            updateStars(rating);
+        });
+    }
+    
+    // Yıldız tıklama
+    document.querySelectorAll('.rating-star').forEach(function(star) {
+        star.addEventListener('click', function() {
+            var rating = parseInt(this.getAttribute('data-rating'));
+            document.getElementById('editRating').value = rating;
+            updateStars(rating);
+        });
+    });
+});
+
+function updateStars(rating) {
+    document.querySelectorAll('.rating-star').forEach(function(star, index) {
+        var starSpan = star.querySelector('span');
+        if (index < rating) {
+            starSpan.textContent = '★';
+            starSpan.className = 'fs-3 text-warning';
+        } else {
+            starSpan.textContent = '☆';
+            starSpan.className = 'fs-3 text-muted';
+        }
+    });
+}
+
+async function saveReview() {
+    var reviewId = document.getElementById('editReviewId').value;
+    var rating = parseInt(document.getElementById('editRating').value);
+    var comment = document.getElementById('editComment').value;
+    
+    if (rating < 1 || rating > 5) {
+        alert('Lütfen 1-5 arasında bir puan seçin');
+        return;
+    }
+    
+    if (comment.length < 10) {
+        alert('Yorum en az 10 karakter olmalıdır');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/MyAccount/UpdateReview', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reviewId: parseInt(reviewId), rating, comment })
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+            alert('Değerlendirme güncellendi!');
+            var modal = bootstrap.Modal.getInstance(document.getElementById('editReviewModal'));
+            modal.hide();
+            location.reload();
+        } else {
+            alert(data.message || 'Bir hata oluştu');
+        }
+    } catch (error) {
+        alert('Bir hata oluştu');
+    }
+}
+
+async function deleteReview() {
+    if (!confirm('Bu değerlendirmeyi silmek istediğinizden emin misiniz?')) {
+        return;
+    }
+    
+    var reviewId = document.getElementById('editReviewId').value;
+    
+    try {
+        const response = await fetch('/MyAccount/DeleteReview', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reviewId: parseInt(reviewId) })
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+            alert('Değerlendirme silindi!');
+            var modal = bootstrap.Modal.getInstance(document.getElementById('editReviewModal'));
+            modal.hide();
+            location.reload();
+        } else {
+            alert(data.message || 'Bir hata oluştu');
+        }
+    } catch (error) {
+        alert('Bir hata oluştu');
+    }
+}
+</script>
+

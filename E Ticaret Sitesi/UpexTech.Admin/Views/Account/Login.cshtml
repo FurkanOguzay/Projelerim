@@ -1,0 +1,116 @@
+@model LoginViewModel
+@{
+    ViewData["Title"] = "Giriş";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - UpexTech Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+</head>
+<body>
+    <div class="login-page">
+        <!-- Left Side - Visual -->
+        <div class="login-visual">
+            <div class="login-visual-bg"></div>
+            <div class="login-visual-content">
+                <div class="login-visual-icon">
+                    <i class="fas fa-mobile-alt"></i>
+                </div>
+                <h1>Admin Yönetim Paneli</h1>
+                <p>Mobil cihazlar ve yedek parçalar için profesyonel e-ticaret yönetim sistemi</p>
+            </div>
+            <div class="login-visual-decor top"></div>
+            <div class="login-visual-decor bottom"></div>
+        </div>
+
+        <!-- Right Side - Form -->
+        <div class="login-form-container">
+            <div class="login-form-wrapper">
+                <!-- Logo -->
+                <div class="login-logo">
+                    <i class="fas fa-mobile-alt"></i>
+                    <span>UpexTech</span>
+                </div>
+
+                <!-- Header -->
+                <div class="login-header">
+                    <h2>Hoş Geldiniz</h2>
+                    <p>Admin paneline giriş yapmak için bilgilerinizi giriniz</p>
+                </div>
+
+                <!-- Validation Summary -->
+                <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
+
+                <!-- Login Form -->
+                <form asp-action="Login" method="post">
+                    <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
+
+                    <!-- Email -->
+                    <div class="form-group">
+                        <label asp-for="Email">E-posta Adresi</label>
+                        <input asp-for="Email" class="form-control" placeholder="ornek@upextech.com" />
+                        <span asp-validation-for="Email" class="text-danger"></span>
+                    </div>
+
+                    <!-- Password -->
+                    <div class="form-group">
+                        <label asp-for="Password">Şifre</label>
+                        <div class="password-input">
+                            <input asp-for="Password" type="password" class="form-control" id="passwordInput" placeholder="••••••••" />
+                            <button type="button" class="password-toggle" onclick="togglePassword()">
+                                <i class="fas fa-eye" id="passwordIcon"></i>
+                            </button>
+                        </div>
+                        <span asp-validation-for="Password" class="text-danger"></span>
+                    </div>
+
+                    <!-- Options -->
+                    <div class="form-options">
+                        <label class="checkbox-wrapper">
+                            <input asp-for="RememberMe" type="checkbox" />
+                            <span>Beni Hatırla</span>
+                        </label>
+                        <a href="#" class="forgot-link">Şifremi Unuttum?</a>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="btn-login">
+                        Giriş Yap
+                    </button>
+                </form>
+
+                <!-- Footer -->
+                <div class="login-footer">
+                    <p>© 2024 UpexTech - Tüm hakları saklıdır</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function togglePassword() {
+            const input = document.getElementById('passwordInput');
+            const icon = document.getElementById('passwordIcon');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+    </script>
+</body>
+</html>

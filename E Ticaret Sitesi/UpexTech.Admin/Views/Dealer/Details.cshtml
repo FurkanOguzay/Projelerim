@@ -1,0 +1,258 @@
+@model UpexTech.Entity.User
+@using UpexTech.Entity
+@{
+    ViewData["Title"] = "Başvuru Detayı";
+}
+
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
+    <div>
+        <h1>Bayilik Başvurusu</h1>
+        <p>@Model.CompanyName - Başvuru inceleme</p>
+    </div>
+    <a href="@Url.Action("Index")" class="btn-filter secondary">
+        <i class="fas fa-arrow-left"></i>
+        Geri
+    </a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success" style="background: var(--success-100); color: var(--success-700); padding: 16px 24px; border-radius: var(--radius-lg); margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
+        <i class="fas fa-check-circle"></i>
+        @TempData["SuccessMessage"]
+    </div>
+}
+
+<div class="dealer-detail-grid">
+    <!-- Sol Panel - Firma Bilgileri -->
+    <div class="dealer-info-panel">
+        <div class="card">
+            <!-- Status Badge -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin: 0; color: var(--gray-900);">
+                    <i class="fas fa-building" style="color: var(--primary-500);"></i> Firma Bilgileri
+                </h3>
+                @if (Model.Status == UserStatus.Pending)
+                {
+                    <span class="badge-status pending">Onay Bekliyor</span>
+                }
+                else if (Model.Status == UserStatus.Active)
+                {
+                    <span class="badge-status delivered">Onaylandı</span>
+                }
+                else
+                {
+                    <span class="badge-status cancelled">Reddedildi</span>
+                }
+            </div>
+
+            <div class="info-grid">
+                <div class="info-item">
+                    <label>Firma Adı</label>
+                    <p>@(Model.CompanyName ?? "-")</p>
+                </div>
+                <div class="info-item">
+                    <label>Vergi Numarası</label>
+                    <p>@(Model.TaxNumber ?? "-")</p>
+                </div>
+                <div class="info-item">
+                    <label>Yetkili Kişi</label>
+                    <p>@Model.FullName</p>
+                </div>
+                <div class="info-item">
+                    <label>E-posta</label>
+                    <p>@Model.Email</p>
+                </div>
+                <div class="info-item">
+                    <label>Telefon</label>
+                    <p>@(Model.Phone ?? "-")</p>
+                </div>
+                <div class="info-item">
+                    <label>Başvuru Tarihi</label>
+                    <p>@Model.CreatedAt.ToString("dd MMMM yyyy HH:mm")</p>
+                </div>
+            </div>
+
+            <div class="info-item" style="margin-top: 16px;">
+                <label>Adres</label>
+                <p>@(Model.Address ?? "Adres bilgisi girilmemiş")</p>
+            </div>
+
+            @if (Model.Status == UserStatus.Active)
+            {
+                <hr style="margin: 24px 0; border: none; border-top: 1px solid var(--gray-100);" />
+                
+                <h3 style="margin: 0 0 16px 0; color: var(--gray-900);">
+                    <i class="fas fa-cog" style="color: var(--primary-500);"></i> Bayi Ayarları
+                </h3>
+                
+                <div class="info-grid">
+                    <div class="info-item">
+                        <label>Bayi Seviyesi</label>
+                        <p>
+                            @switch (Model.Tier)
+                            {
+                                case CustomerTier.Platinum:
+                                    <span class="dealer-tier platinum">Platinum</span>
+                                    break;
+                                case CustomerTier.Gold:
+                                    <span class="dealer-tier gold">Gold</span>
+                                    break;
+                                case CustomerTier.Silver:
+                                    <span class="dealer-tier silver">Silver</span>
+                                    break;
+                                default:
+                                    <span class="dealer-tier standard">Standart</span>
+                                    break;
+                            }
+                        </p>
+                    </div>
+                    <div class="info-item">
+                        <label>Kredi Limiti</label>
+                        <p style="font-size: 18px; font-weight: 600; color: var(--primary-500);">
+                            ₺@((Model.CreditLimit ?? 0).ToString("N0"))
+                        </p>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Aksiyon Kartı -->
+        @if (Model.Status == UserStatus.Pending)
+        {
+            <div class="card" style="margin-top: 20px;">
+                <h3 style="margin: 0 0 20px 0; color: var(--gray-900);">
+                    <i class="fas fa-tasks" style="color: var(--primary-500);"></i> Başvuru İşlemleri
+                </h3>
+                
+                <form asp-action="ApproveFromDetails" method="post">
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    
+                    <div class="filter-group" style="margin-bottom: 16px;">
+                        <label>Bayi Seviyesi</label>
+                        <select name="tier" class="filter-input" style="padding-left: 12px;">
+                            <option value="1">Standart</option>
+                            <option value="2">Silver</option>
+                            <option value="3" selected>Gold</option>
+                            <option value="4">Platinum</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group" style="margin-bottom: 20px;">
+                        <label>Kredi Limiti (₺)</label>
+                        <input type="number" name="creditLimit" value="50000" step="1000" min="0" class="filter-input" style="padding-left: 12px;" />
+                    </div>
+                    
+                    <div style="display: flex; gap: 12px;">
+                        <button type="submit" class="btn-filter primary" style="flex: 1;">
+                            <i class="fas fa-check"></i> Onayla
+                        </button>
+                    </div>
+                </form>
+                
+                <form asp-action="Reject" method="post" style="margin-top: 12px;">
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <button type="submit" class="btn-filter danger" style="width: 100%;" onclick="return confirm('Bu başvuruyu reddetmek istediğinize emin misiniz?')">
+                        <i class="fas fa-times"></i> Reddet
+                    </button>
+                </form>
+            </div>
+        }
+    </div>
+
+    <!-- Sağ Panel - Evrak Önizleme -->
+    <div class="dealer-document-panel">
+        <div class="card" style="height: 100%;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin: 0; color: var(--gray-900);">
+                    <i class="fas fa-file-pdf" style="color: #dc2626;"></i> Vergi Levhası
+                </h3>
+                @if (!string.IsNullOrEmpty(Model.TaxDocument))
+                {
+                    <a href="/documents/@Model.TaxDocument" target="_blank" class="btn-filter secondary" style="padding: 8px 16px;">
+                        <i class="fas fa-download"></i> İndir
+                    </a>
+                }
+            </div>
+            
+            @if (!string.IsNullOrEmpty(Model.TaxDocument))
+            {
+                <div class="document-preview">
+                    <iframe src="/documents/@Model.TaxDocument" style="width: 100%; height: 500px; border: 1px solid var(--gray-200); border-radius: var(--radius-lg);"></iframe>
+                </div>
+            }
+            else
+            {
+                <div class="document-placeholder">
+                    <i class="fas fa-file-upload"></i>
+                    <h4>Evrak Yüklenmemiş</h4>
+                    <p>Bayi henüz vergi levhası yüklememiş.</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .dealer-detail-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+    }
+    @@media (max-width: 1024px) {
+        .dealer-detail-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+    .info-item label {
+        display: block;
+        font-size: 13px;
+        color: var(--gray-500);
+        margin-bottom: 4px;
+    }
+    .info-item p {
+        margin: 0;
+        color: var(--gray-900);
+        font-weight: 500;
+    }
+    .dealer-tier.standard {
+        background: var(--gray-100);
+        color: var(--gray-600);
+    }
+    .btn-filter.danger {
+        background: var(--danger-500);
+        color: white;
+    }
+    .btn-filter.danger:hover {
+        background: var(--danger-600);
+    }
+    .document-placeholder {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 400px;
+        background: var(--gray-50);
+        border: 2px dashed var(--gray-200);
+        border-radius: var(--radius-lg);
+        color: var(--gray-400);
+        text-align: center;
+    }
+    .document-placeholder i {
+        font-size: 64px;
+        margin-bottom: 16px;
+    }
+    .document-placeholder h4 {
+        margin: 0 0 8px 0;
+        color: var(--gray-600);
+    }
+    .document-placeholder p {
+        margin: 0;
+        font-size: 14px;
+    }
+</style>

@@ -1,0 +1,1049 @@
+@model IEnumerable<UpexTech.Entity.User>
+@using UpexTech.Entity
+@{
+    ViewData["Title"] = "Müşteri Listesi";
+    var searchQuery = ViewBag.SearchQuery as string;
+    var currentFilter = ViewBag.CurrentFilter as string;
+    var currentCity = ViewBag.CurrentCity as string;
+    var currentPage = (int)(ViewBag.CurrentPage ?? 1);
+    var totalPages = (int)(ViewBag.TotalPages ?? 1);
+    var totalCount = (int)(ViewBag.TotalCount ?? 0);
+    var cities = ViewBag.Cities as List<string> ?? new List<string>();
+    var b2bCount = (int)(ViewBag.B2BCount ?? 0);
+    var b2cCount = (int)(ViewBag.B2CCount ?? 0);
+}
+
+<!-- Page Header -->
+<div class="customer-page-header">
+    <div>
+        <h1 class="customer-page-title">Müşteri Listesi</h1>
+        <p class="customer-page-subtitle">Global müşteri rehberiniz - Tüm B2B ve B2C müşteriler</p>
+    </div>
+    <a href="@Url.Action("ExportCustomers")" class="btn-export">
+        <i class="fas fa-download"></i>
+        Listeyi Dışa Aktar
+    </a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success" style="background: var(--success-100); color: var(--success-700); padding: 16px 24px; border-radius: var(--radius-lg); margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
+        <i class="fas fa-check-circle"></i>
+        @TempData["SuccessMessage"]
+    </div>
+}
+
+@if (TempData["InfoMessage"] != null)
+{
+    <div class="alert alert-info" style="background: #e0f2fe; color: #0369a1; padding: 16px 24px; border-radius: var(--radius-lg); margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
+        <i class="fas fa-info-circle"></i>
+        @TempData["InfoMessage"]
+    </div>
+}
+
+<!-- Global Search Hero Section -->
+<div class="customer-search-hero">
+    <form method="get" asp-action="Index" id="customerFilterForm">
+        <!-- Large Search Bar -->
+        <div class="customer-search-container">
+            <i class="fas fa-search customer-search-icon"></i>
+            <input type="text"
+                   name="searchQuery"
+                   value="@searchQuery"
+                   placeholder="Ad, Soyad, Telefon, E-posta veya Vergi No ile arayın..."
+                   class="customer-search-input"
+                   id="customerSearchInput" />
+        </div>
+
+        <!-- Quick Filter Chips -->
+        <div class="customer-filter-chips">
+            <button type="submit" name="filter" value=""
+                    class="filter-chip @(string.IsNullOrEmpty(currentFilter) ? "active" : "")">
+                Tümü
+            </button>
+            <button type="submit" name="filter" value="b2b"
+                    class="filter-chip @(currentFilter == "b2b" ? "active" : "")">
+                Sadece B2B <span class="filter-chip-count">@b2bCount</span>
+            </button>
+            <button type="submit" name="filter" value="b2c"
+                    class="filter-chip @(currentFilter == "b2c" ? "active" : "")">
+                Sadece B2C <span class="filter-chip-count">@b2cCount</span>
+            </button>
+
+            <!-- City Dropdown -->
+            <div class="filter-chip-dropdown">
+                <button type="button" class="filter-chip @(!string.IsNullOrEmpty(currentCity) ? "active" : "")" id="cityDropdownBtn">
+                    @(string.IsNullOrEmpty(currentCity) ? "Şehir" : currentCity)
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="filter-chip-dropdown-content" id="cityDropdownContent">
+                    <a href="@Url.Action("Index", new { searchQuery, filter = currentFilter, city = "" })">Tüm Şehirler</a>
+                    @foreach (var city in cities)
+                    {
+                        <a href="@Url.Action("Index", new { searchQuery, filter = currentFilter, city })">@city</a>
+                    }
+                </div>
+            </div>
+
+            <button type="submit" name="filter" value="active"
+                    class="filter-chip @(currentFilter == "active" ? "active" : "")">
+                Aktif Müşteriler
+            </button>
+        </div>
+        
+        <input type="hidden" name="city" value="@currentCity" />
+    </form>
+
+    <!-- Results Count -->
+    <div class="customer-results-count">
+        @totalCount müşteri bulundu
+    </div>
+</div>
+
+<!-- Customer Table -->
+<div class="customer-table-container">
+    <div class="customer-table-wrapper">
+        <table class="customer-table">
+            <thead>
+                <tr>
+                    <th>Müşteri Kimliği</th>
+                    <th>Müşteri Tipi</th>
+                    <th>Fiyat Listesi</th>
+                    <th>İletişim</th>
+                    <th>Lokasyon</th>
+                    <th>Son Etkileşim</th>
+                    <th class="actions-column">Hızlı Aksiyonlar</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var customer in Model)
+                {
+                    <tr class="customer-row">
+                        <!-- Customer Identity -->
+                        <td>
+                            <div class="customer-identity">
+                                @if (customer.Role == UserRole.B2B)
+                                {
+                                    <div class="customer-logo">
+                                        <i class="fas fa-building"></i>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="customer-avatar">
+                                        @customer.FirstName?.FirstOrDefault()@customer.LastName?.FirstOrDefault()
+                                    </div>
+                                }
+                                <div class="customer-info">
+                                    <span class="customer-name">@customer.FullName</span>
+                                    <span class="customer-code">
+                                        @(customer.Role == UserRole.B2B ? "Cari Kodu: " : "Üye ID: ")C-@customer.Id.ToString("D5")
+                                    </span>
+                                </div>
+                            </div>
+                        </td>
+
+                        <!-- Customer Type Badge -->
+                        <td>
+                            @if (customer.Role == UserRole.B2B)
+                            {
+                                <span class="customer-badge b2b">
+                                    <i class="fas fa-building"></i> B2B - BAYİ
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="customer-badge b2c">
+                                    <i class="fas fa-user"></i> B2C - ÜYE
+                                </span>
+                            }
+                        </td>
+
+                        <!-- Fiyat Listesi -->
+                        <td>
+                            @if (!string.IsNullOrEmpty(customer.PriceListName))
+                            {
+                                <span class="price-list-badge">
+                                    <i class="fas fa-tag"></i> @customer.PriceListName
+                                </span>
+                            }
+                            else
+                            {
+                                <span style="color: var(--gray-400); font-size: 13px;">Atanmamış</span>
+                            }
+                        </td>
+
+                        <!-- Contact Information -->
+                        <td>
+                            <div class="customer-contact">
+                                <div class="contact-item">
+                                    <i class="fas fa-phone"></i>
+                                    @(customer.Phone ?? "-")
+                                </div>
+                                <div class="contact-item email">
+                                    <i class="fas fa-envelope"></i>
+                                    @customer.Email
+                                </div>
+                            </div>
+                        </td>
+
+                        <!-- Location -->
+                        <td>
+                            <div class="customer-location">
+                                <i class="fas fa-map-marker-alt"></i>
+                                @(customer.Address ?? "Belirtilmemiş")
+                            </div>
+                        </td>
+
+                        <!-- Son Etkileşim -->
+                        <td>
+                            <div class="customer-interaction">
+                                <i class="fas fa-clock"></i>
+                                @{
+                                    var lastInteraction = customer.UpdatedAt ?? customer.CreatedAt;
+                                    var today = DateTime.Today;
+                                    var diff = (today - lastInteraction.Date).Days;
+                                    var timeStr = lastInteraction.ToString("HH:mm");
+                                    var dateStr = diff == 0 ? "Bugün " + timeStr : (diff == 1 ? "Dün " + timeStr : diff + " gün");
+                                }
+                                @dateStr
+                            </div>
+                            <div class="customer-interaction-type">
+                                @(customer.Role == UserRole.B2B ? "Sipariş" : "Kayıt")
+                            </div>
+                        </td>
+
+                        <!-- Quick Actions (visible on hover) -->
+                        <td>
+                            <div class="quick-actions">
+                                <button class="quick-action-btn" title="SMS Gönder" onclick="sendSMS('@customer.Phone')">
+                                    <i class="fas fa-comment-alt"></i>
+                                </button>
+                                <a href="mailto:@customer.Email" class="quick-action-btn" title="E-posta Gönder">
+                                    <i class="fas fa-envelope"></i>
+                                </a>
+                                <a href="@Url.Action("Details", new { id = customer.Id })" class="quick-action-btn" title="Profile Git">
+                                    <i class="fas fa-external-link-alt"></i>
+                                </a>
+                                <button class="quick-action-btn" title="Fiyat Listesi Tanımla" onclick="openPriceListModal(@customer.Id, '@customer.FullName', 'C-@customer.Id.ToString("D5")', '@customer.Role')">
+                                    <i class="fas fa-tags"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="6" class="no-results">
+                            <i class="fas fa-search"></i>
+                            <p>Arama kriterlerinize uygun müşteri bulunamadı.</p>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    @if (totalPages > 1)
+    {
+        <div class="customer-pagination">
+            <div class="pagination-info">
+                Toplam @totalCount müşteri gösteriliyor
+            </div>
+            <div class="pagination-controls">
+                @if (currentPage > 1)
+                {
+                    <a href="@Url.Action("Index", new { searchQuery, filter = currentFilter, city = currentCity, page = currentPage - 1 })" class="pagination-btn">
+                        Önceki
+                    </a>
+                }
+                else
+                {
+                    <span class="pagination-btn disabled">Önceki</span>
+                }
+
+                @for (int i = 1; i <= totalPages && i <= 5; i++)
+                {
+                    <a href="@Url.Action("Index", new { searchQuery, filter = currentFilter, city = currentCity, page = i })"
+                       class="pagination-btn @(i == currentPage ? "active" : "")">
+                        @i
+                    </a>
+                }
+
+                @if (currentPage < totalPages)
+                {
+                    <a href="@Url.Action("Index", new { searchQuery, filter = currentFilter, city = currentCity, page = currentPage + 1 })" class="pagination-btn">
+                        Sonraki
+                    </a>
+                }
+                else
+                {
+                    <span class="pagination-btn disabled">Sonraki</span>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Tier Modal -->
+<div id="tierModal" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 400px;">
+        <div class="modal-header">
+            <h3>Müşteri Grubu Ata</h3>
+            <button type="button" onclick="closeTierModal()" class="modal-close">&times;</button>
+        </div>
+        <form id="tierForm" method="post" asp-action="UpdateTier">
+            <input type="hidden" id="tierCustomerId" name="id" />
+            <div class="modal-body">
+                <p id="tierCustomerName" style="margin-bottom: 16px; color: var(--gray-600);"></p>
+                <div class="filter-group">
+                    <label>Müşteri Seviyesi</label>
+                    <select name="tier" id="tierSelect" class="filter-input" style="padding-left: 12px;">
+                        <option value="1">Standart</option>
+                        <option value="2">Silver</option>
+                        <option value="3">Gold</option>
+                        <option value="4">Platinum</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" onclick="closeTierModal()" class="btn-filter secondary">İptal</button>
+                <button type="submit" class="btn-filter primary">Kaydet</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Fiyat Listesi Tanımla Modal -->
+<div id="priceListModal" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 460px;">
+        <div class="modal-header">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div class="modal-icon">
+                    <i class="fas fa-tags"></i>
+                </div>
+                <h3>Fiyat Listesi Tanımla</h3>
+            </div>
+            <button type="button" onclick="closePriceListModal()" class="modal-close">&times;</button>
+        </div>
+        <form id="priceListForm" method="post" asp-action="UpdatePriceList">
+            <input type="hidden" id="priceListCustomerId" name="customerId" />
+            <div class="modal-body">
+                <!-- Müşteri Bilgisi -->
+                <div class="pricelist-customer-info">
+                    <div class="pricelist-customer-avatar">
+                        <i class="fas fa-building"></i>
+                    </div>
+                    <div class="pricelist-customer-details">
+                        <span id="priceListCustomerName" class="pricelist-customer-name"></span>
+                        <span id="priceListCustomerCode" class="pricelist-customer-code"></span>
+                    </div>
+                </div>
+                
+                <!-- Fiyat Listesi Seçimi -->
+                <div class="pricelist-select-group">
+                    <label>Fiyat Listesi Seçiniz</label>
+                    <select name="priceListId" id="priceListSelect" class="pricelist-select">
+                        <option value="">Fiyat listesi seçin...</option>
+                        @{
+                            var priceLists = ViewBag.PriceLists as List<UpexTech.Entity.PriceList> ?? new List<UpexTech.Entity.PriceList>();
+                        }
+                        @foreach (var pl in priceLists)
+                        {
+                            <option value="@pl.Id">@pl.Name</option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" onclick="closePriceListModal()" class="btn btn-outline">İptal</button>
+                <button type="submit" class="btn btn-primary">Kaydet</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    /* Customer Page Styles */
+    .customer-page-header {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    @@media (min-width: 1024px) {
+        .customer-page-header {
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+        }
+    }
+
+    .customer-page-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--gray-900);
+        margin-bottom: 8px;
+    }
+
+    .customer-page-subtitle {
+        color: var(--gray-600);
+        font-size: 0.95rem;
+    }
+
+    .btn-export {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        background: white;
+        border: 1px solid var(--gray-200);
+        border-radius: var(--radius-lg);
+        color: var(--gray-700);
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+
+    .btn-export:hover {
+        background: var(--gray-50);
+        border-color: var(--gray-300);
+    }
+
+    /* Search Hero Section */
+    .customer-search-hero {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        border: 1px solid var(--gray-200);
+        padding: 32px;
+        margin-bottom: 24px;
+    }
+
+    .customer-search-container {
+        position: relative;
+        margin-bottom: 24px;
+    }
+
+    .customer-search-icon {
+        position: absolute;
+        left: 24px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--gray-400);
+        font-size: 1.1rem;
+    }
+
+    .customer-search-input {
+        width: 100%;
+        padding: 20px 24px 20px 56px;
+        font-size: 1.1rem;
+        border: 2px solid var(--gray-200);
+        border-radius: 16px;
+        transition: all 0.2s;
+        background: white;
+    }
+
+    .customer-search-input:focus {
+        outline: none;
+        border-color: var(--primary-500);
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+
+    .customer-search-input::placeholder {
+        color: var(--gray-400);
+    }
+
+    /* Filter Chips */
+    .customer-filter-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .filter-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 10px 20px;
+        border-radius: 50px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        background: var(--gray-100);
+        color: var(--gray-700);
+        border: none;
+    }
+
+    .filter-chip:hover {
+        background: var(--gray-200);
+    }
+
+    .filter-chip.active {
+        background: var(--primary-500);
+        color: white;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+
+    .filter-chip-count {
+        font-size: 0.8rem;
+        opacity: 0.8;
+    }
+
+    /* City Dropdown */
+    .filter-chip-dropdown {
+        position: relative;
+    }
+
+    .filter-chip-dropdown-content {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        margin-top: 8px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        border: 1px solid var(--gray-200);
+        min-width: 180px;
+        z-index: 100;
+        overflow: hidden;
+    }
+
+    .filter-chip-dropdown-content.show {
+        display: block;
+    }
+
+    .filter-chip-dropdown-content a {
+        display: block;
+        padding: 10px 16px;
+        color: var(--gray-700);
+        text-decoration: none;
+        transition: background 0.2s;
+    }
+
+    .filter-chip-dropdown-content a:hover {
+        background: var(--gray-50);
+    }
+
+    .customer-results-count {
+        margin-top: 16px;
+        font-size: 0.9rem;
+        color: var(--gray-600);
+    }
+
+    /* Customer Table */
+    .customer-table-container {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        border: 1px solid var(--gray-200);
+        overflow: hidden;
+    }
+
+    .customer-table-wrapper {
+        overflow-x: auto;
+    }
+
+    .customer-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .customer-table thead tr {
+        background: var(--gray-50);
+        border-bottom: 1px solid var(--gray-200);
+    }
+
+    .customer-table th {
+        padding: 16px 24px;
+        text-align: left;
+        font-weight: 600;
+        color: var(--gray-700);
+        font-size: 0.9rem;
+    }
+
+    .customer-table th.actions-column {
+        text-align: center;
+        width: 160px;
+    }
+
+    .customer-table tbody tr {
+        border-bottom: 1px solid var(--gray-100);
+        transition: background 0.2s;
+    }
+
+    .customer-table tbody tr:hover {
+        background: var(--gray-50);
+    }
+
+    .customer-table td {
+        padding: 16px 24px;
+    }
+
+    /* Customer Identity */
+    .customer-identity {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .customer-logo {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, var(--primary-500) 0%, #9333ea 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.2rem;
+        flex-shrink: 0;
+    }
+
+    .customer-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+
+    .customer-info {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .customer-name {
+        font-weight: 600;
+        color: var(--gray-900);
+    }
+
+    .customer-code {
+        font-size: 0.85rem;
+        color: var(--gray-500);
+    }
+
+    /* Customer Badge */
+    .customer-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+
+    .customer-badge.b2b {
+        background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
+        color: var(--primary-700);
+    }
+
+    .customer-badge.b2c {
+        background: linear-gradient(135deg, #fef3c7 0%, #fef9c3 100%);
+        color: #d97706;
+    }
+
+    .price-list-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        background: linear-gradient(135deg, #dcfce7 0%, #d1fae5 100%);
+        color: #059669;
+    }
+
+    /* Contact Info */
+    .customer-contact {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .contact-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.9rem;
+        color: var(--gray-900);
+    }
+
+    .contact-item i {
+        color: var(--gray-400);
+        width: 14px;
+    }
+
+    .contact-item.email {
+        color: var(--gray-600);
+        font-size: 0.85rem;
+    }
+
+    /* Location */
+    .customer-location {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--gray-900);
+    }
+
+    .customer-location i {
+        color: var(--gray-400);
+    }
+
+    /* Date */
+    .customer-date {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--gray-900);
+    }
+
+    .customer-date i {
+        color: var(--gray-400);
+    }
+
+    .customer-date-sub {
+        font-size: 0.8rem;
+        color: var(--gray-500);
+    }
+
+    /* Quick Actions - Her zaman görünür */
+    .quick-actions {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    /* Son Etkileşim */
+    .customer-interaction {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--gray-900);
+        font-weight: 500;
+    }
+
+    .customer-interaction i {
+        color: var(--gray-400);
+    }
+
+    .customer-interaction-type {
+        font-size: 0.8rem;
+        color: var(--gray-500);
+    }
+
+    .quick-action-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        border: none;
+        color: var(--gray-600);
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+
+    .quick-action-btn:hover {
+        background: rgba(99, 102, 241, 0.1);
+        color: var(--primary-500);
+    }
+
+    /* No Results */
+    .no-results {
+        text-align: center;
+        padding: 48px 24px !important;
+        color: var(--gray-500);
+    }
+
+    .no-results i {
+        font-size: 2rem;
+        margin-bottom: 12px;
+        opacity: 0.5;
+    }
+
+    /* Pagination */
+    .customer-pagination {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 24px;
+        border-top: 1px solid var(--gray-200);
+    }
+
+    .pagination-info {
+        font-size: 0.9rem;
+        color: var(--gray-600);
+    }
+
+    .pagination-controls {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .pagination-btn {
+        padding: 8px 14px;
+        border: 1px solid var(--gray-200);
+        border-radius: 8px;
+        background: white;
+        color: var(--gray-700);
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+
+    .pagination-btn:hover:not(.disabled) {
+        background: var(--gray-50);
+        border-color: var(--gray-300);
+    }
+
+    .pagination-btn.active {
+        background: var(--primary-500);
+        color: white;
+        border-color: var(--primary-500);
+    }
+
+    .pagination-btn.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    /* Modal Styles */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow-xl);
+        width: 100%;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--gray-100);
+    }
+
+    .modal-header h3 {
+        margin: 0;
+        color: var(--gray-900);
+    }
+
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 24px;
+        color: var(--gray-400);
+        cursor: pointer;
+    }
+
+    .modal-body {
+        padding: 24px;
+    }
+
+    .modal-footer {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+        padding: 16px 24px;
+        border-top: 1px solid var(--gray-100);
+    }
+
+    /* Fiyat Listesi Modal Stilleri */
+    .modal-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #4318FF 0%, #868CFF 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1rem;
+    }
+
+    .pricelist-customer-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 16px;
+        background: var(--gray-50);
+        border-radius: var(--radius-lg);
+        margin-bottom: 20px;
+    }
+
+    .pricelist-customer-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, var(--primary-500) 0%, #9333ea 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.2rem;
+    }
+
+    .pricelist-customer-details {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .pricelist-customer-name {
+        font-weight: 600;
+        color: var(--gray-900);
+    }
+
+    .pricelist-customer-code {
+        font-size: 0.85rem;
+        color: var(--gray-500);
+    }
+
+    .pricelist-select-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .pricelist-select-group label {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--gray-700);
+    }
+
+    .pricelist-select {
+        width: 100%;
+        padding: 14px 16px;
+        border: 1px solid var(--gray-300);
+        border-radius: var(--radius-lg);
+        font-size: 14px;
+        color: var(--gray-700);
+        background: white;
+        cursor: pointer;
+        transition: all 0.2s;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236B7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 16px center;
+    }
+
+    .pricelist-select:focus {
+        outline: none;
+        border-color: var(--primary-500);
+        box-shadow: 0 0 0 3px rgba(67, 24, 255, 0.1);
+    }
+</style>
+
+@section Scripts {
+    <script>
+        // City dropdown toggle
+        document.getElementById('cityDropdownBtn')?.addEventListener('click', function(e) {
+            e.preventDefault();
+            document.getElementById('cityDropdownContent').classList.toggle('show');
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.filter-chip-dropdown')) {
+                document.getElementById('cityDropdownContent')?.classList.remove('show');
+            }
+        });
+
+        // Search on enter
+        document.getElementById('customerSearchInput')?.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('customerFilterForm').submit();
+            }
+        });
+
+        // Tier Modal functions
+        function openTierModal(customerId, customerName, currentTier) {
+            document.getElementById('tierCustomerId').value = customerId;
+            document.getElementById('tierCustomerName').textContent = customerName + ' için seviye seçin:';
+            document.getElementById('tierSelect').value = currentTier;
+            document.getElementById('tierModal').style.display = 'flex';
+        }
+
+        function closeTierModal() {
+            document.getElementById('tierModal').style.display = 'none';
+        }
+
+        document.getElementById('tierModal')?.addEventListener('click', function(e) {
+            if (e.target === this) closeTierModal();
+        });
+
+        // Fiyat Listesi Modal functions
+        function openPriceListModal(customerId, customerName, customerCode, customerRole) {
+            document.getElementById('priceListCustomerId').value = customerId;
+            document.getElementById('priceListCustomerName').textContent = customerName;
+            document.getElementById('priceListCustomerCode').textContent = (customerRole === 'B2B' ? 'Cari Kodu: ' : 'Üye ID: ') + customerCode;
+            document.getElementById('priceListSelect').value = '';
+            document.getElementById('priceListModal').style.display = 'flex';
+        }
+
+        function closePriceListModal() {
+            document.getElementById('priceListModal').style.display = 'none';
+        }
+
+        document.getElementById('priceListModal')?.addEventListener('click', function(e) {
+            if (e.target === this) closePriceListModal();
+        });
+
+        // Form submit handler for price list - gerçek POST request
+        document.getElementById('priceListForm')?.addEventListener('submit', function(e) {
+            const priceListId = document.getElementById('priceListSelect').value;
+            
+            if (!priceListId) {
+                e.preventDefault();
+                alert('Lütfen bir fiyat listesi seçiniz.');
+                return;
+            }
+            
+            // Form normal şekilde submit olacak (POST request)
+        });
+
+        // SMS function placeholder
+        function sendSMS(phone) {
+            if (phone && phone !== '-') {
+                alert('SMS g\u00f6nderilecek numara: ' + phone);
+            } else {
+                alert('Bu m\u00fc\u015fterinin telefon numaras\u0131 bulunmuyor.');
+            }
+        }
+    </script>
+}

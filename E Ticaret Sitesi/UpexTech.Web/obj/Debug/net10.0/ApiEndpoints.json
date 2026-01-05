@@ -1,0 +1,38 @@
+[
+  {
+    "ContainingType": "UpexTech.Web.Controllers.ReportsApiController",
+    "Method": "MakePayment",
+    "RelativePath": "api/reports/make-payment",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "UpexTech.Web.Controllers.PaymentRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "UpexTech.Web.Controllers.ReportsApiController",
+    "Method": "GetPaymentHistory",
+    "RelativePath": "api/reports/payment-history",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "UpexTech.Web.Controllers.ReportsApiController",
+    "Method": "DownloadStatement",
+    "RelativePath": "api/reports/statement",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  }
+]

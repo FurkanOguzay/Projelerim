@@ -1,0 +1,627 @@
+@model FavoritesViewModel
+@{
+    ViewData["Title"] = "Favorilerim";
+}
+
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/">Ana Sayfa</a></li>
+        <li class="breadcrumb-item active">Favorilerim</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-heart me-2"></i>Favorilerim</h2>
+</div>
+
+<!-- TempData Mesajları -->
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle me-2"></i>@TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-circle me-2"></i>@TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Sekmeler (AC.1) -->
+<ul class="nav nav-tabs mb-4" id="favoriteTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <a class="nav-link @(Model.ActiveTab == "favorites" ? "active" : "")" 
+           href="/Favorites?tab=favorites"
+           role="tab">
+            <i class="bi bi-heart me-1"></i>
+            Favoriler
+            <span class="badge bg-primary ms-1">@Model.Favorites.Count</span>
+        </a>
+    </li>
+    <li class="nav-item" role="presentation">
+        <a class="nav-link @(Model.ActiveTab == "collections" ? "active" : "")" 
+           href="/Favorites?tab=collections"
+           role="tab">
+            <i class="bi bi-collection me-1"></i>
+            Koleksiyonlar
+            <span class="badge bg-secondary ms-1">@Model.Collections.Count</span>
+        </a>
+    </li>
+</ul>
+
+<!-- Sekme İçerikleri -->
+<div class="tab-content">
+    @if (Model.ActiveTab == "favorites")
+    {
+        <!-- Favoriler Sekmesi -->
+        <div class="tab-pane fade show active">
+            @if (Model.Favorites.Any())
+            {
+                <div class="row g-4 ps-5">
+                    @foreach (var favorite in Model.Favorites)
+                    {
+                        var product = favorite.Product;
+                        <div class="col-md-6 col-lg-4 col-xl-3">
+                            <div class="card h-100 product-card shadow-sm">
+                                <!-- Ürün Resmi -->
+                                <div class="position-relative">
+                                    <a href="/Catalog/Details/@product.Id">
+                                        <img src="/images/@product.Image" class="card-img-top p-3" alt="@product.Name" 
+                                             style="height: 200px; object-fit: contain;">
+                                    </a>
+                                    
+                                    <!-- Favoriden Çıkar Butonu -->
+                                    <button class="btn btn-danger btn-sm position-absolute top-0 end-0 m-2"
+                                            onclick="removeFavorite(@product.Id)" title="Favorilerden Çıkar">
+                                        <i class="bi bi-heart-fill"></i>
+                                    </button>
+                                    
+                                    <!-- Koleksiyona Ekle Butonu (AC.5) -->
+                                    <button class="btn btn-outline-primary btn-sm position-absolute top-0 start-0 m-2"
+                                            onclick="openCollectionModal(@product.Id, '@product.Name.Replace("'", "\\'")')"
+                                            title="Koleksiyona Ekle">
+                                        <i class="bi bi-folder-plus"></i>
+                                    </button>
+                                </div>
+                                
+                                <div class="card-body d-flex flex-column">
+                                    <!-- Marka & Kategori -->
+                                    <div class="mb-2">
+                                        <span class="badge bg-light text-dark me-1">@product.Brand?.Name</span>
+                                        <span class="badge bg-light text-dark">@product.Category?.Name</span>
+                                    </div>
+                                    
+                                    <!-- Ürün Adı -->
+                                    <h6 class="card-title">
+                                        <a href="/Catalog/Details/@product.Id" class="text-decoration-none text-dark">
+                                            @product.Name
+                                        </a>
+                                    </h6>
+                                    
+                                    <!-- Koleksiyon Etiketleri -->
+                                    @if (favorite.CollectionItems.Any(ci => ci.IsActive))
+                                    {
+                                        <div class="mb-2">
+                                            @foreach (var ci in favorite.CollectionItems.Where(ci => ci.IsActive).Take(3))
+                                            {
+                                                <span class="badge bg-info text-white me-1" style="font-size: 0.7rem;">
+                                                    <i class="bi bi-collection me-1"></i>@ci.Collection?.Name
+                                                </span>
+                                            }
+                                            @if (favorite.CollectionItems.Count(ci => ci.IsActive) > 3)
+                                            {
+                                                <span class="badge bg-secondary">+@(favorite.CollectionItems.Count(ci => ci.IsActive) - 3)</span>
+                                            }
+                                        </div>
+                                    }
+                                    
+                                    <!-- Fiyat -->
+                                    <div class="mt-auto">
+                                        <h5 class="text-primary mb-2">@product.PriceB2C.ToString("N0") ₺</h5>
+                                        
+                                        <!-- Sepete Ekle -->
+                                        <button class="btn btn-primary w-100" onclick="addToCart(@product.Id)">
+                                            <i class="bi bi-cart-plus me-2"></i>Sepete Ekle
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-heart display-1 text-muted"></i>
+                    <h4 class="mt-3">Henüz favori ürününüz yok</h4>
+                    <p class="text-muted">Beğendiğiniz ürünleri favorilere ekleyerek daha sonra kolayca ulaşabilirsiniz.</p>
+                    <a href="/Catalog" class="btn btn-primary">
+                        <i class="bi bi-shop me-2"></i>Alışverişe Başla
+                    </a>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <!-- Koleksiyonlar Sekmesi -->
+        <div class="tab-pane fade show active">
+            <!-- Yeni Koleksiyon Oluştur Butonu (AC.2) -->
+            <div class="mb-4">
+                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createCollectionModal">
+                    <i class="bi bi-plus-lg me-2"></i>Yeni Koleksiyon Oluştur
+                </button>
+            </div>
+            
+            @if (Model.Collections.Any())
+            {
+                <!-- Koleksiyon Listesi (AC.3) -->
+                <div class="row g-4 ps-5">
+                    @foreach (var collection in Model.Collections)
+                    {
+                        var itemCount = collection.Items.Count(i => i.IsActive);
+                        var previewItems = collection.Items.Where(i => i.IsActive && i.Favorite?.Product != null).Take(4).ToList();
+                        
+                        <div class="col-md-6 col-lg-4">
+                            <div class="card h-100 shadow-sm collection-card">
+                                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">
+                                        <i class="bi bi-collection me-2"></i>
+                                        <span class="collection-name" data-id="@collection.Id">@collection.Name</span>
+                                    </h5>
+                                    
+                                    <!-- Düzenle & Sil Dropdown (AC.4) -->
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="bi bi-three-dots-vertical"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end">
+                                            <li>
+                                                <button type="button" class="dropdown-item rename-collection-btn" 
+                                                        data-collection-id="@collection.Id" 
+                                                        data-collection-name="@collection.Name">
+                                                    <i class="bi bi-pencil me-2"></i>Yeniden Adlandır
+                                                </button>
+                                            </li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li>
+                                                <button type="button" class="dropdown-item text-danger delete-collection-btn" 
+                                                        data-collection-id="@collection.Id" 
+                                                        data-collection-name="@collection.Name">
+                                                    <i class="bi bi-trash me-2"></i>Sil
+                                                </button>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                
+                                <div class="card-body">
+                                    <!-- Ürün Önizleme Görselleri -->
+                                    <div class="row g-1 mb-3">
+                                        @if (previewItems.Any())
+                                        {
+                                            @foreach (var item in previewItems)
+                                            {
+                                                <div class="col-3">
+                                                    <img src="/images/@item.Favorite.Product.Image" 
+                                                         alt="@item.Favorite.Product.Name"
+                                                         class="img-fluid rounded" 
+                                                         style="height: 60px; width: 100%; object-fit: contain; background: #f8f9fa;">
+                                                </div>
+                                            }
+                                            @for (var i = previewItems.Count; i < 4; i++)
+                                            {
+                                                <div class="col-3">
+                                                    <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 60px;">
+                                                        <i class="bi bi-image text-muted"></i>
+                                                    </div>
+                                                </div>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            @for (var i = 0; i < 4; i++)
+                                            {
+                                                <div class="col-3">
+                                                    <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 60px;">
+                                                        <i class="bi bi-image text-muted"></i>
+                                                    </div>
+                                                </div>
+                                            }
+                                        }
+                                    </div>
+                                    
+                                    <!-- Ürün Sayısı (AC.3) -->
+                                    <p class="text-muted mb-0">
+                                        <i class="bi bi-box me-1"></i>
+                                        <strong>@itemCount</strong> ürün
+                                    </p>
+                                </div>
+                                
+                                <div class="card-footer bg-white">
+                                    <a href="/Favorites/Collection/@collection.Id" class="btn btn-outline-primary w-100">
+                                        <i class="bi bi-eye me-2"></i>Koleksiyonu Görüntüle
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-collection display-1 text-muted"></i>
+                    <h4 class="mt-3">Henüz koleksiyonunuz yok</h4>
+                    <p class="text-muted">Favori ürünlerinizi organize etmek için koleksiyonlar oluşturun.</p>
+                    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createCollectionModal">
+                        <i class="bi bi-plus-lg me-2"></i>İlk Koleksiyonumu Oluştur
+                    </button>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<!-- Yeni Koleksiyon Modal (AC.2) -->
+<div class="modal fade" id="createCollectionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="CreateCollection" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-plus-circle me-2"></i>Yeni Koleksiyon Oluştur
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Koleksiyon Adı <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="name" required 
+                               placeholder="Örn: iPhone Parçaları, Yeni Aksesuarlar" maxlength="100">
+                        <small class="text-muted">Koleksiyonunuza anlamlı bir isim verin.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-lg me-2"></i>Oluştur
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Koleksiyon Düzenle Modal (AC.4) -->
+<div class="modal fade" id="editCollectionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-pencil me-2"></i>Koleksiyonu Düzenle
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Koleksiyon Adı <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="editCollectionName" required maxlength="100">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-primary" onclick="saveCollectionName()">
+                    <i class="bi bi-check-lg me-2"></i>Kaydet
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Koleksiyon Silme Onay Modal (AC.4) -->
+<div class="modal fade" id="deleteCollectionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle me-2"></i>Koleksiyonu Sil
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong id="deleteCollectionName"></strong> koleksiyonunu silmek istediğinizden emin misiniz?</p>
+                <p class="text-muted mb-0">Bu işlem geri alınamaz. Koleksiyondaki ürünler favorilerinizden silinmez.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                <input type="hidden" id="deleteCollectionId">
+                <button type="button" class="btn btn-danger" onclick="deleteCollection()">
+                    <i class="bi bi-trash me-2"></i>Evet, Sil
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Ürünü Koleksiyona Ekle Modal (AC.5) -->
+<div class="modal fade" id="addToCollectionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-folder-plus me-2"></i>Koleksiyona Ekle
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3"><strong id="productNameForCollection"></strong></p>
+                
+                <div id="collectionCheckboxes">
+                    <!-- JavaScript ile doldurulacak -->
+                </div>
+                
+                <div id="noCollectionsMessage" class="text-center py-3" style="display: none;">
+                    <p class="text-muted">Henüz koleksiyonunuz yok.</p>
+                    <button type="button" class="btn btn-sm btn-success" data-bs-dismiss="modal" 
+                            onclick="setTimeout(() => new bootstrap.Modal(document.getElementById('createCollectionModal')).show(), 300)">
+                        <i class="bi bi-plus-lg me-2"></i>Koleksiyon Oluştur
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                <button type="button" class="btn btn-primary" onclick="saveProductCollections()" id="saveCollectionsBtn">
+                    <i class="bi bi-check-lg me-2"></i>Kaydet
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .product-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+        transition: all 0.3s ease;
+    }
+    
+    .collection-card:hover {
+        border-color: #0d6efd;
+        transition: all 0.3s ease;
+    }
+    
+    .nav-tabs .nav-link {
+        color: #6c757d;
+    }
+    
+    .nav-tabs .nav-link.active {
+        font-weight: 600;
+    }
+    
+    .collection-checkbox {
+        padding: 10px;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        margin-bottom: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .collection-checkbox:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .collection-checkbox.selected {
+        background-color: #e7f1ff;
+        border-color: #0d6efd;
+    }
+</style>
+
+@section Scripts {
+<script>
+    let currentEditCollectionId = null;
+    let currentProductId = null;
+
+    // Event listeners for collection buttons
+    document.addEventListener('DOMContentLoaded', function() {
+        // Rename buttons
+        document.querySelectorAll('.rename-collection-btn').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const collectionId = this.getAttribute('data-collection-id');
+                const collectionName = this.getAttribute('data-collection-name');
+                console.log('Rename clicked:', collectionId, collectionName);
+                editCollection(collectionId, collectionName);
+            });
+        });
+
+        // Delete buttons
+        document.querySelectorAll('.delete-collection-btn').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const collectionId = this.getAttribute('data-collection-id');
+                const collectionName = this.getAttribute('data-collection-name');
+                console.log('Delete clicked:', collectionId, collectionName);
+                confirmDeleteCollection(collectionId, collectionName);
+            });
+        });
+    });
+
+    // Favoriden çıkar
+    function removeFavorite(productId) {
+        if (confirm('Bu ürünü favorilerden çıkarmak istediğinizden emin misiniz?')) {
+            fetch('/Favorites/Toggle', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'productId=' + productId
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                }
+            });
+        }
+    }
+
+    // Sepete ekle
+    function addToCart(productId) {
+        fetch('/Cart/Add', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'productId=' + productId + '&quantity=1'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Ürün sepete eklendi!');
+            }
+        });
+    }
+
+    // Koleksiyon düzenleme modalını aç (AC.4)
+    function editCollection(collectionId, collectionName) {
+        currentEditCollectionId = collectionId;
+        document.getElementById('editCollectionName').value = collectionName;
+        new bootstrap.Modal(document.getElementById('editCollectionModal')).show();
+    }
+
+    // Koleksiyon adını kaydet (AC.4)
+    function saveCollectionName() {
+        const newName = document.getElementById('editCollectionName').value.trim();
+        if (!newName) {
+            alert('Koleksiyon adı boş olamaz.');
+            return;
+        }
+
+        fetch('/Favorites/UpdateCollection', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'id=' + currentEditCollectionId + '&name=' + encodeURIComponent(newName)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.message);
+            }
+        });
+    }
+
+    // Koleksiyon silme onayı (AC.4)
+    function confirmDeleteCollection(collectionId, collectionName) {
+        document.getElementById('deleteCollectionId').value = collectionId;
+        document.getElementById('deleteCollectionName').textContent = collectionName;
+        new bootstrap.Modal(document.getElementById('deleteCollectionModal')).show();
+    }
+
+    // Koleksiyonu sil (AC.4)
+    function deleteCollection() {
+        const collectionId = document.getElementById('deleteCollectionId').value;
+        
+        fetch('/Favorites/DeleteCollection', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'id=' + collectionId
+        })
+        .then(response => {
+            // Redirect işlemi başarılı olsa bile JSON dönmeyebilir
+            window.location.href = '/Favorites?tab=collections';
+        })
+        .catch(error => {
+            console.error('Hata:', error);
+            window.location.href = '/Favorites?tab=collections';
+        });
+    }
+
+    // Koleksiyona ekle modalını aç (AC.5)
+    function openCollectionModal(productId, productName) {
+        currentProductId = productId;
+        document.getElementById('productNameForCollection').textContent = productName;
+        
+        // Koleksiyonları ve ürünün hangi koleksiyonlarda olduğunu getir
+        fetch('/Favorites/GetProductCollections?productId=' + productId)
+            .then(response => response.json())
+            .then(data => {
+                const container = document.getElementById('collectionCheckboxes');
+                const noCollectionsMsg = document.getElementById('noCollectionsMessage');
+                const saveBtn = document.getElementById('saveCollectionsBtn');
+                
+                container.innerHTML = '';
+                
+                if (data.collections && data.collections.length > 0) {
+                    noCollectionsMsg.style.display = 'none';
+                    saveBtn.style.display = 'inline-block';
+                    
+                    data.collections.forEach(collection => {
+                        const isSelected = data.collectionIds.includes(collection.id);
+                        const div = document.createElement('div');
+                        div.className = 'collection-checkbox d-flex align-items-center' + (isSelected ? ' selected' : '');
+                        div.onclick = function() { toggleCollectionSelection(this, collection.id); };
+                        div.innerHTML = `
+                            <input type="checkbox" class="form-check-input me-3" value="${collection.id}" 
+                                   ${isSelected ? 'checked' : ''} style="pointer-events: none;">
+                            <div class="flex-grow-1">
+                                <strong>${collection.name}</strong>
+                                <small class="text-muted d-block">${collection.itemCount} ürün</small>
+                            </div>
+                        `;
+                        container.appendChild(div);
+                    });
+                } else {
+                    noCollectionsMsg.style.display = 'block';
+                    saveBtn.style.display = 'none';
+                }
+                
+                new bootstrap.Modal(document.getElementById('addToCollectionModal')).show();
+            });
+    }
+
+    // Koleksiyon seçimini toggle et
+    function toggleCollectionSelection(element, collectionId) {
+        const checkbox = element.querySelector('input[type="checkbox"]');
+        checkbox.checked = !checkbox.checked;
+        element.classList.toggle('selected', checkbox.checked);
+    }
+
+    // Ürün koleksiyonlarını kaydet (AC.5)
+    function saveProductCollections() {
+        const checkboxes = document.querySelectorAll('#collectionCheckboxes input[type="checkbox"]:checked');
+        const collectionIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
+        
+        fetch('/Favorites/UpdateProductCollections?productId=' + currentProductId, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(collectionIds)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                bootstrap.Modal.getInstance(document.getElementById('addToCollectionModal')).hide();
+                location.reload();
+            } else {
+                alert(data.message);
+            }
+        });
+    }
+</script>
+}

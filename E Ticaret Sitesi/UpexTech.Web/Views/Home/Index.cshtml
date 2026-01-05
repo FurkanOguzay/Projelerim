@@ -1,0 +1,346 @@
+@model HomeViewModel
+@using UpexTech.Entity
+@{
+    ViewData["Title"] = "Ana Sayfa";
+    
+    // Fiyat hesaplama fonksiyonu
+    decimal CalculatePrice(Product product) {
+        // Varsayılan fiyat (fallback için)
+        decimal defaultPrice = Model.UserRole == UserRole.B2B ? product.PriceB2B : product.PriceB2C;
+        
+        if (Model.UserPriceList != null) {
+            // PurchasePrice 0 veya null ise fallback fiyat kullan
+            decimal basePrice = product.PurchasePrice > 0 ? product.PurchasePrice : defaultPrice;
+            
+            // PriceList Factor uygula
+            decimal calculatedPrice = basePrice * Model.UserPriceList.Factor;
+            
+            // Yuvarlama uygula
+            calculatedPrice = Model.UserPriceList.Rounding switch {
+                RoundingMethod.Ending90 => Math.Floor(calculatedPrice) + 0.90m,
+                RoundingMethod.Ending99 => Math.Floor(calculatedPrice) + 0.99m,
+                RoundingMethod.NearestFive => Math.Round(calculatedPrice / 5) * 5,
+                _ => Math.Round(calculatedPrice, 2)
+            };
+            
+            // Hesaplanan fiyat 0 ise fallback kullan
+            return calculatedPrice > 0 ? calculatedPrice : defaultPrice;
+        }
+        
+        // PriceList yoksa varsayılan fiyat
+        return defaultPrice;
+    }
+}
+
+<!-- Banner Carousel -->
+<section class="container py-4">
+    <div class="banner-carousel" id="bannerCarousel">
+        <!-- Slide 1 -->
+        <div class="banner-slide active">
+            <img src="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=1200&h=400&fit=crop" alt="iPhone 15 Serisi">
+            <div class="banner-overlay">
+                <div class="banner-content">
+                    <h2>Yeni iPhone 15 Serisi</h2>
+                    <p>En yeni teknoloji artık burada!</p>
+                    <a href="/Catalog" class="btn">Hemen İncele</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Slide 2 -->
+        <div class="banner-slide">
+            <img src="https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=1200&h=400&fit=crop" alt="Samsung Galaxy">
+            <div class="banner-overlay">
+                <div class="banner-content">
+                    <h2>Samsung Galaxy İndirimleri</h2>
+                    <p>%30'a varan indirimler</p>
+                    <a href="/Catalog" class="btn">Fırsatları Gör</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Slide 3 -->
+        <div class="banner-slide">
+            <img src="https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=1200&h=400&fit=crop" alt="Aksesuarlar">
+            <div class="banner-overlay">
+                <div class="banner-content">
+                    <h2>Aksesuarlarda Büyük İndirim</h2>
+                    <p>Tüm aksesuar kategorilerinde</p>
+                    <a href="/Catalog" class="btn">Keşfet</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Navigation Buttons -->
+        <button class="banner-nav-btn prev" onclick="prevSlide()">
+            <i data-lucide="chevron-left" style="width: 24px; height: 24px;"></i>
+        </button>
+        <button class="banner-nav-btn next" onclick="nextSlide()">
+            <i data-lucide="chevron-right" style="width: 24px; height: 24px;"></i>
+        </button>
+        
+        <!-- Dots -->
+        <div class="banner-dots">
+            <button class="banner-dot active" onclick="goToSlide(0)"></button>
+            <button class="banner-dot" onclick="goToSlide(1)"></button>
+            <button class="banner-dot" onclick="goToSlide(2)"></button>
+        </div>
+    </div>
+</section>
+
+<!-- En Çok Satanlar -->
+<section class="container product-section">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="product-section-title mb-0">En Çok Satanlar</h2>
+        <a href="/Catalog" class="btn btn-outline-primary btn-sm">
+            Tümünü Gör <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
+        </a>
+    </div>
+    <div class="product-scroll-container">
+        <button class="product-scroll-btn prev" onclick="scrollProducts(this, 'left')">
+            <i data-lucide="chevron-left" style="width: 24px; height: 24px;"></i>
+        </button>
+        <div class="product-scroll-wrapper">
+            @foreach (var product in Model.PopularProducts)
+            {
+                var cardModel = new ProductCardViewModel
+                {
+                    Product = product,
+                    ShowPrice = Model.IsLoggedIn,
+                    IsB2B = Model.UserRole == UserRole.B2B,
+                    IsFavorite = false,
+                    IsLoggedIn = Model.IsLoggedIn,
+                    CalculatedPrice = CalculatePrice(product)
+                };
+                <partial name="_ProductCard" model="cardModel" />
+            }
+        </div>
+        <button class="product-scroll-btn next" onclick="scrollProducts(this, 'right')">
+            <i data-lucide="chevron-right" style="width: 24px; height: 24px;"></i>
+        </button>
+    </div>
+</section>
+
+<!-- İndirimli Ürünler -->
+@if (Model.ImmediateDeliveryProducts.Any())
+{
+    <section class="container product-section">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="product-section-title mb-0">
+                <i data-lucide="zap" style="width: 24px; height: 24px; color: #facc15;"></i>
+                İndirimli Ürünler
+            </h2>
+            <a href="/Catalog" class="btn btn-outline-primary btn-sm">
+                Tümünü Gör <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
+            </a>
+        </div>
+        <div class="product-scroll-container">
+            <button class="product-scroll-btn prev" onclick="scrollProducts(this, 'left')">
+                <i data-lucide="chevron-left" style="width: 24px; height: 24px;"></i>
+            </button>
+            <div class="product-scroll-wrapper">
+                @foreach (var product in Model.ImmediateDeliveryProducts)
+                {
+                    var cardModel = new ProductCardViewModel
+                    {
+                        Product = product,
+                        ShowPrice = Model.IsLoggedIn,
+                        IsB2B = Model.UserRole == UserRole.B2B,
+                        IsFavorite = false,
+                        IsLoggedIn = Model.IsLoggedIn,
+                        CalculatedPrice = CalculatePrice(product)
+                    };
+                    <partial name="_ProductCard" model="cardModel" />
+                }
+            </div>
+            <button class="product-scroll-btn next" onclick="scrollProducts(this, 'right')">
+                <i data-lucide="chevron-right" style="width: 24px; height: 24px;"></i>
+            </button>
+        </div>
+    </section>
+}
+
+<!-- Popüler Kategoriler -->
+<section class="container categories-section">
+    <h2 class="product-section-title">Popüler Kategoriler</h2>
+    <div class="product-scroll-container">
+        <button class="product-scroll-btn prev" onclick="scrollProducts(this, 'left')">
+            <i data-lucide="chevron-left" style="width: 24px; height: 24px;"></i>
+        </button>
+        <div class="product-scroll-wrapper">
+            <a href="/Catalog?categoryId=1" class="category-card">
+                <img src="https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=400&h=300&fit=crop" alt="Son Çıkanlar">
+                <div class="category-card-overlay">
+                    <div class="category-card-icon purple">
+                        <i data-lucide="sparkles" style="width: 32px; height: 32px;"></i>
+                    </div>
+                    <h3>Son Çıkanlar</h3>
+                </div>
+            </a>
+            
+            <a href="/Catalog?categoryId=8" class="category-card">
+                <img src="https://images.unsplash.com/photo-1484704849700-f032a568e944?w=400&h=300&fit=crop" alt="Aksesuarlar">
+                <div class="category-card-overlay">
+                    <div class="category-card-icon blue">
+                        <i data-lucide="headphones" style="width: 32px; height: 32px;"></i>
+                    </div>
+                    <h3>Aksesuarlar</h3>
+                </div>
+            </a>
+            
+            <a href="/Catalog?categoryId=1" class="category-card">
+                <img src="https://images.unsplash.com/photo-1605236453806-6ff36851218e?w=400&h=300&fit=crop" alt="Oyun Telefonları">
+                <div class="category-card-overlay">
+                    <div class="category-card-icon red">
+                        <i data-lucide="gamepad-2" style="width: 32px; height: 32px;"></i>
+                    </div>
+                    <h3>Oyun Telefonları</h3>
+                </div>
+            </a>
+            
+            <a href="/Catalog?categoryId=1" class="category-card">
+                <img src="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&h=300&fit=crop" alt="Akıllı Telefonlar">
+                <div class="category-card-overlay">
+                    <div class="category-card-icon green">
+                        <i data-lucide="smartphone" style="width: 32px; height: 32px;"></i>
+                    </div>
+                    <h3>Akıllı Telefonlar</h3>
+                </div>
+            </a>
+            
+            <a href="/Catalog?categoryId=3" class="category-card">
+                <img src="https://images.unsplash.com/photo-1609091839311-d5365f9ff1c5?w=400&h=300&fit=crop" alt="Bataryalar">
+                <div class="category-card-overlay">
+                    <div class="category-card-icon yellow">
+                        <i data-lucide="battery" style="width: 32px; height: 32px;"></i>
+                    </div>
+                    <h3>Bataryalar</h3>
+                </div>
+            </a>
+            
+            <a href="/Catalog?categoryId=5" class="category-card">
+                <img src="https://images.unsplash.com/photo-1591290619762-c588f880f76a?w=400&h=300&fit=crop" alt="Şarj Kabloları">
+                <div class="category-card-overlay">
+                    <div class="category-card-icon indigo">
+                        <i data-lucide="cable" style="width: 32px; height: 32px;"></i>
+                    </div>
+                    <h3>Şarj Kabloları</h3>
+                </div>
+            </a>
+        </div>
+        <button class="product-scroll-btn next" onclick="scrollProducts(this, 'right')">
+            <i data-lucide="chevron-right" style="width: 24px; height: 24px;"></i>
+        </button>
+    </div>
+</section>
+
+<!-- Markalar -->
+<section class="container brands-section">
+    <h2 class="product-section-title text-center">Markalarımız</h2>
+    <div class="brands-container">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" alt="Apple" class="brand-logo" style="height: 40px;">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/2/24/Samsung_Logo.svg" alt="Samsung" class="brand-logo" style="height: 30px;">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/a/ae/Xiaomi_logo_%282021-%29.svg" alt="Xiaomi" class="brand-logo" style="height: 30px;">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/2/2e/HUAWEI_logo.svg" alt="Huawei" class="brand-logo" style="height: 30px;">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/5/51/Google_2015_logo.svg" alt="Google" class="brand-logo" style="height: 30px;">
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        // Banner Carousel
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.banner-slide');
+        const dots = document.querySelectorAll('.banner-dot');
+        
+        function showSlide(index) {
+            slides.forEach((slide, i) => {
+                slide.classList.toggle('active', i === index);
+            });
+            dots.forEach((dot, i) => {
+                dot.classList.toggle('active', i === index);
+            });
+            currentSlide = index;
+        }
+        
+        function nextSlide() {
+            showSlide((currentSlide + 1) % slides.length);
+        }
+        
+        function prevSlide() {
+            showSlide((currentSlide - 1 + slides.length) % slides.length);
+        }
+        
+        function goToSlide(index) {
+            showSlide(index);
+        }
+        
+        // Auto-play carousel
+        setInterval(nextSlide, 5000);
+        
+        // Product Scroll
+        function scrollProducts(btn, direction) {
+            const container = btn.parentElement.querySelector('.product-scroll-wrapper');
+            const scrollAmount = 400;
+            container.scrollBy({
+                left: direction === 'left' ? -scrollAmount : scrollAmount,
+                behavior: 'smooth'
+            });
+        }
+        
+        // Favorites toggle
+        function showLoginAlert() {
+            alert('Favorilere eklemek için giriş yapmalısınız.');
+            window.location.href = '/Account/Login';
+        }
+
+        function toggleFavorite(btn, productId) {
+            fetch('/Favorites/Toggle', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'productId=' + productId
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const svg = btn.querySelector('svg');
+                    if (svg) {
+                        if (data.isFavorite) {
+                            svg.style.fill = '#ef4444';
+                            svg.style.stroke = '#ef4444';
+                            btn.classList.add('active');
+                        } else {
+                            svg.style.fill = 'none';
+                            svg.style.stroke = 'currentColor';
+                            btn.classList.remove('active');
+                        }
+                    }
+                }
+            });
+        }
+        
+        function addToCart(productId) {
+            fetch('/Cart/Add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'productId=' + productId
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update cart badge
+                    const badge = document.getElementById('cartBadge');
+                    if (badge) {
+                        badge.textContent = data.count || 1;
+                        badge.style.display = 'flex';
+                    }
+                    alert('Ürün sepete eklendi!');
+                }
+            });
+        }
+    </script>
+}

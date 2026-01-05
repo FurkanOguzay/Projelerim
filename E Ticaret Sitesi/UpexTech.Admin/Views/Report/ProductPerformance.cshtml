@@ -1,0 +1,352 @@
+@{
+    ViewData["Title"] = "Ürün Performans Analizi";
+}
+
+<div class="performance-page">
+    <!-- Header -->
+    <div class="performance-header simple">
+        <div class="performance-header-left">
+            <h1 class="performance-title">Ürün Performans Analizi</h1>
+            <p class="performance-subtitle">Ürünlerinizin satış performansını detaylı inceleyin</p>
+        </div>
+    </div>
+
+    <!-- Filters Card -->
+    <div class="filters-card">
+        <div class="filters-row">
+            <!-- Search -->
+            <div class="filter-search">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="Barkod, Model Kodu veya Ürün Adı Ara..." />
+            </div>
+            
+            <!-- Category Dropdown -->
+            <div class="filter-dropdown">
+                <button type="button" class="filter-dropdown-btn" id="categoryBtn">
+                    <span id="selectedCategory">Tüm Kategoriler</span>
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="filter-dropdown-menu" id="categoryMenu">
+                    <!-- Categories will be loaded dynamically -->
+                </div>
+            </div>
+            
+            <!-- Brand Dropdown -->
+            <div class="filter-dropdown">
+                <button type="button" class="filter-dropdown-btn" id="brandBtn">
+                    <span id="selectedBrand">Tüm Markalar</span>
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="filter-dropdown-menu" id="brandMenu">
+                    <!-- Brands will be loaded dynamically -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Customer Type Toggle -->
+        <div class="filters-row secondary">
+            <div class="customer-type-section">
+                <span class="filter-label">Müşteri Tipi:</span>
+                <div class="segment-toggle small">
+                    <button type="button" class="segment-btn active" data-segment="all">Tümü</button>
+                    <button type="button" class="segment-btn" data-segment="b2b">B2B</button>
+                    <button type="button" class="segment-btn" data-segment="b2c">B2C</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs and Table Card -->
+    <div class="product-performance-card">
+        <!-- Tab Navigation -->
+        <div class="performance-tabs">
+            <button type="button" class="performance-tab active" data-tab="revenue">
+                <i class="fas fa-trending-up"></i>
+                <div class="tab-content">
+                    <span class="tab-title">Net Ciro Bazlı Çok Satanlar</span>
+                    <span class="tab-subtitle">Toplam satış cirolarına göre sıralama</span>
+                </div>
+            </button>
+            <button type="button" class="performance-tab" data-tab="quantity">
+                <i class="fas fa-shopping-cart"></i>
+                <div class="tab-content">
+                    <span class="tab-title">Net Satış Adedi Bazlı Çok Satanlar</span>
+                    <span class="tab-subtitle">Satış adetlerine göre sıralama</span>
+                </div>
+            </button>
+            <button type="button" class="performance-tab" data-tab="cart">
+                <i class="fas fa-heart"></i>
+                <div class="tab-content">
+                    <span class="tab-title">En Çok Sepete Eklenenler</span>
+                    <span class="tab-subtitle">Sepete eklenme sayısına göre sıralama</span>
+                </div>
+            </button>
+        </div>
+        
+        <!-- Table -->
+        <div class="table-container">
+            <table class="performance-table">
+                <thead>
+                    <tr>
+                        <th class="th-rank">SIRA</th>
+                        <th class="th-product">ÜRÜN BİLGİSİ</th>
+                        <th class="th-cart" id="cartHeader" style="display: none;">SEPETE EKLENME</th>
+                        <th class="th-revenue">NET CİRO</th>
+                        <th class="th-count">NET SATIŞ ADEDİ</th>
+                        <th class="th-price">BİRİM FİYAT</th>
+                        <th class="th-return">İADE ORANI</th>
+                        <th class="th-stock">GÜNCEL STOK</th>
+                        <th class="th-action">AKSİYON</th>
+                    </tr>
+                </thead>
+                <tbody id="productsTableBody">
+                    <!-- Products will be loaded here -->
+                </tbody>
+            </table>
+            
+            <!-- Empty State -->
+            <div class="empty-state" id="emptyState" style="display: none;">
+                <div class="empty-icon">
+                    <i class="fas fa-box-open"></i>
+                </div>
+                <h3>Henüz veri yok</h3>
+                <p>Seçili filtreler için henüz ürün performans verisi bulunmuyor.</p>
+            </div>
+        </div>
+        
+        <!-- Footer Stats -->
+        <div class="table-footer" id="tableFooter">
+            <div class="footer-left">
+                Toplam <span id="productCount">0</span> ürün listeleniyor
+            </div>
+            <div class="footer-right">
+                <div class="stock-legend">
+                    <span class="legend-dot red"></span>
+                    <span>Kritik Stok (&lt;10)</span>
+                </div>
+                <div class="stock-legend">
+                    <span class="legend-dot green"></span>
+                    <span>Normal Stok</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // State
+        let currentSegment = 'all';
+        let currentTab = 'revenue';
+        let currentCategoryId = null;
+        let currentBrandId = null;
+        let searchQuery = '';
+        let searchTimeout = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCategories();
+            loadBrands();
+            loadProducts();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            // Segment toggle
+            document.querySelectorAll('.segment-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.segment-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    currentSegment = this.dataset.segment;
+                    loadProducts();
+                });
+            });
+
+            // Tab navigation
+            document.querySelectorAll('.performance-tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    document.querySelectorAll('.performance-tab').forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    currentTab = this.dataset.tab;
+                    
+                    // Show/hide cart column
+                    const cartHeader = document.getElementById('cartHeader');
+                    cartHeader.style.display = currentTab === 'cart' ? '' : 'none';
+                    
+                    loadProducts();
+                });
+            });
+
+            // Search input with debounce
+            document.getElementById('searchInput').addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                searchQuery = this.value;
+                searchTimeout = setTimeout(() => loadProducts(), 300);
+            });
+
+            // Category dropdown
+            document.getElementById('categoryBtn').addEventListener('click', function(e) {
+                e.stopPropagation();
+                document.getElementById('categoryMenu').classList.toggle('show');
+                document.getElementById('brandMenu').classList.remove('show');
+            });
+
+            // Brand dropdown
+            document.getElementById('brandBtn').addEventListener('click', function(e) {
+                e.stopPropagation();
+                document.getElementById('brandMenu').classList.toggle('show');
+                document.getElementById('categoryMenu').classList.remove('show');
+            });
+
+            // Close dropdowns on outside click
+            document.addEventListener('click', function() {
+                document.getElementById('categoryMenu').classList.remove('show');
+                document.getElementById('brandMenu').classList.remove('show');
+            });
+        }
+
+        async function loadCategories() {
+            // For now, using static categories - can be replaced with API call
+            const categories = [
+                { id: null, name: 'Tüm Kategoriler' },
+                { id: 1, name: 'Telefonlar' },
+                { id: 2, name: 'Tablet & Bilgisayar' },
+                { id: 3, name: 'Aksesuar' },
+                { id: 4, name: 'Ses Sistemleri' }
+            ];
+            
+            const menu = document.getElementById('categoryMenu');
+            menu.innerHTML = categories.map(cat => `
+                <button type="button" class="filter-option ${cat.id === currentCategoryId ? 'active' : ''}" 
+                        data-id="${cat.id}" onclick="selectCategory(${cat.id}, '${cat.name}')">
+                    ${cat.name}
+                </button>
+            `).join('');
+        }
+
+        async function loadBrands() {
+            // For now, using static brands - can be replaced with API call
+            const brands = [
+                { id: null, name: 'Tüm Markalar' },
+                { id: 1, name: 'Apple' },
+                { id: 2, name: 'Samsung' },
+                { id: 3, name: 'Xiaomi' },
+                { id: 4, name: 'Huawei' },
+                { id: 5, name: 'Oppo' }
+            ];
+            
+            const menu = document.getElementById('brandMenu');
+            menu.innerHTML = brands.map(brand => `
+                <button type="button" class="filter-option ${brand.id === currentBrandId ? 'active' : ''}" 
+                        data-id="${brand.id}" onclick="selectBrand(${brand.id}, '${brand.name}')">
+                    ${brand.name}
+                </button>
+            `).join('');
+        }
+
+        function selectCategory(id, name) {
+            currentCategoryId = id;
+            document.getElementById('selectedCategory').textContent = name;
+            document.getElementById('categoryMenu').classList.remove('show');
+            loadProducts();
+        }
+
+        function selectBrand(id, name) {
+            currentBrandId = id;
+            document.getElementById('selectedBrand').textContent = name;
+            document.getElementById('brandMenu').classList.remove('show');
+            loadProducts();
+        }
+
+        async function loadProducts() {
+            try {
+                let url = `/Report/GetProductPerformanceData?segment=${currentSegment}&sortBy=${currentTab}`;
+                if (currentCategoryId) url += `&categoryId=${currentCategoryId}`;
+                if (currentBrandId) url += `&brandId=${currentBrandId}`;
+                if (searchQuery) url += `&search=${encodeURIComponent(searchQuery)}`;
+
+                const response = await fetch(url);
+                const result = await response.json();
+                
+                if (result.success) {
+                    renderProducts(result.data);
+                }
+            } catch (error) {
+                console.error('Products load error:', error);
+            }
+        }
+
+        function renderProducts(products) {
+            const tbody = document.getElementById('productsTableBody');
+            const emptyState = document.getElementById('emptyState');
+            const tableFooter = document.getElementById('tableFooter');
+            const productCount = document.getElementById('productCount');
+            const showCartColumn = currentTab === 'cart';
+
+            if (products.length === 0) {
+                tbody.innerHTML = '';
+                emptyState.style.display = 'flex';
+                tableFooter.style.display = 'none';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            tableFooter.style.display = 'flex';
+            productCount.textContent = products.length;
+
+            tbody.innerHTML = products.map(product => `
+                <tr onclick="viewProduct(${product.productId})">
+                    <td class="td-rank">
+                        <div class="rank-badge">${product.rank}</div>
+                    </td>
+                    <td class="td-product">
+                        <div class="product-info">
+                            <img src="${product.imageUrl || '/images/no-image.png'}" alt="${product.productName}" class="product-thumb" />
+                            <div class="product-details">
+                                <span class="product-name">${product.productName}</span>
+                                <span class="product-sku">Stok Kodu: ${product.sku}</span>
+                            </div>
+                        </div>
+                    </td>
+                    ${showCartColumn ? `
+                        <td class="td-cart">
+                            <div class="cart-additions">
+                                <i class="fas fa-heart"></i>
+                                <span>${product.cartAdditions}</span>
+                            </div>
+                        </td>
+                    ` : ''}
+                    <td class="td-revenue">${formatCurrency(product.netRevenue)}</td>
+                    <td class="td-count">${product.salesCount} Adet</td>
+                    <td class="td-price">${formatCurrency(product.unitPrice)}</td>
+                    <td class="td-return">
+                        <span class="return-badge">%${product.returnRate}</span>
+                    </td>
+                    <td class="td-stock ${product.currentStock < 10 ? 'critical' : ''}">
+                        ${product.currentStock < 10 ? '<i class="fas fa-exclamation-triangle"></i>' : ''}
+                        <span>${product.currentStock} Adet</span>
+                    </td>
+                    <td class="td-action">
+                        <button type="button" class="action-btn" onclick="event.stopPropagation(); viewProduct(${product.productId})">
+                            <i class="fas fa-eye"></i>
+                            <span>İncele</span>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function viewProduct(productId) {
+            window.location.href = `/Product/Edit/${productId}`;
+        }
+
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('tr-TR', {
+                style: 'currency',
+                currency: 'TRY',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(amount);
+        }
+    </script>
+}

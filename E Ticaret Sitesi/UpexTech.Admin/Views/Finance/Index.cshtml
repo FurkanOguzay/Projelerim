@@ -1,0 +1,417 @@
+@{
+    ViewData["Title"] = "Kasalar";
+}
+
+<div class="page-header">
+    <div class="page-header-left">
+        <h1>Kasalar (Hesaplar)</h1>
+        <p class="page-subtitle">Banka hesaplarınız ve sanal POS entegrasyonlarınız</p>
+    </div>
+    <div class="page-header-right">
+        <button class="btn btn-outline" onclick="refreshBankIntegration()">
+            <i class="fas fa-sync-alt"></i>
+            Banka Entegrasyonunu Yenile
+        </button>
+        <button class="btn btn-primary" onclick="openAddBankModal()">
+            <i class="fas fa-plus"></i>
+            Yeni Banka Hesabı Ekle
+        </button>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="finance-summary-cards">
+    <div class="summary-card blue">
+        <div class="summary-card-icon">
+            <i class="fas fa-landmark"></i>
+        </div>
+        <span class="summary-badge">Hazır Para</span>
+        <div class="summary-card-content">
+            <p class="summary-label">Toplam Mevduat</p>
+            <h2 class="summary-value">₺@(((decimal)ViewBag.TotalDeposit).ToString("N0"))</h2>
+            <p class="summary-subtitle">Tüm banka hesapları</p>
+        </div>
+    </div>
+    
+    <div class="summary-card orange">
+        <div class="summary-card-icon">
+            <i class="fas fa-credit-card"></i>
+        </div>
+        <span class="summary-badge">Valör</span>
+        <div class="summary-card-content">
+            <p class="summary-label">POS İçerdeki Tutar</p>
+            <h2 class="summary-value">₺@(((decimal)ViewBag.PosBalance).ToString("N0"))</h2>
+            <p class="summary-subtitle">Henüz hesaba geçmemiş</p>
+        </div>
+    </div>
+    
+    <div class="summary-card green">
+        <div class="summary-card-icon">
+            <i class="fas fa-arrow-trend-up"></i>
+        </div>
+        <span class="summary-badge">Bugün</span>
+        <div class="summary-card-content">
+            <p class="summary-label">Bugünkü Tahsilat</p>
+            <h2 class="summary-value">₺@(((decimal)ViewBag.TodayCollection).ToString("N0"))</h2>
+            <p class="summary-subtitle">B2B + B2C Toplamı</p>
+        </div>
+    </div>
+</div>
+
+<!-- Bank Accounts Section -->
+<div class="section-header">
+    <h3>BANKA HESAPLARI</h3>
+    <span class="section-badge">@(((dynamic[])ViewBag.BankAccounts).Length) Hesap</span>
+</div>
+
+<div class="bank-accounts-grid">
+    @foreach (var bank in (dynamic[])ViewBag.BankAccounts)
+    {
+        <div class="bank-card">
+            <div class="bank-card-header">
+                <div class="bank-icon">
+                    <i class="fas @bank.Icon"></i>
+                </div>
+                <div class="bank-info">
+                    <h4>@bank.Name</h4>
+                    <p class="iban">IBAN: @bank.IBAN</p>
+                </div>
+            </div>
+            <div class="bank-card-body">
+                <p class="balance-label">Güncel Bakiye</p>
+                <h3 class="balance-value">₺@(((decimal)bank.Balance).ToString("N0"))</h3>
+            </div>
+            <div class="bank-card-footer">
+                <span class="last-activity">
+                    <i class="far fa-clock"></i>
+                    Son Hareket: @bank.LastActivity
+                </span>
+                <button class="btn-link" onclick="viewBankTransactions('@bank.Name')">
+                    Hareketleri Görüntüle
+                </button>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Virtual POS Section -->
+<div class="section-header" style="margin-top: 32px;">
+    <h3>SANAL POS ENTEGRASYONLARI</h3>
+    <span class="section-badge">@(((dynamic[])ViewBag.VirtualPosIntegrations).Length) Entegrasyon</span>
+</div>
+
+<div class="pos-grid">
+    @foreach (var pos in (dynamic[])ViewBag.VirtualPosIntegrations)
+    {
+        <div class="pos-card">
+            <div class="pos-card-header">
+                <div class="pos-logo">
+                    @if (pos.Name == "Stripe")
+                    {
+                        <span class="stripe-text">stripe</span>
+                    }
+                    else
+                    {
+                        <i class="fas fa-credit-card"></i>
+                    }
+                </div>
+                <div class="pos-info">
+                    <h4>@pos.Name</h4>
+                    <span class="status-badge @(pos.IsActive ? "active" : "inactive")">
+                        <i class="fas fa-circle"></i>
+                        @(pos.IsActive ? "Aktif" : "Pasif")
+                    </span>
+                </div>
+            </div>
+            
+            <div class="pos-card-body">
+                <div class="pos-amount pending">
+                    <span class="amount-icon">
+                        <i class="far fa-clock"></i>
+                    </span>
+                    <div class="amount-info">
+                        <p class="amount-label">Hesaba Geçecek</p>
+                        <h3 class="amount-value">₺@(((decimal)pos.PendingAmount).ToString("N0"))</h3>
+                        <p class="amount-date">@pos.PendingDate</p>
+                    </div>
+                </div>
+                
+                <div class="pos-amount blocked">
+                    <span class="amount-icon warning">
+                        <i class="fas fa-lock"></i>
+                    </span>
+                    <div class="amount-info">
+                        <p class="amount-label">Blokeli Tutar</p>
+                        <h3 class="amount-value warning">₺@(((decimal)pos.BlockedAmount).ToString("N0"))</h3>
+                        <p class="amount-date">@pos.BlockedValor</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="pos-card-footer">
+                <span class="pos-status-text">Durum</span>
+                <span class="pos-status-value @(pos.IsActive ? "active" : "")">
+                    <i class="fas fa-check"></i>
+                    @(pos.IsActive ? "Aktif" : "Pasif")
+                </span>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Add Bank Account Modal -->
+<div class="modal-overlay" id="addBankModal">
+    <div class="modal-container">
+        <div class="modal-header">
+            <h2><i class="fas fa-building-columns"></i> Yeni Banka Hesabı Ekle</h2>
+            <button class="modal-close" onclick="closeAddBankModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form id="addBankForm" onsubmit="saveBankAccount(event)">
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="bankName">Banka Adı *</label>
+                        <select id="bankName" name="bankName" required>
+                            <option value="">Banka Seçin</option>
+                            <option value="Garanti BBVA">Garanti BBVA</option>
+                            <option value="İş Bankası">İş Bankası</option>
+                            <option value="Yapı Kredi">Yapı Kredi</option>
+                            <option value="Ziraat Bankası">Ziraat Bankası</option>
+                            <option value="Akbank">Akbank</option>
+                            <option value="QNB Finansbank">QNB Finansbank</option>
+                            <option value="Denizbank">Denizbank</option>
+                            <option value="Halkbank">Halkbank</option>
+                            <option value="Vakıfbank">Vakıfbank</option>
+                            <option value="TEB">TEB</option>
+                            <option value="ING">ING</option>
+                            <option value="HSBC">HSBC</option>
+                            <option value="Diğer">Diğer</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="accountName">Hesap Adı *</label>
+                        <input type="text" id="accountName" name="accountName" placeholder="Örn: Ana Ticari Hesap" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="iban">IBAN *</label>
+                    <input type="text" id="iban" name="iban" placeholder="TR00 0000 0000 0000 0000 0000 00" maxlength="32" required>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="currency">Para Birimi</label>
+                        <select id="currency" name="currency">
+                            <option value="TRY" selected>₺ Türk Lirası (TRY)</option>
+                            <option value="USD">$ Amerikan Doları (USD)</option>
+                            <option value="EUR">€ Euro (EUR)</option>
+                            <option value="GBP">£ İngiliz Sterlini (GBP)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="openingBalance">Açılış Bakiyesi</label>
+                        <input type="number" id="openingBalance" name="openingBalance" placeholder="0.00" step="0.01" value="0">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="accountHolder">Hesap Sahibi</label>
+                    <input type="text" id="accountHolder" name="accountHolder" placeholder="Şirket veya kişi adı">
+                </div>
+
+                <div class="form-group">
+                    <label for="branch">Şube</label>
+                    <input type="text" id="branch" name="branch" placeholder="Şube adı veya kodu">
+                </div>
+
+                <div class="form-group">
+                    <label for="notes">Notlar</label>
+                    <textarea id="notes" name="notes" rows="3" placeholder="Hesap ile ilgili notlar..."></textarea>
+                </div>
+
+                <div class="form-check">
+                    <input type="checkbox" id="isDefault" name="isDefault">
+                    <label for="isDefault">Bu hesabı varsayılan hesap olarak ayarla</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeAddBankModal()">
+                    <i class="fas fa-times"></i> İptal
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Hesabı Kaydet
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Success Toast -->
+<div class="toast-container" id="toastContainer"></div>
+
+@section Scripts {
+    <script>
+        function refreshBankIntegration() {
+            const btn = event.target.closest('button');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Yenileniyor...';
+            btn.disabled = true;
+            
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                showToast('success', 'Banka entegrasyonları başarıyla güncellendi!');
+            }, 2000);
+        }
+        
+        function openAddBankModal() {
+            document.getElementById('addBankModal').classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeAddBankModal() {
+            document.getElementById('addBankModal').classList.remove('show');
+            document.body.style.overflow = '';
+            document.getElementById('addBankForm').reset();
+        }
+        
+        function saveBankAccount(event) {
+            event.preventDefault();
+            
+            const formData = {
+                bankName: document.getElementById('bankName').value,
+                accountName: document.getElementById('accountName').value,
+                iban: document.getElementById('iban').value,
+                currency: document.getElementById('currency').value,
+                openingBalance: document.getElementById('openingBalance').value,
+                accountHolder: document.getElementById('accountHolder').value,
+                branch: document.getElementById('branch').value,
+                notes: document.getElementById('notes').value,
+                isDefault: document.getElementById('isDefault').checked
+            };
+            
+            // Show loading
+            const submitBtn = event.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Kaydediliyor...';
+            submitBtn.disabled = true;
+            
+            // Simulate API call
+            setTimeout(() => {
+                // Add new bank card to the grid
+                addBankCardToGrid(formData);
+                
+                // Close modal
+                closeAddBankModal();
+                
+                // Reset button
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+                
+                // Show success message
+                showToast('success', `${formData.bankName} hesabı başarıyla eklendi!`);
+                
+                // Update counter
+                updateBankCounter();
+            }, 1500);
+        }
+        
+        function addBankCardToGrid(data) {
+            const grid = document.querySelector('.bank-accounts-grid');
+            const currencySymbol = data.currency === 'TRY' ? '₺' : (data.currency === 'USD' ? '$' : (data.currency === 'EUR' ? '€' : '£'));
+            const balance = parseFloat(data.openingBalance || 0).toLocaleString('tr-TR');
+            const maskedIban = '****' + data.iban.slice(-4);
+            
+            const cardHtml = `
+                <div class="bank-card" style="animation: fadeInUp 0.3s ease;">
+                    <div class="bank-card-header">
+                        <div class="bank-icon">
+                            <i class="fas fa-building-columns"></i>
+                        </div>
+                        <div class="bank-info">
+                            <h4>${data.bankName}</h4>
+                            <p class="iban">IBAN: ${maskedIban}</p>
+                        </div>
+                    </div>
+                    <div class="bank-card-body">
+                        <p class="balance-label">Güncel Bakiye</p>
+                        <h3 class="balance-value">${currencySymbol}${balance}</h3>
+                    </div>
+                    <div class="bank-card-footer">
+                        <span class="last-activity">
+                            <i class="far fa-clock"></i>
+                            Son Hareket: Şimdi
+                        </span>
+                        <button class="btn-link" onclick="viewBankTransactions('${data.bankName}')">
+                            Hareketleri Görüntüle
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            grid.insertAdjacentHTML('beforeend', cardHtml);
+        }
+        
+        function updateBankCounter() {
+            const counter = document.querySelector('.section-header .section-badge');
+            const currentCount = document.querySelectorAll('.bank-card').length;
+            counter.textContent = currentCount + ' Hesap';
+        }
+        
+        function viewBankTransactions(bankName) {
+            showToast('info', `${bankName} hareketleri yükleniyor...`);
+        }
+        
+        function showToast(type, message) {
+            const container = document.getElementById('toastContainer');
+            const iconMap = {
+                success: 'fa-check-circle',
+                error: 'fa-exclamation-circle',
+                info: 'fa-info-circle',
+                warning: 'fa-exclamation-triangle'
+            };
+            
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.innerHTML = `
+                <i class="fas ${iconMap[type]}"></i>
+                <span>${message}</span>
+            `;
+            
+            container.appendChild(toast);
+            
+            // Trigger animation
+            setTimeout(() => toast.classList.add('show'), 10);
+            
+            // Remove after 4 seconds
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+        
+        // Close modal on escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeAddBankModal();
+            }
+        });
+        
+        // Close modal on overlay click
+        document.getElementById('addBankModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeAddBankModal();
+            }
+        });
+        
+        // IBAN formatting
+        document.getElementById('iban').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\s/g, '').toUpperCase();
+            value = value.replace(/(.{4})/g, '$1 ').trim();
+            e.target.value = value;
+        });
+    </script>
+}

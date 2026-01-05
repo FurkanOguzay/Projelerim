@@ -1,0 +1,229 @@
+@model IEnumerable<UpexTech.Entity.Product>
+@{
+    ViewData["Title"] = "Ürün Listesi";
+    var currentPage = ViewBag.CurrentPage ?? 1;
+    var totalPages = ViewBag.TotalPages ?? 1;
+    var totalCount = ViewBag.TotalCount ?? 0;
+}
+
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
+    <div>
+        <h1>Ürün Listesi</h1>
+        <p>Tüm ürünleri görüntüleyin, düzenleyin ve yönetin</p>
+    </div>
+    <div style="display: flex; gap: 12px;">
+        <a href="@Url.Action("Index", "BulkOperation")" class="btn-secondary" style="display: flex; align-items: center; gap: 8px; padding: 12px 20px; background: var(--gray-100); color: var(--gray-700); border-radius: var(--radius-lg); text-decoration: none; font-weight: 500;">
+            <i class="fas fa-file-excel"></i>
+            Toplu İşlemler
+        </a>
+        <a href="@Url.Action("Create")" class="btn-new">
+            <i class="fas fa-plus"></i>
+            Yeni Ürün Ekle
+        </a>
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success" style="background: var(--success-100); color: var(--success-700); padding: 16px 24px; border-radius: var(--radius-lg); margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
+        <i class="fas fa-check-circle"></i>
+        @TempData["SuccessMessage"]
+    </div>
+}
+
+<!-- Filtre Paneli -->
+<div class="filter-panel" style="background: var(--white); border-radius: var(--radius-lg); padding: 20px; margin-bottom: 24px; box-shadow: var(--shadow-sm);">
+    <form method="get" asp-action="Index" style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end;">
+        <div style="flex: 1; min-width: 150px;">
+            <label style="display: block; margin-bottom: 6px; font-size: 13px; color: var(--gray-600);">SKU</label>
+            <input type="text" name="sku" value="@ViewBag.CurrentSku" placeholder="SKU ara..." 
+                   style="width: 100%; padding: 10px 14px; border: 1px solid var(--gray-200); border-radius: var(--radius-md);">
+        </div>
+        <div style="flex: 1; min-width: 150px;">
+            <label style="display: block; margin-bottom: 6px; font-size: 13px; color: var(--gray-600);">Barkod</label>
+            <input type="text" name="barcode" value="@ViewBag.CurrentBarcode" placeholder="Barkod ara..." 
+                   style="width: 100%; padding: 10px 14px; border: 1px solid var(--gray-200); border-radius: var(--radius-md);">
+        </div>
+        <div style="flex: 1; min-width: 200px;">
+            <label style="display: block; margin-bottom: 6px; font-size: 13px; color: var(--gray-600);">Cihaz Modeli</label>
+            <select name="deviceModelId" asp-items="ViewBag.DeviceModels as SelectList" 
+                    style="width: 100%; padding: 10px 14px; border: 1px solid var(--gray-200); border-radius: var(--radius-md);">
+                <option value="">Tümü</option>
+            </select>
+        </div>
+        <div style="flex: 1; min-width: 150px;">
+            <label style="display: block; margin-bottom: 6px; font-size: 13px; color: var(--gray-600);">Ürün Ara</label>
+            <input type="text" name="search" value="@ViewBag.CurrentSearch" placeholder="Ürün adı..." 
+                   style="width: 100%; padding: 10px 14px; border: 1px solid var(--gray-200); border-radius: var(--radius-md);">
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" name="criticalStockOnly" value="true" id="criticalStock" @(ViewBag.CriticalStockOnly == true ? "checked" : "")>
+            <label for="criticalStock" style="font-size: 14px; color: var(--gray-700);">Sadece Kritik Stok</label>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <button type="submit" class="btn-new" style="padding: 10px 20px;">
+                <i class="fas fa-search"></i> Filtrele
+            </button>
+            <a href="@Url.Action("Index")" style="padding: 10px 20px; background: var(--gray-100); color: var(--gray-600); border-radius: var(--radius-md); text-decoration: none;">
+                <i class="fas fa-times"></i> Temizle
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- KPI Cards -->
+<div class="kpi-grid" style="margin-bottom: 24px;">
+    <div class="kpi-simple">
+        <div class="kpi-simple-header">
+            <div class="kpi-simple-icon blue">
+                <i class="fas fa-box"></i>
+            </div>
+            <span class="kpi-simple-value" style="color: var(--primary-500);">@totalCount</span>
+        </div>
+        <h3>Toplam Ürün</h3>
+        <p>Filtrelenmiş sonuç sayısı</p>
+    </div>
+    <div class="kpi-simple">
+        <div class="kpi-simple-header">
+            <div class="kpi-simple-icon green">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <span class="kpi-simple-value" style="color: var(--success-500);">@Model.Count(p => p.Stock > p.CriticalStockLevel)</span>
+        </div>
+        <h3>Stokta</h3>
+        <p>Kritik seviyenin üstünde</p>
+    </div>
+    <div class="kpi-simple">
+        <div class="kpi-simple-header">
+            <div class="kpi-simple-icon orange">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <span class="kpi-simple-value" style="color: var(--orange-600);">@Model.Count(p => p.Stock > 0 && p.Stock <= p.CriticalStockLevel)</span>
+        </div>
+        <h3>Kritik Stok</h3>
+        <p>Kritik seviyede veya altında</p>
+    </div>
+    <div class="kpi-simple">
+        <div class="kpi-simple-header">
+            <div class="kpi-simple-icon red">
+                <i class="fas fa-times-circle"></i>
+            </div>
+            <span class="kpi-simple-value" style="color: var(--danger-500);">@Model.Count(p => p.Stock == 0)</span>
+        </div>
+        <h3>Tükendi</h3>
+        <p>Stoğu biten ürünler</p>
+    </div>
+</div>
+
+<div class="data-table-container">
+    <div class="table-actions">
+        <div class="pagination-info">
+            Toplam @totalCount ürün (Sayfa @currentPage / @totalPages)
+        </div>
+    </div>
+
+    <div style="overflow-x: auto;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Görsel</th>
+                    <th>Ürün Adı</th>
+                    <th>SKU</th>
+                    <th>Stok</th>
+                    <th>Alış Fiyatı</th>
+                    <th>Satış Fiyatı</th>
+                    <th>Durum</th>
+                    <th>Aksiyonlar</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var product in Model)
+                {
+                    var isCritical = product.Stock <= product.CriticalStockLevel;
+                    var rowStyle = isCritical && product.Stock > 0 ? "background: rgba(239, 68, 68, 0.05);" : "";
+                    
+                    <tr style="@rowStyle">
+                        <td>
+                            <img src="@(string.IsNullOrEmpty(product.Image) ? "/images/phone1.png" : $"/images/{product.Image}")" 
+                                 class="product-image" alt="@product.Name" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px;" />
+                        </td>
+                        <td>
+                            <div class="product-info">
+                                <p class="product-name" style="font-weight: 500;">@product.Name</p>
+                                <p class="product-sku" style="color: var(--gray-500); font-size: 12px;">
+                                    @(product.Category?.Name ?? "-") / @(product.Brand?.Name ?? "-")
+                                </p>
+                            </div>
+                        </td>
+                        <td>
+                            <span style="font-family: monospace; font-size: 13px;">@(product.SKU ?? "-")</span>
+                        </td>
+                        <td>
+                            @if (product.Stock == 0)
+                            {
+                                <span style="background: var(--danger-100); color: var(--danger-700); padding: 4px 12px; border-radius: 8px; font-weight: 600;">0</span>
+                            }
+                            else if (isCritical)
+                            {
+                                <span style="background: var(--danger-100); color: var(--danger-700); padding: 4px 12px; border-radius: 8px; font-weight: 600;">
+                                    @product.Stock <i class="fas fa-exclamation-circle" style="margin-left: 4px;"></i>
+                                </span>
+                            }
+                            else
+                            {
+                                <span style="background: var(--success-100); color: var(--success-700); padding: 4px 12px; border-radius: 8px;">@product.Stock</span>
+                            }
+                        </td>
+                        <td>
+                            <span style="color: var(--gray-600);">₺@product.PurchasePrice.ToString("N0")</span>
+                        </td>
+                        <td>
+                            <div>
+                                <span style="font-weight: 500;">₺@product.PriceB2C.ToString("N0")</span>
+                                <span style="color: var(--gray-400); font-size: 12px; display: block;">B2B: ₺@product.PriceB2B.ToString("N0")</span>
+                            </div>
+                        </td>
+                        <td>
+                            @if (product.IsActive)
+                            {
+                                <span class="badge-status delivered">Aktif</span>
+                            }
+                            else
+                            {
+                                <span class="badge-status" style="background: var(--gray-100); color: var(--gray-600);">Pasif</span>
+                            }
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <a href="@Url.Action("Edit", new { id = product.Id })" class="btn-icon" title="Düzenle">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <form asp-action="Delete" asp-route-id="@product.Id" method="post" style="display: inline;">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn-icon danger" title="Sil" onclick="return confirm('Bu ürünü silmek istediğinize emin misiniz?')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Sayfalama -->
+    @if (totalPages > 1)
+    {
+        <div class="pagination" style="display: flex; justify-content: center; gap: 8px; margin-top: 24px;">
+            @for (int i = 1; i <= totalPages; i++)
+            {
+                var isActive = i == currentPage;
+                <a href="@Url.Action("Index", new { page = i, sku = ViewBag.CurrentSku, barcode = ViewBag.CurrentBarcode, deviceModelId = ViewBag.CurrentDeviceModelId, search = ViewBag.CurrentSearch, criticalStockOnly = ViewBag.CriticalStockOnly })"
+                   style="padding: 8px 14px; border-radius: var(--radius-md); text-decoration: none; @(isActive ? "background: var(--primary-500); color: white;" : "background: var(--gray-100); color: var(--gray-700);")">
+                    @i
+                </a>
+            }
+        </div>
+    }
+</div>

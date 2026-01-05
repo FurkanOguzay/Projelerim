@@ -1,0 +1,176 @@
+C:\Users\Administrator\Desktop\v7.7.4\v7.7.4\v7.7.3\v7.7.2\v7.7.1\v7.0.1\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.deps.json
+C:\Users\Administrator\Desktop\v7.7.4\v7.7.4\v7.7.3\v7.7.2\v7.7.1\v7.0.1\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.dll
+C:\Users\Administrator\Desktop\v7.7.4\v7.7.4\v7.7.3\v7.7.2\v7.7.1\v7.0.1\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.pdb
+C:\Users\Administrator\Desktop\v7.7.4\v7.7.4\v7.7.3\v7.7.2\v7.7.1\v7.0.1\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Administrator\Desktop\v7.7.4\v7.7.4\v7.7.3\v7.7.2\v7.7.1\v7.0.1\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.AssemblyInfoInputs.cache
+C:\Users\Administrator\Desktop\v7.7.4\v7.7.4\v7.7.3\v7.7.2\v7.7.1\v7.0.1\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.AssemblyInfo.cs
+C:\Users\Administrator\Desktop\v7.7.4\v7.7.4\v7.7.3\v7.7.2\v7.7.1\v7.0.1\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.csproj.CoreCompileInputs.cache
+C:\Users\Administrator\Desktop\v7.7.4\v7.7.4\v7.7.3\v7.7.2\v7.7.1\v7.0.1\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.dll
+C:\Users\Administrator\Desktop\v7.7.4\v7.7.4\v7.7.3\v7.7.2\v7.7.1\v7.0.1\UpexTech.Entity\obj\Debug\net10.0\refint\UpexTech.Entity.dll
+C:\Users\Administrator\Desktop\v7.7.4\v7.7.4\v7.7.3\v7.7.2\v7.7.1\v7.0.1\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.pdb
+C:\Users\Administrator\Desktop\v7.7.4\v7.7.4\v7.7.3\v7.7.2\v7.7.1\v7.0.1\UpexTech.Entity\obj\Debug\net10.0\ref\UpexTech.Entity.dll
+C:\Users\user\OneDrive\Pictures\Desktop\v7.8.0\v7.8.0\v7.7.4\v7.7.3\v7.7.2\v7.7.1\v7.0.1\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.deps.json
+C:\Users\user\OneDrive\Pictures\Desktop\v7.8.0\v7.8.0\v7.7.4\v7.7.3\v7.7.2\v7.7.1\v7.0.1\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.dll
+C:\Users\user\OneDrive\Pictures\Desktop\v7.8.0\v7.8.0\v7.7.4\v7.7.3\v7.7.2\v7.7.1\v7.0.1\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.pdb
+C:\Users\user\OneDrive\Pictures\Desktop\v7.8.0\v7.8.0\v7.7.4\v7.7.3\v7.7.2\v7.7.1\v7.0.1\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\user\OneDrive\Pictures\Desktop\v7.8.0\v7.8.0\v7.7.4\v7.7.3\v7.7.2\v7.7.1\v7.0.1\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.AssemblyInfoInputs.cache
+C:\Users\user\OneDrive\Pictures\Desktop\v7.8.0\v7.8.0\v7.7.4\v7.7.3\v7.7.2\v7.7.1\v7.0.1\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.AssemblyInfo.cs
+C:\Users\user\OneDrive\Pictures\Desktop\v7.8.0\v7.8.0\v7.7.4\v7.7.3\v7.7.2\v7.7.1\v7.0.1\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.csproj.CoreCompileInputs.cache
+C:\Users\user\OneDrive\Pictures\Desktop\v7.8.0\v7.8.0\v7.7.4\v7.7.3\v7.7.2\v7.7.1\v7.0.1\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.dll
+C:\Users\user\OneDrive\Pictures\Desktop\v7.8.0\v7.8.0\v7.7.4\v7.7.3\v7.7.2\v7.7.1\v7.0.1\UpexTech.Entity\obj\Debug\net10.0\refint\UpexTech.Entity.dll
+C:\Users\user\OneDrive\Pictures\Desktop\v7.8.0\v7.8.0\v7.7.4\v7.7.3\v7.7.2\v7.7.1\v7.0.1\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.pdb
+C:\Users\user\OneDrive\Pictures\Desktop\v7.8.0\v7.8.0\v7.7.4\v7.7.3\v7.7.2\v7.7.1\v7.0.1\UpexTech.Entity\obj\Debug\net10.0\ref\UpexTech.Entity.dll
+C:\Users\bilal\Desktop\v7.8.1\v7.8.1\v7.8.0\v7.7.4\v7.7.3\v7.7.2\v7.7.1\v7.0.1\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.deps.json
+C:\Users\bilal\Desktop\v7.8.1\v7.8.1\v7.8.0\v7.7.4\v7.7.3\v7.7.2\v7.7.1\v7.0.1\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.dll
+C:\Users\bilal\Desktop\v7.8.1\v7.8.1\v7.8.0\v7.7.4\v7.7.3\v7.7.2\v7.7.1\v7.0.1\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.pdb
+C:\Users\bilal\Desktop\v7.8.1\v7.8.1\v7.8.0\v7.7.4\v7.7.3\v7.7.2\v7.7.1\v7.0.1\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\bilal\Desktop\v7.8.1\v7.8.1\v7.8.0\v7.7.4\v7.7.3\v7.7.2\v7.7.1\v7.0.1\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.AssemblyInfoInputs.cache
+C:\Users\bilal\Desktop\v7.8.1\v7.8.1\v7.8.0\v7.7.4\v7.7.3\v7.7.2\v7.7.1\v7.0.1\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.AssemblyInfo.cs
+C:\Users\bilal\Desktop\v7.8.1\v7.8.1\v7.8.0\v7.7.4\v7.7.3\v7.7.2\v7.7.1\v7.0.1\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.csproj.CoreCompileInputs.cache
+C:\Users\bilal\Desktop\v7.8.1\v7.8.1\v7.8.0\v7.7.4\v7.7.3\v7.7.2\v7.7.1\v7.0.1\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.dll
+C:\Users\bilal\Desktop\v7.8.1\v7.8.1\v7.8.0\v7.7.4\v7.7.3\v7.7.2\v7.7.1\v7.0.1\UpexTech.Entity\obj\Debug\net10.0\refint\UpexTech.Entity.dll
+C:\Users\bilal\Desktop\v7.8.1\v7.8.1\v7.8.0\v7.7.4\v7.7.3\v7.7.2\v7.7.1\v7.0.1\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.pdb
+C:\Users\bilal\Desktop\v7.8.1\v7.8.1\v7.8.0\v7.7.4\v7.7.3\v7.7.2\v7.7.1\v7.0.1\UpexTech.Entity\obj\Debug\net10.0\ref\UpexTech.Entity.dll
+C:\Users\bilal\Desktop\v7.8.1 (Geliştirme)\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.deps.json
+C:\Users\bilal\Desktop\v7.8.1 (Geliştirme)\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.dll
+C:\Users\bilal\Desktop\v7.8.1 (Geliştirme)\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.pdb
+C:\Users\bilal\Desktop\v7.8.1 (Geliştirme)\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\bilal\Desktop\v7.8.1 (Geliştirme)\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.AssemblyInfoInputs.cache
+C:\Users\bilal\Desktop\v7.8.1 (Geliştirme)\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.AssemblyInfo.cs
+C:\Users\bilal\Desktop\v7.8.1 (Geliştirme)\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.csproj.CoreCompileInputs.cache
+C:\Users\bilal\Desktop\v7.8.1 (Geliştirme)\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.dll
+C:\Users\bilal\Desktop\v7.8.1 (Geliştirme)\UpexTech.Entity\obj\Debug\net10.0\refint\UpexTech.Entity.dll
+C:\Users\bilal\Desktop\v7.8.1 (Geliştirme)\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.pdb
+C:\Users\bilal\Desktop\v7.8.1 (Geliştirme)\UpexTech.Entity\obj\Debug\net10.0\ref\UpexTech.Entity.dll
+C:\Users\bilal\Desktop\Üniversite\BPY UpexTech\Proje Versiyonlar\v7.8.2\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.deps.json
+C:\Users\bilal\Desktop\Üniversite\BPY UpexTech\Proje Versiyonlar\v7.8.2\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.dll
+C:\Users\bilal\Desktop\Üniversite\BPY UpexTech\Proje Versiyonlar\v7.8.2\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.pdb
+C:\Users\bilal\Desktop\Üniversite\BPY UpexTech\Proje Versiyonlar\v7.8.2\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\bilal\Desktop\Üniversite\BPY UpexTech\Proje Versiyonlar\v7.8.2\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.AssemblyInfoInputs.cache
+C:\Users\bilal\Desktop\Üniversite\BPY UpexTech\Proje Versiyonlar\v7.8.2\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.AssemblyInfo.cs
+C:\Users\bilal\Desktop\Üniversite\BPY UpexTech\Proje Versiyonlar\v7.8.2\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.csproj.CoreCompileInputs.cache
+C:\Users\bilal\Desktop\Üniversite\BPY UpexTech\Proje Versiyonlar\v7.8.2\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.dll
+C:\Users\bilal\Desktop\Üniversite\BPY UpexTech\Proje Versiyonlar\v7.8.2\UpexTech.Entity\obj\Debug\net10.0\refint\UpexTech.Entity.dll
+C:\Users\bilal\Desktop\Üniversite\BPY UpexTech\Proje Versiyonlar\v7.8.2\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.pdb
+C:\Users\bilal\Desktop\Üniversite\BPY UpexTech\Proje Versiyonlar\v7.8.2\UpexTech.Entity\obj\Debug\net10.0\ref\UpexTech.Entity.dll
+C:\Users\bilal\Desktop\v7.8.2 Geliştirme2\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.deps.json
+C:\Users\bilal\Desktop\v7.8.2 Geliştirme2\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.dll
+C:\Users\bilal\Desktop\v7.8.2 Geliştirme2\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.pdb
+C:\Users\bilal\Desktop\v7.8.2 Geliştirme2\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\bilal\Desktop\v7.8.2 Geliştirme2\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.AssemblyInfoInputs.cache
+C:\Users\bilal\Desktop\v7.8.2 Geliştirme2\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.AssemblyInfo.cs
+C:\Users\bilal\Desktop\v7.8.2 Geliştirme2\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.csproj.CoreCompileInputs.cache
+C:\Users\bilal\Desktop\v7.8.2 Geliştirme2\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.dll
+C:\Users\bilal\Desktop\v7.8.2 Geliştirme2\UpexTech.Entity\obj\Debug\net10.0\refint\UpexTech.Entity.dll
+C:\Users\bilal\Desktop\v7.8.2 Geliştirme2\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.pdb
+C:\Users\bilal\Desktop\v7.8.2 Geliştirme2\UpexTech.Entity\obj\Debug\net10.0\ref\UpexTech.Entity.dll
+C:\Users\bilal\Desktop\v7.8.2 (Geliştirme)\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.deps.json
+C:\Users\bilal\Desktop\v7.8.2 (Geliştirme)\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.dll
+C:\Users\bilal\Desktop\v7.8.2 (Geliştirme)\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.pdb
+C:\Users\bilal\Desktop\v7.8.2 (Geliştirme)\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\bilal\Desktop\v7.8.2 (Geliştirme)\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.AssemblyInfoInputs.cache
+C:\Users\bilal\Desktop\v7.8.2 (Geliştirme)\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.AssemblyInfo.cs
+C:\Users\bilal\Desktop\v7.8.2 (Geliştirme)\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.csproj.CoreCompileInputs.cache
+C:\Users\bilal\Desktop\v7.8.2 (Geliştirme)\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.dll
+C:\Users\bilal\Desktop\v7.8.2 (Geliştirme)\UpexTech.Entity\obj\Debug\net10.0\refint\UpexTech.Entity.dll
+C:\Users\bilal\Desktop\v7.8.2 (Geliştirme)\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.pdb
+C:\Users\bilal\Desktop\v7.8.2 (Geliştirme)\UpexTech.Entity\obj\Debug\net10.0\ref\UpexTech.Entity.dll
+C:\Users\bilal\Desktop\v7.8.3\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.deps.json
+C:\Users\bilal\Desktop\v7.8.3\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.dll
+C:\Users\bilal\Desktop\v7.8.3\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.pdb
+C:\Users\bilal\Desktop\v7.8.3\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\bilal\Desktop\v7.8.3\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.AssemblyInfoInputs.cache
+C:\Users\bilal\Desktop\v7.8.3\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.AssemblyInfo.cs
+C:\Users\bilal\Desktop\v7.8.3\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.csproj.CoreCompileInputs.cache
+C:\Users\bilal\Desktop\v7.8.3\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.dll
+C:\Users\bilal\Desktop\v7.8.3\UpexTech.Entity\obj\Debug\net10.0\refint\UpexTech.Entity.dll
+C:\Users\bilal\Desktop\v7.8.3\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.pdb
+C:\Users\bilal\Desktop\v7.8.3\UpexTech.Entity\obj\Debug\net10.0\ref\UpexTech.Entity.dll
+C:\Users\bilal\Desktop\v7.8.6\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.deps.json
+C:\Users\bilal\Desktop\v7.8.6\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.dll
+C:\Users\bilal\Desktop\v7.8.6\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.pdb
+C:\Users\bilal\Desktop\v7.8.6\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\bilal\Desktop\v7.8.6\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.AssemblyInfoInputs.cache
+C:\Users\bilal\Desktop\v7.8.6\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.AssemblyInfo.cs
+C:\Users\bilal\Desktop\v7.8.6\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.csproj.CoreCompileInputs.cache
+C:\Users\bilal\Desktop\v7.8.6\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.dll
+C:\Users\bilal\Desktop\v7.8.6\UpexTech.Entity\obj\Debug\net10.0\refint\UpexTech.Entity.dll
+C:\Users\bilal\Desktop\v7.8.6\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.pdb
+C:\Users\bilal\Desktop\v7.8.6\UpexTech.Entity\obj\Debug\net10.0\ref\UpexTech.Entity.dll
+C:\Users\Administrator\Desktop\v7.8.7\v7.8.7\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.deps.json
+C:\Users\Administrator\Desktop\v7.8.7\v7.8.7\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.dll
+C:\Users\Administrator\Desktop\v7.8.7\v7.8.7\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.pdb
+C:\Users\Administrator\Desktop\v7.8.7\v7.8.7\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Administrator\Desktop\v7.8.7\v7.8.7\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.AssemblyInfoInputs.cache
+C:\Users\Administrator\Desktop\v7.8.7\v7.8.7\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.AssemblyInfo.cs
+C:\Users\Administrator\Desktop\v7.8.7\v7.8.7\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.csproj.CoreCompileInputs.cache
+C:\Users\Administrator\Desktop\v7.8.7\v7.8.7\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.dll
+C:\Users\Administrator\Desktop\v7.8.7\v7.8.7\UpexTech.Entity\obj\Debug\net10.0\refint\UpexTech.Entity.dll
+C:\Users\Administrator\Desktop\v7.8.7\v7.8.7\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.pdb
+C:\Users\Administrator\Desktop\v7.8.7\v7.8.7\UpexTech.Entity\obj\Debug\net10.0\ref\UpexTech.Entity.dll
+C:\Users\Administrator\Desktop\v7.8.7 - Copy\v7.8.7\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.deps.json
+C:\Users\Administrator\Desktop\v7.8.7 - Copy\v7.8.7\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.dll
+C:\Users\Administrator\Desktop\v7.8.7 - Copy\v7.8.7\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.pdb
+C:\Users\Administrator\Desktop\v7.8.7 - Copy\v7.8.7\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Administrator\Desktop\v7.8.7 - Copy\v7.8.7\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.AssemblyInfoInputs.cache
+C:\Users\Administrator\Desktop\v7.8.7 - Copy\v7.8.7\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.AssemblyInfo.cs
+C:\Users\Administrator\Desktop\v7.8.7 - Copy\v7.8.7\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.csproj.CoreCompileInputs.cache
+C:\Users\Administrator\Desktop\v7.8.7 - Copy\v7.8.7\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.dll
+C:\Users\Administrator\Desktop\v7.8.7 - Copy\v7.8.7\UpexTech.Entity\obj\Debug\net10.0\refint\UpexTech.Entity.dll
+C:\Users\Administrator\Desktop\v7.8.7 - Copy\v7.8.7\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.pdb
+C:\Users\Administrator\Desktop\v7.8.7 - Copy\v7.8.7\UpexTech.Entity\obj\Debug\net10.0\ref\UpexTech.Entity.dll
+C:\Users\Administrator\Desktop\v7.8.9\v7.8.8\v7.8.7\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.deps.json
+C:\Users\Administrator\Desktop\v7.8.9\v7.8.8\v7.8.7\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.dll
+C:\Users\Administrator\Desktop\v7.8.9\v7.8.8\v7.8.7\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.pdb
+C:\Users\Administrator\Desktop\v7.8.9\v7.8.8\v7.8.7\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Administrator\Desktop\v7.8.9\v7.8.8\v7.8.7\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.AssemblyInfoInputs.cache
+C:\Users\Administrator\Desktop\v7.8.9\v7.8.8\v7.8.7\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.AssemblyInfo.cs
+C:\Users\Administrator\Desktop\v7.8.9\v7.8.8\v7.8.7\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.csproj.CoreCompileInputs.cache
+C:\Users\Administrator\Desktop\v7.8.9\v7.8.8\v7.8.7\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.dll
+C:\Users\Administrator\Desktop\v7.8.9\v7.8.8\v7.8.7\UpexTech.Entity\obj\Debug\net10.0\refint\UpexTech.Entity.dll
+C:\Users\Administrator\Desktop\v7.8.9\v7.8.8\v7.8.7\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.pdb
+C:\Users\Administrator\Desktop\v7.8.9\v7.8.8\v7.8.7\UpexTech.Entity\obj\Debug\net10.0\ref\UpexTech.Entity.dll
+C:\Users\Administrator\Desktop\v7.8.9 - Copy (2)\v7.8.8\v7.8.7\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.deps.json
+C:\Users\Administrator\Desktop\v7.8.9 - Copy (2)\v7.8.8\v7.8.7\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.dll
+C:\Users\Administrator\Desktop\v7.8.9 - Copy (2)\v7.8.8\v7.8.7\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.pdb
+C:\Users\Administrator\Desktop\v7.8.9 - Copy (2)\v7.8.8\v7.8.7\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Administrator\Desktop\v7.8.9 - Copy (2)\v7.8.8\v7.8.7\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.AssemblyInfoInputs.cache
+C:\Users\Administrator\Desktop\v7.8.9 - Copy (2)\v7.8.8\v7.8.7\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.AssemblyInfo.cs
+C:\Users\Administrator\Desktop\v7.8.9 - Copy (2)\v7.8.8\v7.8.7\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.csproj.CoreCompileInputs.cache
+C:\Users\Administrator\Desktop\v7.8.9 - Copy (2)\v7.8.8\v7.8.7\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.dll
+C:\Users\Administrator\Desktop\v7.8.9 - Copy (2)\v7.8.8\v7.8.7\UpexTech.Entity\obj\Debug\net10.0\refint\UpexTech.Entity.dll
+C:\Users\Administrator\Desktop\v7.8.9 - Copy (2)\v7.8.8\v7.8.7\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.pdb
+C:\Users\Administrator\Desktop\v7.8.9 - Copy (2)\v7.8.8\v7.8.7\UpexTech.Entity\obj\Debug\net10.0\ref\UpexTech.Entity.dll
+C:\Users\Administrator\Desktop\v7.9.3\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.deps.json
+C:\Users\Administrator\Desktop\v7.9.3\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.dll
+C:\Users\Administrator\Desktop\v7.9.3\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.pdb
+C:\Users\Administrator\Desktop\v7.9.3\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Administrator\Desktop\v7.9.3\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.AssemblyInfoInputs.cache
+C:\Users\Administrator\Desktop\v7.9.3\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.AssemblyInfo.cs
+C:\Users\Administrator\Desktop\v7.9.3\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.csproj.CoreCompileInputs.cache
+C:\Users\Administrator\Desktop\v7.9.3\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.dll
+C:\Users\Administrator\Desktop\v7.9.3\UpexTech.Entity\obj\Debug\net10.0\refint\UpexTech.Entity.dll
+C:\Users\Administrator\Desktop\v7.9.3\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.pdb
+C:\Users\Administrator\Desktop\v7.9.3\UpexTech.Entity\obj\Debug\net10.0\ref\UpexTech.Entity.dll
+C:\Users\user\OneDrive\Pictures\Desktop\v7.9.3\v7.9.3\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.deps.json
+C:\Users\user\OneDrive\Pictures\Desktop\v7.9.3\v7.9.3\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.dll
+C:\Users\user\OneDrive\Pictures\Desktop\v7.9.3\v7.9.3\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.pdb
+C:\Users\user\OneDrive\Pictures\Desktop\v7.9.3\v7.9.3\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\user\OneDrive\Pictures\Desktop\v7.9.3\v7.9.3\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.AssemblyInfoInputs.cache
+C:\Users\user\OneDrive\Pictures\Desktop\v7.9.3\v7.9.3\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.AssemblyInfo.cs
+C:\Users\user\OneDrive\Pictures\Desktop\v7.9.3\v7.9.3\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.csproj.CoreCompileInputs.cache
+C:\Users\user\OneDrive\Pictures\Desktop\v7.9.3\v7.9.3\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.dll
+C:\Users\user\OneDrive\Pictures\Desktop\v7.9.3\v7.9.3\UpexTech.Entity\obj\Debug\net10.0\refint\UpexTech.Entity.dll
+C:\Users\user\OneDrive\Pictures\Desktop\v7.9.3\v7.9.3\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.pdb
+C:\Users\user\OneDrive\Pictures\Desktop\v7.9.3\v7.9.3\UpexTech.Entity\obj\Debug\net10.0\ref\UpexTech.Entity.dll
+C:\Users\user\OneDrive\Pictures\Desktop\v7.9.4\v7.9.3\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.deps.json
+C:\Users\user\OneDrive\Pictures\Desktop\v7.9.4\v7.9.3\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.dll
+C:\Users\user\OneDrive\Pictures\Desktop\v7.9.4\v7.9.3\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.pdb
+C:\Users\user\OneDrive\Pictures\Desktop\v7.9.4\v7.9.3\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\user\OneDrive\Pictures\Desktop\v7.9.4\v7.9.3\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.AssemblyInfoInputs.cache
+C:\Users\user\OneDrive\Pictures\Desktop\v7.9.4\v7.9.3\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.AssemblyInfo.cs
+C:\Users\user\OneDrive\Pictures\Desktop\v7.9.4\v7.9.3\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.csproj.CoreCompileInputs.cache
+C:\Users\user\OneDrive\Pictures\Desktop\v7.9.4\v7.9.3\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.dll
+C:\Users\user\OneDrive\Pictures\Desktop\v7.9.4\v7.9.3\UpexTech.Entity\obj\Debug\net10.0\refint\UpexTech.Entity.dll
+C:\Users\user\OneDrive\Pictures\Desktop\v7.9.4\v7.9.3\UpexTech.Entity\obj\Debug\net10.0\UpexTech.Entity.pdb
+C:\Users\user\OneDrive\Pictures\Desktop\v7.9.4\v7.9.3\UpexTech.Entity\obj\Debug\net10.0\ref\UpexTech.Entity.dll

@@ -1,0 +1,219 @@
+@model MyAccountViewModel
+@{
+    var sectionTitle = Model.Section switch
+    {
+        "Orders" => "Tüm Siparişlerim",
+        "PendingOrders" => "Bekleyen Siparişler",
+        "ShippedOrders" => "Kargodaki Siparişler",
+        "DeliveredOrders" => "Teslim Edilen Siparişler",
+        "CancelledOrders" => "İptal/İade Edilen Siparişler",
+        _ => "Siparişlerim"
+    };
+}
+
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3">
+        <h5 class="mb-0">
+            <i class="bi bi-box-seam me-2"></i>@sectionTitle
+            <span class="badge bg-primary ms-2">@Model.Orders.Count</span>
+        </h5>
+    </div>
+    <div class="card-body">
+        @if (Model.Orders.Any())
+        {
+            foreach (var order in Model.Orders)
+            {
+                var statusClass = order.Status switch
+                {
+                    OrderStatus.Pending => "bg-warning text-dark",
+                    OrderStatus.Confirmed => "bg-info text-white",
+                    OrderStatus.Shipped => "bg-primary",
+                    OrderStatus.Delivered => "bg-success",
+                    OrderStatus.Cancelled => "bg-danger",
+                    OrderStatus.Returned => "bg-secondary",
+                    _ => "bg-secondary"
+                };
+                
+                var statusText = order.Status switch
+                {
+                    OrderStatus.Pending => "Beklemede",
+                    OrderStatus.Confirmed => "Onaylandı",
+                    OrderStatus.Shipped => "Kargoda",
+                    OrderStatus.Delivered => "Teslim Edildi",
+                    OrderStatus.Cancelled => "İptal Edildi",
+                    OrderStatus.Returned => "İade Edildi",
+                    _ => "Bilinmiyor"
+                };
+
+                <div class="order-card border rounded p-3 mb-3">
+                    <div class="row align-items-center">
+                        <div class="col-md-3">
+                            <small class="text-muted d-block">Sipariş No</small>
+                            <strong class="text-primary">#@order.OrderNumber</strong>
+                        </div>
+                        <div class="col-md-2">
+                            <small class="text-muted d-block">Tarih</small>
+                            <span>@order.CreatedAt.ToString("dd.MM.yyyy")</span>
+                        </div>
+                        <div class="col-md-2">
+                            <small class="text-muted d-block">Ürün Sayısı</small>
+                            <span>@order.OrderItems.Count adet</span>
+                        </div>
+                        <div class="col-md-2">
+                            <small class="text-muted d-block">Toplam</small>
+                            <strong>@order.TotalAmount.ToString("N0") ₺</strong>
+                        </div>
+                        <div class="col-md-2">
+                            <small class="text-muted d-block">Durum</small>
+                            <span class="badge @statusClass">@statusText</span>
+                        </div>
+                        <div class="col-md-1 text-end">
+                            <button type="button" class="btn btn-sm btn-outline-primary" 
+                                    title="Detay"
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#orderDetailModal"
+                                    data-order-number="@order.OrderNumber"
+                                    data-order-date="@order.CreatedAt.ToString("dd.MM.yyyy HH:mm")"
+                                    data-order-status="@statusText"
+                                    data-order-status-class="@statusClass"
+                                    data-order-total="@order.TotalAmount.ToString("N0")"
+                                    data-order-address="@(order.ShippingAddress ?? "Adres belirtilmemiş")"
+                                    data-order-items="@System.Text.Json.JsonSerializer.Serialize(order.OrderItems.Select(i => new { name = i.Product?.Name ?? "Ürün", quantity = i.Quantity, price = i.UnitPrice }))">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="text-center py-5">
+                <i class="bi bi-inbox display-1 text-muted"></i>
+                <h5 class="mt-3 text-muted">Henüz sipariş bulunmuyor</h5>
+                <p class="text-muted">Bu kategoride siparişiniz yok.</p>
+                <a href="/Catalog" class="btn btn-primary">
+                    <i class="bi bi-cart-plus me-2"></i>Alışverişe Başla
+                </a>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Sipariş Detay Modal -->
+<div class="modal fade" id="orderDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-box-seam me-2"></i>Sipariş Detayı - <span id="modalOrderNumber"></span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="border rounded p-3 text-center">
+                            <small class="text-muted d-block">Sipariş Tarihi</small>
+                            <strong id="modalOrderDate"></strong>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="border rounded p-3 text-center">
+                            <small class="text-muted d-block">Durum</small>
+                            <span id="modalOrderStatus" class="badge"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="border rounded p-3 text-center">
+                            <small class="text-muted d-block">Toplam Tutar</small>
+                            <strong class="text-primary fs-5" id="modalOrderTotal"></strong>
+                        </div>
+                    </div>
+                </div>
+                
+                <h6 class="mb-3"><i class="bi bi-geo-alt me-2"></i>Teslimat Adresi</h6>
+                <div class="bg-light rounded p-3 mb-4">
+                    <p class="mb-0" id="modalOrderAddress"></p>
+                </div>
+                
+                <h6 class="mb-3"><i class="bi bi-cart me-2"></i>Sipariş Kalemleri</h6>
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Ürün</th>
+                                <th class="text-center">Adet</th>
+                                <th class="text-end">Birim Fiyat</th>
+                                <th class="text-end">Toplam</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modalOrderItems">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .order-card {
+        transition: all 0.2s ease;
+    }
+    .order-card:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        border-color: #0d6efd !important;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var orderDetailModal = document.getElementById('orderDetailModal');
+    if (orderDetailModal) {
+        orderDetailModal.addEventListener('show.bs.modal', function(event) {
+            var button = event.relatedTarget;
+            
+            // Verileri butondan al
+            var orderNumber = button.getAttribute('data-order-number');
+            var orderDate = button.getAttribute('data-order-date');
+            var orderStatus = button.getAttribute('data-order-status');
+            var orderStatusClass = button.getAttribute('data-order-status-class');
+            var orderTotal = button.getAttribute('data-order-total');
+            var orderAddress = button.getAttribute('data-order-address');
+            var orderItemsJson = button.getAttribute('data-order-items');
+            
+            // Modal'ı doldur
+            document.getElementById('modalOrderNumber').textContent = '#' + orderNumber;
+            document.getElementById('modalOrderDate').textContent = orderDate;
+            
+            var statusBadge = document.getElementById('modalOrderStatus');
+            statusBadge.textContent = orderStatus;
+            statusBadge.className = 'badge ' + orderStatusClass;
+            
+            document.getElementById('modalOrderTotal').textContent = orderTotal + ' ₺';
+            document.getElementById('modalOrderAddress').textContent = orderAddress;
+            
+            // Sipariş kalemlerini doldur
+            var orderItems = JSON.parse(orderItemsJson || '[]');
+            var tbody = document.getElementById('modalOrderItems');
+            tbody.innerHTML = '';
+            
+            orderItems.forEach(function(item) {
+                var row = document.createElement('tr');
+                var itemTotal = item.quantity * item.price;
+                row.innerHTML = `
+                    <td>${item.name}</td>
+                    <td class="text-center">${item.quantity}</td>
+                    <td class="text-end">${item.price.toLocaleString('tr-TR')} ₺</td>
+                    <td class="text-end"><strong>${itemTotal.toLocaleString('tr-TR')} ₺</strong></td>
+                `;
+                tbody.appendChild(row);
+            });
+        });
+    }
+});
+</script>

@@ -1,0 +1,960 @@
+@using System.Security.Claims
+@inject UpexTech.Business.Services.IBrandService BrandService
+@inject UpexTech.Business.Services.ICategoryService CategoryService
+
+@{
+    var isLoggedIn = User.Identity?.IsAuthenticated ?? false;
+    var userName = User.Identity?.Name ?? "";
+    var userRole = User.FindFirst(ClaimTypes.Role)?.Value ?? "";
+    var isDealer = userRole == "B2B";
+    
+    // Get brands and categories from database
+    var allBrands = await BrandService.GetAllBrandsAsync();
+    var topBrands = allBrands.Where(b => b.IsActive).Take(5).ToList();
+}
+
+<header class="main-header">
+    <div class="container">
+        <!-- ========== MOBILE HEADER (Only visible on mobile < 992px) ========== -->
+        <div class="mobile-header">
+            <!-- Mobile Top Bar -->
+            <div class="mobile-top-bar">
+                <!-- Left: Hamburger + Logo -->
+                <div class="mobile-left-group">
+                    <button type="button" class="mobile-menu-btn" id="mobileMenuBtn">
+                        <i data-lucide="menu" style="width: 24px; height: 24px;"></i>
+                    </button>
+                    <a href="/" class="mobile-logo">
+                        <img src="~/images/upex-logo.png" alt="UpexTech">
+                    </a>
+                </div>
+                
+                <!-- Right: Three Icons -->
+                <div class="mobile-actions">
+                    @if (isLoggedIn)
+                    {
+                        <a href="/Favorites" class="mobile-action-btn">
+                            <i data-lucide="heart" style="width: 22px; height: 22px;"></i>
+                        </a>
+                        <a href="/MyAccount" class="mobile-action-btn">
+                            <i data-lucide="user" style="width: 22px; height: 22px;"></i>
+                        </a>
+                        <a href="/Cart" class="mobile-action-btn mobile-cart-btn">
+                            <i data-lucide="shopping-cart" style="width: 22px; height: 22px;"></i>
+                            <span class="mobile-cart-badge" id="mobileCartBadge" style="display: none;">0</span>
+                        </a>
+                    }
+                    else
+                    {
+                        <a href="/Account/Login" class="mobile-action-btn">
+                            <i data-lucide="heart" style="width: 22px; height: 22px;"></i>
+                        </a>
+                        <a href="/Account/Login" class="mobile-action-btn">
+                            <i data-lucide="user" style="width: 22px; height: 22px;"></i>
+                        </a>
+                        <a href="/Account/Login" class="mobile-action-btn">
+                            <i data-lucide="shopping-cart" style="width: 22px; height: 22px;"></i>
+                        </a>
+                    }
+                </div>
+            </div>
+            
+            <!-- Mobile Search Bar - Full Width Below Top Bar -->
+            <div class="mobile-search-bar">
+                <form asp-controller="Catalog" asp-action="Index" method="get" class="mobile-search-form">
+                    <input type="text" name="search" class="mobile-search-input" placeholder="Ürün, marka veya kategori ara..." autocomplete="off">
+                    <button type="submit" class="mobile-search-submit">
+                        <i data-lucide="search" style="width: 20px; height: 20px;"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- ========== DESKTOP HEADER (Hidden on mobile) ========== -->
+        <!-- Üst Satır: Logo, Arama, Sağ İkonlar -->
+        <div class="py-3 desktop-header-row">
+            <div class="d-flex align-items-center justify-content-between gap-4">
+                <!-- Logo -->
+                <a href="/" class="d-flex align-items-center flex-shrink-0">
+                    <img src="~/images/upex-logo.png" alt="UpexTech" class="header-logo">
+                </a>
+
+                <!-- Orta - Arama -->
+                <div class="flex-grow-1" style="max-width: 550px;">
+                    <form asp-controller="Catalog" asp-action="Index" method="get" class="search-container">
+                        <input type="text" name="search" id="searchInput" class="search-input" placeholder="Ürün, marka veya kategori ara..." autocomplete="off">
+                        <button type="submit" class="search-btn">
+                            <i data-lucide="search" style="width: 24px; height: 24px;"></i>
+                        </button>
+                        <div id="searchAutocomplete" class="search-autocomplete"></div>
+                        <div id="searchHistory" class="search-history-dropdown">
+                            <div class="search-history-header">
+                                <span><i data-lucide="clock" style="width: 16px; height: 16px;"></i> Son Aramalar</span>
+                                <button type="button" id="clearSearchHistory" class="search-history-clear">Temizle</button>
+                            </div>
+                            <div id="searchHistoryItems" class="search-history-items"></div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Sağ Taraf - Hesap, Favoriler, Sepet -->
+                <div class="d-flex gap-2">
+                    @if (isLoggedIn)
+                    {
+                        <!-- Hesabım -->
+                        <div class="position-relative" id="accountContainer">
+                            <a href="/MyAccount" class="header-action-btn" id="accountBtn">
+                                <i data-lucide="user" style="width: 24px; height: 24px;"></i>
+                                <span>Hesabım</span>
+                                @if (isDealer)
+                                {
+                                    <span class="dealer-badge">Bayi</span>
+                                }
+                            </a>
+                            
+                            <div class="account-dropdown" id="accountDropdown">
+                                <a href="/MyAccount/Orders">Siparişlerim</a>
+                                <a href="/MyAccount/Profile">Değerlendirmelerim</a>
+                                <a href="/MyAccount/Profile">Kullanıcı Bilgilerim</a>
+                                <form asp-controller="Account" asp-action="Logout" method="post" class="m-0">
+                                    <button type="submit" class="logout-btn">Çıkış Yap</button>
+                                </form>
+                            </div>
+                        </div>
+                        
+                        <!-- Favorilerim -->
+                        <a href="/Favorites" class="header-action-btn">
+                            <i data-lucide="heart" style="width: 24px; height: 24px;"></i>
+                            <span>Favorilerim</span>
+                        </a>
+                        
+                        <!-- Sepetim -->
+                        <div class="position-relative" id="cartContainer">
+                            <button class="header-action-btn" type="button" id="cartBtn" onclick="window.location.href='/Cart'">
+                                <i data-lucide="shopping-cart" style="width: 24px; height: 24px;"></i>
+                                <span>Sepetim</span>
+                                <span class="badge cart-badge" id="cartBadge" style="display: none;">0</span>
+                            </button>
+                            
+                            <div class="cart-dropdown" id="cartDropdown">
+                                <div class="cart-dropdown-items" id="cartDropdownItems">
+                                    <!-- Cart items will be loaded via JS -->
+                                </div>
+                                <div class="cart-dropdown-footer">
+                                    <div class="cart-dropdown-total">
+                                        <span>Toplam:</span>
+                                        <span class="total-amount" id="cartTotal">₺0</span>
+                                    </div>
+                                    <div class="cart-dropdown-actions">
+                                        <a href="/Cart" class="btn btn-outline">Sepete Git</a>
+                                        <a href="/Checkout" class="btn btn-solid">Siparişi Tamamla</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <!-- Giriş Yap -->
+                        <a href="/Account/Login" class="header-action-btn">
+                            <i data-lucide="log-in" style="width: 24px; height: 24px;"></i>
+                            <span>Giriş Yap</span>
+                        </a>
+                        
+                        <!-- Favorilerim (Login'e yönlendir) -->
+                        <a href="/Account/Login" class="header-action-btn">
+                            <i data-lucide="heart" style="width: 24px; height: 24px;"></i>
+                            <span>Favorilerim</span>
+                        </a>
+                        
+                        <!-- Sepetim (Login'e yönlendir) -->
+                        <a href="/Account/Login" class="header-action-btn">
+                            <i data-lucide="shopping-cart" style="width: 24px; height: 24px;"></i>
+                            <span>Sepetim</span>
+                        </a>
+                    }
+                    
+                    <!-- Mobil Menü Butonu -->
+                    <button class="header-action-btn d-md-none" type="button" data-bs-toggle="collapse" data-bs-target="#mobileMenu">
+                        <i data-lucide="menu" style="width: 24px; height: 24px;"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alt Satır: Tüm Kategoriler + Marka Linkleri -->
+        <div class="category-nav-bar py-2 border-top" style="border-color: #e5e7eb !important;">
+            <div class="d-flex align-items-center gap-4">
+                <!-- Tüm Kategoriler Butonu -->
+                <div class="position-relative">
+                    <button class="categories-btn" type="button" id="categoriesBtn">
+                        <i data-lucide="menu" style="width: 18px; height: 18px;"></i>
+                        <span>Tüm Kategoriler</span>
+                    </button>
+                </div>
+                
+                <!-- Marka ve Kategori Linkleri -->
+                <div class="d-flex gap-4 align-items-center">
+                    @foreach (var brand in topBrands)
+                    {
+                        <a href="/Catalog?brandId=@brand.Id" class="category-nav-link">@brand.Name</a>
+                    }
+                    <a href="/Catalog?categoryId=2" class="category-nav-link">Ekran & Yedek Parça</a>
+                    <a href="/Catalog?sort=popular" class="category-nav-link">Fırsatlar</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobil Menü -->
+        <div class="collapse d-md-none border-top" id="mobileMenu">
+            <nav class="py-3">
+                <div class="d-flex flex-column gap-3">
+                    <a href="/" class="text-dark text-decoration-none">Ana Sayfa</a>
+                    <a href="/Catalog" class="text-dark text-decoration-none">Telefonlar</a>
+                    <a href="/Catalog" class="text-dark text-decoration-none">Kategoriler</a>
+                    <a href="/Home/About" class="text-dark text-decoration-none">Hakkımızda</a>
+                    @if (isLoggedIn)
+                    {
+                        <a href="/MyAccount" class="text-dark text-decoration-none">Hesabım</a>
+                        <a href="/Cart" class="text-dark text-decoration-none">Sepetim</a>
+                    }
+                </div>
+            </nav>
+        </div>
+    </div>
+</header>
+
+<!-- ========== MOBILE SLIDE-IN MENU ========== -->
+<!-- Overlay -->
+<div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+
+<!-- Side Panel with Drill-down Navigation -->
+<div class="mobile-side-menu" id="mobileSideMenu">
+    <!-- Main Menu Panel -->
+    <div class="mobile-menu-panel mobile-menu-main" id="mobileMenuMain">
+        <div class="mobile-menu-header">
+            <h2>Kategoriler</h2>
+            <button type="button" class="mobile-menu-close" id="mobileMenuClose">
+                <i data-lucide="x" style="width: 24px; height: 24px;"></i>
+            </button>
+        </div>
+        <div class="mobile-menu-content">
+            <button type="button" class="mobile-menu-item" data-submenu="cep-telefonlari-mobile">
+                <span>Cep Telefonları</span>
+                <i data-lucide="chevron-right" style="width: 20px; height: 20px;"></i>
+            </button>
+            <button type="button" class="mobile-menu-item" data-submenu="yedek-parca-mobile">
+                <span>Yedek Parça</span>
+                <i data-lucide="chevron-right" style="width: 20px; height: 20px;"></i>
+            </button>
+            <button type="button" class="mobile-menu-item" data-submenu="mobil-aksesuarlar-mobile">
+                <span>Mobil Aksesuarlar</span>
+                <i data-lucide="chevron-right" style="width: 20px; height: 20px;"></i>
+            </button>
+            <button type="button" class="mobile-menu-item" data-submenu="giyilebilir-teknoloji-mobile">
+                <span>Giyilebilir Teknoloji</span>
+                <i data-lucide="chevron-right" style="width: 20px; height: 20px;"></i>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Submenu Panels -->
+    <!-- Cep Telefonları Submenu -->
+    <div class="mobile-menu-panel mobile-submenu" id="cep-telefonlari-mobile">
+        <div class="mobile-menu-header">
+            <button type="button" class="mobile-menu-back">
+                <i data-lucide="chevron-left" style="width: 20px; height: 20px;"></i>
+                <span>Geri</span>
+            </button>
+            <h2>Cep Telefonları</h2>
+        </div>
+        <div class="mobile-menu-content">
+            <a href="/Catalog?search=iPhone" class="mobile-submenu-item">iPhone</a>
+            <a href="/Catalog?search=Samsung" class="mobile-submenu-item">Samsung</a>
+            <a href="/Catalog?search=Xiaomi" class="mobile-submenu-item">Xiaomi</a>
+            <a href="/Catalog?search=Huawei" class="mobile-submenu-item">Huawei</a>
+            <a href="/Catalog?search=Oppo" class="mobile-submenu-item">Oppo</a>
+            <a href="/Catalog?categoryId=1" class="mobile-submenu-item mobile-submenu-all">Tümünü Gör</a>
+        </div>
+    </div>
+    
+    <!-- Yedek Parça Submenu -->
+    <div class="mobile-menu-panel mobile-submenu" id="yedek-parca-mobile">
+        <div class="mobile-menu-header">
+            <button type="button" class="mobile-menu-back">
+                <i data-lucide="chevron-left" style="width: 20px; height: 20px;"></i>
+                <span>Geri</span>
+            </button>
+            <h2>Yedek Parça</h2>
+        </div>
+        <div class="mobile-menu-content">
+            <a href="/Catalog?categoryId=2" class="mobile-submenu-item">Ekran</a>
+            <a href="/Catalog?categoryId=3" class="mobile-submenu-item">Batarya</a>
+            <a href="/Catalog?search=Kamera" class="mobile-submenu-item">Kamera</a>
+            <a href="/Catalog?categoryId=4" class="mobile-submenu-item">Şarj Soketi</a>
+            <a href="/Catalog?search=Hoparlör" class="mobile-submenu-item">Hoparlör</a>
+            <a href="/Catalog?categoryId=2" class="mobile-submenu-item mobile-submenu-all">Tümünü Gör</a>
+        </div>
+    </div>
+    
+    <!-- Mobil Aksesuarlar Submenu -->
+    <div class="mobile-menu-panel mobile-submenu" id="mobil-aksesuarlar-mobile">
+        <div class="mobile-menu-header">
+            <button type="button" class="mobile-menu-back">
+                <i data-lucide="chevron-left" style="width: 20px; height: 20px;"></i>
+                <span>Geri</span>
+            </button>
+            <h2>Mobil Aksesuarlar</h2>
+        </div>
+        <div class="mobile-menu-content">
+            <a href="/Catalog?categoryId=6" class="mobile-submenu-item">Kılıf</a>
+            <a href="/Catalog?categoryId=4" class="mobile-submenu-item">Şarj Aleti</a>
+            <a href="/Catalog?categoryId=7" class="mobile-submenu-item">Kulaklık</a>
+            <a href="/Catalog?search=Powerbank" class="mobile-submenu-item">Powerbank</a>
+            <a href="/Catalog?categoryId=5" class="mobile-submenu-item">Kablo</a>
+            <a href="/Catalog?categoryId=8" class="mobile-submenu-item mobile-submenu-all">Tümünü Gör</a>
+        </div>
+    </div>
+    
+    <!-- Giyilebilir Teknoloji Submenu -->
+    <div class="mobile-menu-panel mobile-submenu" id="giyilebilir-teknoloji-mobile">
+        <div class="mobile-menu-header">
+            <button type="button" class="mobile-menu-back">
+                <i data-lucide="chevron-left" style="width: 20px; height: 20px;"></i>
+                <span>Geri</span>
+            </button>
+            <h2>Giyilebilir Teknoloji</h2>
+        </div>
+        <div class="mobile-menu-content">
+            <a href="/Catalog?search=Apple+Watch" class="mobile-submenu-item">Apple Watch</a>
+            <a href="/Catalog?search=Galaxy+Watch" class="mobile-submenu-item">Samsung Galaxy Watch</a>
+            <a href="/Catalog?search=Xiaomi+Watch" class="mobile-submenu-item">Xiaomi Watch</a>
+            <a href="/Catalog?search=Fitness+Bant" class="mobile-submenu-item">Fitness Bantlar</a>
+            <a href="/Catalog?search=Akıllı+Saat" class="mobile-submenu-item mobile-submenu-all">Tümünü Gör</a>
+        </div>
+    </div>
+</div>
+
+
+<!-- Mega Menu Overlay -->
+<div class="mega-menu-overlay" id="megaMenuOverlay"></div>
+
+<!-- Mega Menu Panel -->
+<div class="mega-menu-panel" id="megaMenuPanel">
+    <!-- Sol Panel - Ana Kategoriler -->
+    <div class="mega-menu-categories">
+        <button class="mega-menu-category-btn active" data-category="cep-telefonlari">
+            <span>Cep Telefonları</span>
+            <i data-lucide="chevron-right" style="width: 18px; height: 18px;"></i>
+        </button>
+        <button class="mega-menu-category-btn" data-category="yedek-parca">
+            <span>Yedek Parça</span>
+            <i data-lucide="chevron-right" style="width: 18px; height: 18px;"></i>
+        </button>
+        <button class="mega-menu-category-btn" data-category="mobil-aksesuarlar">
+            <span>Mobil Aksesuarlar</span>
+            <i data-lucide="chevron-right" style="width: 18px; height: 18px;"></i>
+        </button>
+        <button class="mega-menu-category-btn" data-category="giyilebilir-teknoloji">
+            <span>Giyilebilir Teknoloji</span>
+            <i data-lucide="chevron-right" style="width: 18px; height: 18px;"></i>
+        </button>
+    </div>
+    
+    <!-- Sağ Panel - Alt Kategoriler -->
+    <div class="mega-menu-content">
+        <!-- Cep Telefonları -->
+        <div class="mega-menu-subcategory" id="cep-telefonlari">
+            <h3 class="mega-menu-title">Cep Telefonları</h3>
+            <div class="mega-menu-sections">
+                <div class="mega-menu-section">
+                    <h4>iPhone Modelleri</h4>
+                    <ul>
+                        <li><a href="/Catalog?search=iPhone+15">iPhone 15 Serisi</a></li>
+                        <li><a href="/Catalog?search=iPhone+14">iPhone 14 Serisi</a></li>
+                        <li><a href="/Catalog?search=iPhone+13">iPhone 13 Serisi</a></li>
+                        <li><a href="/Catalog?search=iPhone+12">iPhone 12 Serisi</a></li>
+                        <li><a href="/Catalog?search=iPhone+11">iPhone 11 Serisi</a></li>
+                        <li><a href="/Catalog?search=iPhone+SE">iPhone SE</a></li>
+                    </ul>
+                </div>
+                <div class="mega-menu-section">
+                    <h4>Samsung Modelleri</h4>
+                    <ul>
+                        <li><a href="/Catalog?search=Galaxy+S24">Galaxy S24 Serisi</a></li>
+                        <li><a href="/Catalog?search=Galaxy+S23">Galaxy S23 Serisi</a></li>
+                        <li><a href="/Catalog?search=Galaxy+A">Galaxy A Serisi</a></li>
+                        <li><a href="/Catalog?search=Galaxy+Z+Fold">Galaxy Z Fold</a></li>
+                        <li><a href="/Catalog?search=Galaxy+Z+Flip">Galaxy Z Flip</a></li>
+                        <li><a href="/Catalog?search=Galaxy+M">Galaxy M Serisi</a></li>
+                    </ul>
+                </div>
+                <div class="mega-menu-section">
+                    <h4>Diğer Markalar</h4>
+                    <ul>
+                        <li><a href="/Catalog?search=Xiaomi">Xiaomi</a></li>
+                        <li><a href="/Catalog?search=Huawei">Huawei</a></li>
+                        <li><a href="/Catalog?search=OnePlus">OnePlus</a></li>
+                        <li><a href="/Catalog?search=Google+Pixel">Google Pixel</a></li>
+                        <li><a href="/Catalog?search=Oppo">Oppo</a></li>
+                        <li><a href="/Catalog?search=Realme">Realme</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Yedek Parça -->
+        <div class="mega-menu-subcategory" id="yedek-parca" style="display: none;">
+            <h3 class="mega-menu-title">Yedek Parça</h3>
+            <div class="mega-menu-sections">
+                <div class="mega-menu-section">
+                    <h4>Ekran & Dokunmatik</h4>
+                    <ul>
+                        <li><a href="/Catalog?categoryId=2&search=Apple">Apple Ekranları</a></li>
+                        <li><a href="/Catalog?categoryId=2&search=Samsung">Samsung Ekranları</a></li>
+                        <li><a href="/Catalog?categoryId=2&search=Xiaomi">Xiaomi Ekranları</a></li>
+                        <li><a href="/Catalog?categoryId=2">Dokunmatik Camlar</a></li>
+                    </ul>
+                </div>
+                <div class="mega-menu-section">
+                    <h4>Batarya & Güç</h4>
+                    <ul>
+                        <li><a href="/Catalog?categoryId=3&search=iPhone">iPhone Bataryalar</a></li>
+                        <li><a href="/Catalog?categoryId=3&search=Android">Android Bataryalar</a></li>
+                        <li><a href="/Catalog?categoryId=4">Şarj Soketleri</a></li>
+                        <li><a href="/Catalog?categoryId=3">Entegreler</a></li>
+                    </ul>
+                </div>
+                <div class="mega-menu-section">
+                    <h4>Kasa & Teknisyen</h4>
+                    <ul>
+                        <li><a href="/Catalog?search=Arka+Kapak">Arka Kapaklar</a></li>
+                        <li><a href="/Catalog?search=Orta+Kasa">Orta Kasalar</a></li>
+                        <li><a href="/Catalog?search=Tamir+Seti">Tamir Setleri</a></li>
+                        <li><a href="/Catalog?search=Bant">Sıvı Bantlar</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobil Aksesuarlar -->
+        <div class="mega-menu-subcategory" id="mobil-aksesuarlar" style="display: none;">
+            <h3 class="mega-menu-title">Mobil Aksesuarlar</h3>
+            <div class="mega-menu-sections">
+                <div class="mega-menu-section">
+                    <h4>Koruma & Kılıf</h4>
+                    <ul>
+                        <li><a href="/Catalog?categoryId=6&search=Silikon">Silikon Kılıflar</a></li>
+                        <li><a href="/Catalog?categoryId=6&search=Deri">Deri Kılıflar</a></li>
+                        <li><a href="/Catalog?categoryId=6&search=Şeffaf">Şeffaf Kılıflar</a></li>
+                        <li><a href="/Catalog?categoryId=6&search=Kapaklı">Kapaklı Kılıflar</a></li>
+                        <li><a href="/Catalog?categoryId=6&search=Zırhlı">Zırhlı Kılıflar</a></li>
+                        <li><a href="/Catalog?search=Cam+Koruyucu">Cam Koruyucular</a></li>
+                    </ul>
+                </div>
+                <div class="mega-menu-section">
+                    <h4>Şarj & Kablo</h4>
+                    <ul>
+                        <li><a href="/Catalog?categoryId=4">Hızlı Şarj Adaptörleri</a></li>
+                        <li><a href="/Catalog?categoryId=5&search=Lightning">Lightning Kablolar</a></li>
+                        <li><a href="/Catalog?categoryId=5&search=USB-C">USB-C Kablolar</a></li>
+                        <li><a href="/Catalog?search=Kablosuz+Şarj">Kablosuz Şarj</a></li>
+                        <li><a href="/Catalog?search=Araç+Şarj">Araç Şarjları</a></li>
+                        <li><a href="/Catalog?search=Powerbank">Powerbank</a></li>
+                    </ul>
+                </div>
+                <div class="mega-menu-section">
+                    <h4>Ses & Görüntü</h4>
+                    <ul>
+                        <li><a href="/Catalog?categoryId=7&search=Kablosuz">Kablosuz Kulaklıklar</a></li>
+                        <li><a href="/Catalog?categoryId=7&search=Kablolu">Kablolu Kulaklıklar</a></li>
+                        <li><a href="/Catalog?search=Bluetooth+Hoparlör">Bluetooth Hoparlör</a></li>
+                        <li><a href="/Catalog?search=Selfie">Selfie Çubuğu</a></li>
+                        <li><a href="/Catalog?search=Telefon+Tutucu">Telefon Tutucular</a></li>
+                        <li><a href="/Catalog?search=OTG">OTG Kablolar</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Giyilebilir Teknoloji -->
+        <div class="mega-menu-subcategory" id="giyilebilir-teknoloji" style="display: none;">
+            <h3 class="mega-menu-title">Giyilebilir Teknoloji</h3>
+            <div class="mega-menu-sections">
+                <div class="mega-menu-section">
+                    <h4>Akıllı Saatler</h4>
+                    <ul>
+                        <li><a href="/Catalog?search=Apple+Watch">Apple Watch</a></li>
+                        <li><a href="/Catalog?search=Galaxy+Watch">Samsung Galaxy Watch</a></li>
+                        <li><a href="/Catalog?search=Xiaomi+Watch">Xiaomi Watch</a></li>
+                        <li><a href="/Catalog?search=Huawei+Watch">Huawei Watch</a></li>
+                        <li><a href="/Catalog?search=Spor+Saat">Spor Saatler</a></li>
+                        <li><a href="/Catalog?search=Fitness+Bant">Fitness Bantlar</a></li>
+                    </ul>
+                </div>
+                <div class="mega-menu-section">
+                    <h4>Akıllı Bileklikler</h4>
+                    <ul>
+                        <li><a href="/Catalog?search=Fitness+Takip">Fitness Takip</a></li>
+                        <li><a href="/Catalog?search=Kalp+Ritmi">Kalp Ritmi İzleme</a></li>
+                        <li><a href="/Catalog?search=Uyku+Takip">Uyku Takibi</a></li>
+                        <li><a href="/Catalog?search=Adım+Sayar">Adım Sayar</a></li>
+                        <li><a href="/Catalog?search=Suya+Dayanıklı">Suya Dayanıklı</a></li>
+                    </ul>
+                </div>
+                <div class="mega-menu-section">
+                    <h4>Aksesuarlar</h4>
+                    <ul>
+                        <li><a href="/Catalog?search=Saat+Kordon">Saat Kordonları</a></li>
+                        <li><a href="/Catalog?search=Saat+Ekran+Koruyucu">Ekran Koruyucular</a></li>
+                        <li><a href="/Catalog?search=Şarj+Stand">Şarj Standları</a></li>
+                        <li><a href="/Catalog?search=Yedek+Kayış">Yedek Kayışlar</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Karşılaştırma Floating Bar -->
+<div id="compareBar" class="compare-floating-bar" style="display: none;">
+    <div class="container d-flex align-items-center justify-content-between">
+        <div class="d-flex align-items-center gap-2">
+            <i data-lucide="arrow-left-right" style="width: 20px; height: 20px;"></i>
+            <span id="compareCount">0</span> ürün karşılaştırılıyor
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-light btn-sm" onclick="clearCompare()">
+                <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i> Temizle
+            </button>
+            <button class="btn btn-light btn-sm" onclick="openCompareModal()">
+                <i data-lucide="eye" style="width: 16px; height: 16px;"></i> Karşılaştır
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Karşılaştırma Modal -->
+<div class="modal fade" id="compareModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i data-lucide="arrow-left-right" style="width: 20px; height: 20px;"></i>
+                    Ürün Karşılaştırma
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div id="compareContent" class="compare-table-container">
+                    <!-- Karşılaştırma içeriği JS ile doldurulacak -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                <button type="button" class="btn btn-outline-danger" onclick="clearCompare()">
+                    <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i> Listeyi Temizle
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize Lucide icons
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+        
+        // Mega Menu
+        const categoriesBtn = document.getElementById('categoriesBtn');
+        const megaMenuOverlay = document.getElementById('megaMenuOverlay');
+        const megaMenuPanel = document.getElementById('megaMenuPanel');
+        const categoryBtns = document.querySelectorAll('.mega-menu-category-btn');
+        const subcategories = document.querySelectorAll('.mega-menu-subcategory');
+        
+        // Toggle Mega Menu
+        if (categoriesBtn && megaMenuPanel) {
+            categoriesBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                megaMenuOverlay.classList.toggle('show');
+                megaMenuPanel.classList.toggle('show');
+                // Close other dropdowns
+                if (accountDropdown) accountDropdown.classList.remove('show');
+                if (cartDropdown) cartDropdown.classList.remove('show');
+            });
+        }
+        
+        // Close Mega Menu on overlay click
+        if (megaMenuOverlay) {
+            megaMenuOverlay.addEventListener('click', function() {
+                megaMenuOverlay.classList.remove('show');
+                megaMenuPanel.classList.remove('show');
+            });
+        }
+        
+        // Category hover - show subcategories
+        categoryBtns.forEach(btn => {
+            btn.addEventListener('mouseenter', function() {
+                const categoryId = this.getAttribute('data-category');
+                
+                // Remove active from all buttons
+                categoryBtns.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Hide all subcategories
+                subcategories.forEach(sub => sub.style.display = 'none');
+                
+                // Show selected subcategory
+                const targetSub = document.getElementById(categoryId);
+                if (targetSub) {
+                    targetSub.style.display = 'block';
+                }
+            });
+        });
+        
+        // Account Dropdown - with timeout for better UX
+        const accountContainer = document.getElementById('accountContainer');
+        const accountDropdown = document.getElementById('accountDropdown');
+        let accountTimeout;
+        
+        if (accountContainer && accountDropdown) {
+            accountContainer.addEventListener('mouseenter', function() {
+                clearTimeout(accountTimeout);
+                accountDropdown.classList.add('show');
+            });
+            accountContainer.addEventListener('mouseleave', function() {
+                accountTimeout = setTimeout(function() {
+                    accountDropdown.classList.remove('show');
+                }, 150);
+            });
+            accountDropdown.addEventListener('mouseenter', function() {
+                clearTimeout(accountTimeout);
+            });
+            accountDropdown.addEventListener('mouseleave', function() {
+                accountTimeout = setTimeout(function() {
+                    accountDropdown.classList.remove('show');
+                }, 150);
+            });
+        }
+        
+        // Cart Dropdown - with timeout for better UX
+        const cartContainer = document.getElementById('cartContainer');
+        const cartDropdown = document.getElementById('cartDropdown');
+        let cartTimeout;
+        
+        if (cartContainer && cartDropdown) {
+            cartContainer.addEventListener('mouseenter', function() {
+                clearTimeout(cartTimeout);
+                cartDropdown.classList.add('show');
+                loadCartPreview();
+            });
+            cartContainer.addEventListener('mouseleave', function() {
+                cartTimeout = setTimeout(function() {
+                    cartDropdown.classList.remove('show');
+                }, 150);
+            });
+            cartDropdown.addEventListener('mouseenter', function() {
+                clearTimeout(cartTimeout);
+            });
+            cartDropdown.addEventListener('mouseleave', function() {
+                cartTimeout = setTimeout(function() {
+                    cartDropdown.classList.remove('show');
+                }, 150);
+            });
+        }
+        
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(e) {
+            if (categoriesDropdown && !categoriesBtn.contains(e.target)) {
+                categoriesDropdown.classList.remove('show');
+            }
+        });
+        
+        // Load cart count on page load
+        loadCartCount();
+        
+        // Search Autocomplete + History
+        const searchInput = document.getElementById('searchInput');
+        const searchAutocomplete = document.getElementById('searchAutocomplete');
+        const searchHistory = document.getElementById('searchHistory');
+        const searchHistoryItems = document.getElementById('searchHistoryItems');
+        const clearSearchHistoryBtn = document.getElementById('clearSearchHistory');
+        let searchTimeout;
+        
+        // Search History Functions
+        function getSearchHistory() {
+            const history = localStorage.getItem('searchHistory');
+            return history ? JSON.parse(history) : [];
+        }
+        
+        function saveSearchHistory(query) {
+            if (!query || query.length < 2) return;
+            let history = getSearchHistory();
+            // Remove duplicate if exists
+            history = history.filter(item => item.toLowerCase() !== query.toLowerCase());
+            // Add to start
+            history.unshift(query);
+            // Keep only last 10 searches
+            history = history.slice(0, 10);
+            localStorage.setItem('searchHistory', JSON.stringify(history));
+        }
+        
+        function renderSearchHistory() {
+            const history = getSearchHistory();
+            if (history.length === 0) {
+                searchHistory.classList.remove('show');
+                return;
+            }
+            
+            searchHistoryItems.innerHTML = history.map(item => `
+                <a href="/Catalog?search=${encodeURIComponent(item)}" class="search-history-item">
+                    <i data-lucide="search" style="width: 14px; height: 14px; color: var(--gray-400);"></i>
+                    <span>${item}</span>
+                </a>
+            `).join('');
+            
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        }
+        
+        function showSearchHistory() {
+            const history = getSearchHistory();
+            if (history.length > 0 && searchInput.value.trim().length < 2) {
+                renderSearchHistory();
+                searchHistory.classList.add('show');
+                searchAutocomplete.classList.remove('show');
+            }
+        }
+        
+        function hideSearchHistory() {
+            searchHistory.classList.remove('show');
+        }
+        
+        // Clear search history
+        if (clearSearchHistoryBtn) {
+            clearSearchHistoryBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                localStorage.removeItem('searchHistory');
+                hideSearchHistory();
+            });
+        }
+        
+        if (searchInput && searchAutocomplete) {
+            // Save search on form submit
+            searchInput.closest('form').addEventListener('submit', function() {
+                const query = searchInput.value.trim();
+                saveSearchHistory(query);
+            });
+            
+            searchInput.addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                const query = this.value.trim();
+                
+                // Hide history when typing
+                if (query.length >= 2) {
+                    hideSearchHistory();
+                }
+                
+                if (query.length < 2) {
+                    searchAutocomplete.classList.remove('show');
+                    searchAutocomplete.innerHTML = '';
+                    showSearchHistory();
+                    return;
+                }
+                
+                searchTimeout = setTimeout(() => {
+                    fetch('/Catalog/SearchSuggestions?query=' + encodeURIComponent(query))
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.suggestions && data.suggestions.length > 0) {
+                                searchAutocomplete.innerHTML = data.suggestions.map(item => `
+                                    <a href="/Catalog/Details/${item.id}" class="search-autocomplete-item">
+                                        <img src="/images/${item.image || 'phone1.png'}" alt="${item.name}">
+                                        <div class="item-info">
+                                            <div class="item-name">${item.name}</div>
+                                            <div class="item-meta">${item.brand || ''} ${item.category ? '• ' + item.category : ''}</div>
+                                        </div>
+                                        <div class="item-price">₺${item.price.toLocaleString('tr-TR')}</div>
+                                    </a>
+                                `).join('');
+                                searchAutocomplete.classList.add('show');
+                            } else {
+                                searchAutocomplete.classList.remove('show');
+                            }
+                        })
+                        .catch(() => searchAutocomplete.classList.remove('show'));
+                }, 300);
+            });
+            
+            // Hide dropdowns on blur
+            searchInput.addEventListener('blur', function() {
+                setTimeout(() => {
+                    searchAutocomplete.classList.remove('show');
+                    hideSearchHistory();
+                }, 200);
+            });
+            
+            // Show history on focus if no query
+            searchInput.addEventListener('focus', function() {
+                const query = this.value.trim();
+                if (query.length < 2) {
+                    showSearchHistory();
+                } else if (searchAutocomplete.innerHTML.trim()) {
+                    searchAutocomplete.classList.add('show');
+                }
+            });
+        }
+    });
+    
+    function loadCartCount() {
+        fetch('/Cart/GetCount')
+            .then(response => {
+                if (response.ok) return response.json();
+                return { count: 0 };
+            })
+            .then(data => {
+                const badge = document.getElementById('cartBadge');
+                if (badge) {
+                    badge.textContent = data.count || 0;
+                    badge.style.display = (data.count && data.count > 0) ? 'flex' : 'none';
+                }
+            })
+            .catch(err => {
+                console.log('Cart count error:', err);
+            });
+    }
+    
+    function loadCartPreview() {
+        fetch('/Cart/GetPreview')
+            .then(response => {
+                if (response.ok) return response.json();
+                return { items: [], total: 0 };
+            })
+            .then(data => {
+                const container = document.getElementById('cartDropdownItems');
+                const totalEl = document.getElementById('cartTotal');
+                
+                if (container && data.items && data.items.length > 0) {
+                    container.innerHTML = data.items.map(item => `
+                        <div class="cart-dropdown-item">
+                            <img src="${item.image || '/images/phone1.png'}" alt="${item.name}">
+                            <div class="item-details">
+                                <h4 class="item-name">${item.name}</h4>
+                                <p class="item-qty">${item.quantity} adet</p>
+                                <p class="item-price">₺${item.price.toLocaleString('tr-TR')}</p>
+                            </div>
+                            <button class="remove-btn" onclick="event.stopPropagation(); removeFromCart(${item.productId})">
+                                <i data-lucide="x" style="width: 18px; height: 18px;"></i>
+                            </button>
+                        </div>
+                    `).join('');
+                    if (typeof lucide !== 'undefined') {
+                        lucide.createIcons();
+                    }
+                } else if (container) {
+                    container.innerHTML = '<div class="p-4 text-center text-muted">Sepetiniz boş</div>';
+                }
+                
+                if (totalEl) {
+                    totalEl.textContent = '₺' + (data.total || 0).toLocaleString('tr-TR');
+                }
+            })
+            .catch(err => {
+                console.log('Cart preview error:', err);
+            });
+    }
+    
+    function removeFromCart(productId) {
+        fetch('/Cart/Remove', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'productId=' + productId
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                loadCartCount();
+                loadCartPreview();
+            }
+        });
+    }
+    
+    // ========== MOBILE MENU FUNCTIONALITY ==========
+    (function() {
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const mobileSideMenu = document.getElementById('mobileSideMenu');
+        const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
+        const mobileMenuClose = document.getElementById('mobileMenuClose');
+        const mobileMenuMain = document.getElementById('mobileMenuMain');
+        
+        // Open mobile menu
+        if (mobileMenuBtn && mobileSideMenu && mobileMenuOverlay) {
+            mobileMenuBtn.addEventListener('click', function() {
+                mobileSideMenu.classList.add('active');
+                mobileMenuOverlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            });
+        }
+        
+        // Close mobile menu
+        function closeMobileMenu() {
+            if (mobileSideMenu) mobileSideMenu.classList.remove('active');
+            if (mobileMenuOverlay) mobileMenuOverlay.classList.remove('active');
+            document.body.style.overflow = '';
+            // Reset to main menu
+            document.querySelectorAll('.mobile-submenu').forEach(sub => sub.classList.remove('active'));
+            if (mobileMenuMain) mobileMenuMain.classList.remove('hidden');
+        }
+        
+        if (mobileMenuOverlay) {
+            mobileMenuOverlay.addEventListener('click', closeMobileMenu);
+        }
+        
+        if (mobileMenuClose) {
+            mobileMenuClose.addEventListener('click', closeMobileMenu);
+        }
+        
+        // Drill-down navigation - open submenu
+        document.querySelectorAll('.mobile-menu-item[data-submenu]').forEach(item => {
+            item.addEventListener('click', function() {
+                const submenuId = this.getAttribute('data-submenu');
+                const submenu = document.getElementById(submenuId);
+                if (submenu && mobileMenuMain) {
+                    mobileMenuMain.classList.add('hidden');
+                    submenu.classList.add('active');
+                }
+            });
+        });
+        
+        // Back button - return to main menu
+        document.querySelectorAll('.mobile-menu-back').forEach(backBtn => {
+            backBtn.addEventListener('click', function() {
+                const submenu = this.closest('.mobile-submenu');
+                if (submenu && mobileMenuMain) {
+                    submenu.classList.remove('active');
+                    mobileMenuMain.classList.remove('hidden');
+                }
+            });
+        });
+        
+        // Update mobile cart badge
+        function updateMobileCartBadge() {
+            fetch('/Cart/GetCount')
+                .then(response => response.ok ? response.json() : { count: 0 })
+                .then(data => {
+                    const badge = document.getElementById('mobileCartBadge');
+                    if (badge) {
+                        badge.textContent = data.count || 0;
+                        badge.style.display = (data.count && data.count > 0) ? 'flex' : 'none';
+                    }
+                })
+                .catch(() => {});
+        }
+        updateMobileCartBadge();
+    })();
+</script>

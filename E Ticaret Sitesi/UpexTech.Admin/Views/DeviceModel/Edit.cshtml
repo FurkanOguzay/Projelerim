@@ -1,0 +1,53 @@
+@model UpexTech.Entity.DeviceModel
+@{
+    ViewData["Title"] = "Cihaz Modeli Düzenle";
+    var levelNames = new[] { "Marka", "Seri", "Model" };
+    var levelName = Model.Level < levelNames.Length ? levelNames[Model.Level] : "Öğe";
+}
+
+<div class="page-header">
+    <h1>@levelName Düzenle</h1>
+    <p>@Model.Name</p>
+</div>
+
+<div class="form-container" style="max-width: 600px; background: var(--white); border-radius: var(--radius-lg); padding: 32px; box-shadow: var(--shadow-sm);">
+    <form asp-action="Edit" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="ParentId" />
+        <input type="hidden" asp-for="Level" />
+        <input type="hidden" asp-for="CreatedAt" />
+
+        <div class="form-group" style="margin-bottom: 20px;">
+            <label asp-for="Name" style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--gray-700);">@levelName Adı *</label>
+            <input asp-for="Name" class="form-control" placeholder="@levelName adı girin..." 
+                   style="width: 100%; padding: 12px 16px; border: 1px solid var(--gray-200); border-radius: var(--radius-md); font-size: 15px;" required />
+            <span asp-validation-for="Name" style="color: var(--danger-500); font-size: 13px;"></span>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 20px;">
+            <label asp-for="DisplayOrder" style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--gray-700);">Sıralama</label>
+            <input asp-for="DisplayOrder" type="number" class="form-control" 
+                   style="width: 100%; padding: 12px 16px; border: 1px solid var(--gray-200); border-radius: var(--radius-md); font-size: 15px;" />
+            <p style="color: var(--gray-500); font-size: 13px; margin-top: 4px;">Küçük değerler önce gösterilir</p>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 20px;">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input asp-for="IsActive" type="checkbox" style="width: 18px; height: 18px;" />
+                <span style="font-weight: 500; color: var(--gray-700);">Aktif</span>
+            </label>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 32px;">
+            <button type="submit" class="btn-new" style="flex: 1;">
+                <i class="fas fa-save"></i>
+                Kaydet
+            </button>
+            <a href="@Url.Action("Index")" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 20px; background: var(--gray-100); color: var(--gray-700); border-radius: var(--radius-lg); text-decoration: none; font-weight: 500;">
+                <i class="fas fa-times"></i>
+                İptal
+            </a>
+        </div>
+    </form>
+</div>

@@ -1,0 +1,104 @@
+@model MyAccountViewModel
+
+<div class="mb-4">
+    <h4 class="fw-semibold mb-3">
+        <i data-lucide="bell" class="me-2 text-warning" style="width: 24px; height: 24px;"></i>
+        Duyuru Tercihlerim
+    </h4>
+    <p class="text-muted">Bildirim ve iletişim tercihlerinizi buradan yönetebilirsiniz.</p>
+</div>
+
+<form asp-action="UpdateNotificationPreferences" method="post">
+    <!-- İletişim Kanalları -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white">
+            <h6 class="mb-0">İletişim Kanalları</h6>
+        </div>
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                <div>
+                    <strong>E-posta Bildirimleri</strong>
+                    <p class="text-muted small mb-0">Sipariş ve kampanyaları e-posta ile alın</p>
+                </div>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" name="EmailNotifications"
+                           @(Model.NotificationPreferences?.EmailNotifications == true ? "checked" : "")>
+                </div>
+            </div>
+            <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                <div>
+                    <strong>SMS Bildirimleri</strong>
+                    <p class="text-muted small mb-0">Önemli güncellemeleri SMS ile alın</p>
+                </div>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" name="SmsNotifications"
+                           @(Model.NotificationPreferences?.SmsNotifications == true ? "checked" : "")>
+                </div>
+            </div>
+            <div class="d-flex justify-content-between align-items-center py-2">
+                <div>
+                    <strong>Push Bildirimleri</strong>
+                    <p class="text-muted small mb-0">Anlık bildirimler alın</p>
+                </div>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" name="PushNotifications"
+                           @(Model.NotificationPreferences?.PushNotifications == true ? "checked" : "")>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bildirim Türleri -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white">
+            <h6 class="mb-0">Bildirim Türleri</h6>
+        </div>
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                <div>
+                    <strong>Sipariş Güncellemeleri</strong>
+                    <p class="text-muted small mb-0">Sipariş durumu, kargo takibi</p>
+                </div>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" name="OrderUpdates"
+                           @(Model.NotificationPreferences?.OrderUpdates == true ? "checked" : "")>
+                </div>
+            </div>
+            <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                <div>
+                    <strong>Kampanya ve Fırsatlar</strong>
+                    <p class="text-muted small mb-0">İndirimler ve özel teklifler</p>
+                </div>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" name="PromotionalEmails"
+                           @(Model.NotificationPreferences?.PromotionalEmails == true ? "checked" : "")>
+                </div>
+            </div>
+            <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                <div>
+                    <strong>Fiyat Alarmları</strong>
+                    <p class="text-muted small mb-0">Takip ettiğiniz ürünlerin fiyat değişiklikleri</p>
+                </div>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" name="PriceAlerts"
+                           @(Model.NotificationPreferences?.PriceAlerts == true ? "checked" : "")>
+                </div>
+            </div>
+            <div class="d-flex justify-content-between align-items-center py-2">
+                <div>
+                    <strong>Bülten Aboneliği</strong>
+                    <p class="text-muted small mb-0">Haftalık bülten ve yeni ürün duyuruları</p>
+                </div>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" name="NewsletterSubscription"
+                           @(Model.NotificationPreferences?.NewsletterSubscription == true ? "checked" : "")>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-end gap-2">
+        <button type="reset" class="btn btn-outline-secondary">İptal</button>
+        <button type="submit" class="btn btn-primary">Tercihleri Kaydet</button>
+    </div>
+</form>

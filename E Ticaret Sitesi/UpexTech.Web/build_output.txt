@@ -1,0 +1,16 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  UpexTech.Entity -> C:\Users\user\OneDrive\Pictures\Desktop\v6.6.0\v6.6.0\v6.4.0\v5.8.0 API Key Deneme\v5.8.0\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.dll
+  UpexTech.Data -> C:\Users\user\OneDrive\Pictures\Desktop\v6.6.0\v6.6.0\v6.4.0\v5.8.0 API Key Deneme\v5.8.0\UpexTech.Data\bin\Debug\net10.0\UpexTech.Data.dll
+  UpexTech.Business -> C:\Users\user\OneDrive\Pictures\Desktop\v6.6.0\v6.6.0\v6.4.0\v5.8.0 API Key Deneme\v5.8.0\UpexTech.Business\bin\Debug\net10.0\UpexTech.Business.dll
+C:\Users\user\OneDrive\Pictures\Desktop\v6.6.0\v6.6.0\v6.4.0\v5.8.0 API Key Deneme\v5.8.0\UpexTech.Web\Controllers\MyAccountController.cs(210,17): error CS0029: Cannot implicitly convert type '(bool Success, string ErrorMessage)' to 'bool' [C:\Users\user\OneDrive\Pictures\Desktop\v6.6.0\v6.6.0\v6.4.0\v5.8.0 API Key Deneme\v5.8.0\UpexTech.Web\UpexTech.Web.csproj]
+C:\Users\user\OneDrive\Pictures\Desktop\v6.6.0\v6.6.0\v6.4.0\v5.8.0 API Key Deneme\v5.8.0\UpexTech.Web\Views\Catalog\Index.cshtml(52,79): warning CS8604: Possible null reference argument for parameter 'source' in 'bool Enumerable.Any<Brand>(IEnumerable<Brand> source, Func<Brand, bool> predicate)'. [C:\Users\user\OneDrive\Pictures\Desktop\v6.6.0\v6.6.0\v6.4.0\v5.8.0 API Key Deneme\v5.8.0\UpexTech.Web\UpexTech.Web.csproj]
+
+Build FAILED.
+
+C:\Users\user\OneDrive\Pictures\Desktop\v6.6.0\v6.6.0\v6.4.0\v5.8.0 API Key Deneme\v5.8.0\UpexTech.Web\Views\Catalog\Index.cshtml(52,79): warning CS8604: Possible null reference argument for parameter 'source' in 'bool Enumerable.Any<Brand>(IEnumerable<Brand> source, Func<Brand, bool> predicate)'. [C:\Users\user\OneDrive\Pictures\Desktop\v6.6.0\v6.6.0\v6.4.0\v5.8.0 API Key Deneme\v5.8.0\UpexTech.Web\UpexTech.Web.csproj]
+C:\Users\user\OneDrive\Pictures\Desktop\v6.6.0\v6.6.0\v6.4.0\v5.8.0 API Key Deneme\v5.8.0\UpexTech.Web\Controllers\MyAccountController.cs(210,17): error CS0029: Cannot implicitly convert type '(bool Success, string ErrorMessage)' to 'bool' [C:\Users\user\OneDrive\Pictures\Desktop\v6.6.0\v6.6.0\v6.4.0\v5.8.0 API Key Deneme\v5.8.0\UpexTech.Web\UpexTech.Web.csproj]
+    1 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:03.59

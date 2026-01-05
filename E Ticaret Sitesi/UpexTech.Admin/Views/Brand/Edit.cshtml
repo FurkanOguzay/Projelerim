@@ -1,0 +1,60 @@
+@model UpexTech.Entity.Brand
+@{
+    ViewData["Title"] = "Marka Düzenle";
+}
+
+<div class="page-header">
+    <h1>Marka Düzenle</h1>
+    <p>@Model.Name markasını düzenleyin</p>
+</div>
+
+<div class="card" style="max-width: 600px;">
+    <form asp-action="Edit" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="CreatedAt" />
+        
+        <div style="display: grid; gap: 20px;">
+            <div class="filter-group">
+                <label asp-for="Name">Marka Adı <span style="color: var(--danger-500);">*</span></label>
+                <input asp-for="Name" class="filter-input" style="padding-left: 12px;" placeholder="Marka adını girin" required />
+                <span asp-validation-for="Name" style="color: var(--danger-500); font-size: 13px;"></span>
+            </div>
+
+            <div class="filter-group">
+                <label asp-for="CategoryId">Kategori <span style="color: var(--danger-500);">*</span></label>
+                <select asp-for="CategoryId" asp-items="ViewBag.Categories" class="filter-input" style="padding-left: 12px;" required>
+                    <option value="">Kategori seçin</option>
+                </select>
+                <span asp-validation-for="CategoryId" style="color: var(--danger-500); font-size: 13px;"></span>
+            </div>
+
+            <div class="filter-group">
+                <label asp-for="Description">Açıklama</label>
+                <textarea asp-for="Description" class="filter-input" style="padding-left: 12px; min-height: 80px; resize: vertical;" placeholder="Marka açıklaması"></textarea>
+            </div>
+
+            <div class="filter-group">
+                <label asp-for="Logo">Logo Dosya Adı</label>
+                <input asp-for="Logo" class="filter-input" style="padding-left: 12px;" placeholder="logo.png" />
+                <small style="color: var(--gray-500);">wwwroot/images klasöründeki dosya adı</small>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 8px; padding: 16px; background: var(--gray-50); border-radius: var(--radius-lg);">
+                <input asp-for="IsActive" type="checkbox" style="width: 18px; height: 18px;" />
+                <label asp-for="IsActive" style="margin: 0; cursor: pointer;">Aktif</label>
+            </div>
+
+            <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 12px;">
+                <a href="@Url.Action("Index")" class="btn-filter secondary">
+                    <i class="fas fa-times"></i>
+                    İptal
+                </a>
+                <button type="submit" class="btn-filter primary">
+                    <i class="fas fa-check"></i>
+                    Kaydet
+                </button>
+            </div>
+        </div>
+    </form>
+</div>

@@ -1,0 +1,197 @@
+@model IEnumerable<UpexTech.Entity.Return>
+@using UpexTech.Entity
+@{
+    ViewData["Title"] = "İade & İptal Yönetimi";
+    var statusCounts = ViewBag.StatusCounts as Dictionary<ReturnStatus, int> ?? new Dictionary<ReturnStatus, int>();
+}
+
+<div class="page-header">
+    <h1>İade & İptal Yönetimi</h1>
+    <p>Müşteri iade taleplerini inceleyin ve işleyin</p>
+</div>
+
+<!-- Tabs -->
+<div class="tabs-container">
+    <div class="tabs-nav">
+        <a href="@Url.Action("Index")" class="tab-btn @(ViewBag.CurrentStatus == null ? "active" : "")">
+            Tümü
+            <span class="tab-count">@statusCounts.Values.Sum()</span>
+        </a>
+        <a href="@Url.Action("Index", new { status = ReturnStatus.Pending })" class="tab-btn @(ViewBag.CurrentStatus?.ToString() == "Pending" ? "active" : "")">
+            Onay Bekliyor
+            <span class="tab-count">@(statusCounts.GetValueOrDefault(ReturnStatus.Pending, 0))</span>
+        </a>
+        <a href="@Url.Action("Index", new { status = ReturnStatus.Approved })" class="tab-btn @(ViewBag.CurrentStatus?.ToString() == "Approved" ? "active" : "")">
+            Onaylandı
+            <span class="tab-count">@(statusCounts.GetValueOrDefault(ReturnStatus.Approved, 0))</span>
+        </a>
+        <a href="@Url.Action("Index", new { status = ReturnStatus.InTransit })" class="tab-btn @(ViewBag.CurrentStatus?.ToString() == "InTransit" ? "active" : "")">
+            Kargoda
+            <span class="tab-count">@(statusCounts.GetValueOrDefault(ReturnStatus.InTransit, 0))</span>
+        </a>
+        <a href="@Url.Action("Index", new { status = ReturnStatus.Refunded })" class="tab-btn @(ViewBag.CurrentStatus?.ToString() == "Refunded" ? "active" : "")">
+            İade Edildi
+            <span class="tab-count">@(statusCounts.GetValueOrDefault(ReturnStatus.Refunded, 0))</span>
+        </a>
+    </div>
+</div>
+
+<!-- Search -->
+<div class="tabs-container">
+    <form asp-action="Index" method="get" class="filter-section" style="display: flex; gap: 12px; align-items: flex-end;">
+        @if (ViewBag.CurrentStatus != null)
+        {
+            <input type="hidden" name="status" value="@((int)ViewBag.CurrentStatus)" />
+        }
+        <div class="filter-group" style="flex: 1;">
+            <label>İade No / Müşteri</label>
+            <div class="filter-input-wrapper">
+                <i class="fas fa-search"></i>
+                <input type="text" name="search" class="filter-input" placeholder="Arama..." value="@ViewBag.CurrentSearch" />
+            </div>
+        </div>
+        <button type="submit" class="btn-filter primary">Ara</button>
+        <a href="@Url.Action("Index")" class="btn-filter secondary">Temizle</a>
+    </form>
+</div>
+
+<!-- Table -->
+<div class="data-table-container">
+    <div style="overflow-x: auto;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>İade No</th>
+                    <th>Sipariş</th>
+                    <th>Ürün</th>
+                    <th>Müşteri</th>
+                    <th>Sebep</th>
+                    <th>İade Tutarı</th>
+                    <th>Durum</th>
+                    <th>Aksiyonlar</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 40px; color: var(--gray-500);">
+                            <i class="fas fa-undo-alt" style="font-size: 48px; margin-bottom: 16px; display: block;"></i>
+                            Henüz iade talebi bulunmuyor
+                        </td>
+                    </tr>
+                }
+                @foreach (var ret in Model)
+                {
+                    var reasonText = ret.Reason switch
+                    {
+                        ReturnReason.Defective => "Arızalı",
+                        ReturnReason.WrongProduct => "Yanlış Ürün",
+                        ReturnReason.NotAsDescribed => "Açıklamaya Uygun Değil",
+                        ReturnReason.DamagedInShipping => "Kargoda Hasar",
+                        ReturnReason.ChangedMind => "Fikir Değişikliği",
+                        _ => "Diğer"
+                    };
+                    var (statusClass, statusText) = ret.Status switch
+                    {
+                        ReturnStatus.Pending => ("background: var(--orange-100); color: var(--orange-600);", "Onay Bekliyor"),
+                        ReturnStatus.Approved => ("background: var(--primary-100); color: var(--primary-600);", "Onaylandı"),
+                        ReturnStatus.Rejected => ("background: var(--danger-100); color: var(--danger-600);", "Reddedildi"),
+                        ReturnStatus.InTransit => ("background: var(--blue-100); color: var(--blue-600);", "Kargoda"),
+                        ReturnStatus.Received => ("background: var(--purple-100); color: var(--purple-600);", "Teslim Alındı"),
+                        ReturnStatus.Refunded => ("background: var(--success-100); color: var(--success-600);", "İade Edildi"),
+                        ReturnStatus.Disputed => ("background: var(--gray-100); color: var(--gray-600);", "İhtilaflı"),
+                        _ => ("", ret.Status.ToString())
+                    };
+                    <tr>
+                        <td>
+                            <p style="font-weight: 500;">@ret.ReturnNumber</p>
+                            <p style="color: var(--gray-500); font-size: 13px;">@ret.CreatedAt.ToString("dd.MM.yyyy")</p>
+                        </td>
+                        <td>
+                            <a href="/Order/Details/@ret.OrderId" style="color: var(--primary-500);">@ret.Order?.OrderNumber</a>
+                        </td>
+                        <td>
+                            <p style="font-weight: 500;">@(ret.OrderItem?.Product?.Name ?? "-")</p>
+                            <p style="color: var(--gray-500); font-size: 13px;">@ret.Quantity adet</p>
+                        </td>
+                        <td>@(ret.User?.FullName ?? "-")</td>
+                        <td>
+                            <span class="reason-badge">@reasonText</span>
+                        </td>
+                        <td style="font-weight: 600;">₺@ret.RefundAmount.ToString("N2")</td>
+                        <td>
+                            <span class="badge-status" style="@statusClass">@statusText</span>
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <a href="@Url.Action("Details", new { id = ret.Id })" class="btn-icon" title="Detay">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                @if (ret.Status == ReturnStatus.Pending)
+                                {
+                                    <button class="btn-icon success" title="Onayla" onclick="approveReturn(@ret.Id)">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                    <button class="btn-icon danger" title="Reddet" onclick="rejectReturn(@ret.Id)">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    
+    @if (ViewBag.TotalPages > 1)
+    {
+        <div class="pagination">
+            <span>Sayfa @ViewBag.CurrentPage / @ViewBag.TotalPages</span>
+            <div class="pagination-buttons">
+                @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                {
+                    <a href="@Url.Action("Index", new { page = i, status = ViewBag.CurrentStatus, search = ViewBag.CurrentSearch })" class="btn-page @(i == ViewBag.CurrentPage ? "active" : "")">@i</a>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .reason-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        background: var(--gray-100);
+        color: var(--gray-700);
+        border-radius: 12px;
+        font-size: 12px;
+    }
+    .btn-icon.success { color: var(--success-500); }
+    .btn-icon.success:hover { background: var(--success-50); }
+    .btn-icon.danger { color: var(--danger-500); }
+    .btn-icon.danger:hover { background: var(--danger-50); }
+</style>
+
+@section Scripts {
+    <script>
+        function approveReturn(id) {
+            if (!confirm('Bu iade talebini onaylamak istediğinize emin misiniz?')) return;
+            fetch('/Return/Approve', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || '' },
+                body: `id=${id}`
+            }).then(r => r.json()).then(d => { if(d.success) location.reload(); else alert(d.message); });
+        }
+        function rejectReturn(id) {
+            const reason = prompt('Red sebebini yazın:');
+            if (reason === null) return;
+            fetch('/Return/Reject', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || '' },
+                body: `id=${id}&reason=${encodeURIComponent(reason)}`
+            }).then(r => r.json()).then(d => { if(d.success) location.reload(); else alert(d.message); });
+        }
+    </script>
+}

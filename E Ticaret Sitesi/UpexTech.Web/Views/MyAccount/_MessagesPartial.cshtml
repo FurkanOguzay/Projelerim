@@ -1,0 +1,58 @@
+@model MyAccountViewModel
+
+<div class="mb-4">
+    <h4 class="fw-semibold mb-3">
+        <i data-lucide="message-square" class="me-2 text-primary" style="width: 24px; height: 24px;"></i>
+        Satıcı Mesajlarım
+    </h4>
+    <p class="text-muted">Satıcılarla olan mesajlaşmalarınızı buradan takip edebilirsiniz.</p>
+</div>
+
+@if (Model.Messages?.Any() == true)
+{
+    <div class="d-flex flex-column gap-2">
+        @foreach (var message in Model.Messages.OrderByDescending(m => m.LastMessageDate))
+        {
+            <div class="card border-0 shadow-sm @(!message.IsRead ? "border-start border-primary border-3" : "")">
+                <div class="card-body py-3">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" 
+                                 style="width: 45px; height: 45px;">
+                                <i data-lucide="store" class="text-primary" style="width: 20px; height: 20px;"></i>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <strong>@message.SellerName</strong>
+                                @if (!message.IsRead)
+                                {
+                                    <span class="badge bg-primary">Yeni</span>
+                                }
+                            </div>
+                            <p class="mb-0 text-muted small text-truncate">@message.LastMessage</p>
+                        </div>
+                        <div class="col-auto text-end">
+                            <small class="text-muted">
+                                @{
+                                    var diff = DateTime.Now - message.LastMessageDate;
+                                    if (diff.TotalHours < 1) { @($"{(int)diff.TotalMinutes} dk önce") }
+                                    else if (diff.TotalHours < 24) { @($"{(int)diff.TotalHours} saat önce") }
+                                    else { @message.LastMessageDate.ToString("dd.MM.yyyy") }
+                                }
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="text-center py-5">
+        <i data-lucide="message-square" class="text-muted mb-3" style="width: 48px; height: 48px;"></i>
+        <h5 class="text-muted">Henüz mesajınız bulunmuyor</h5>
+        <p class="text-muted small">Satıcılarla olan tüm iletişimleriniz burada görüntülenecektir.</p>
+    </div>
+}

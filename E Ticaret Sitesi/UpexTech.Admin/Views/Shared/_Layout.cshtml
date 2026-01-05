@@ -1,0 +1,327 @@
+﻿<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - UpexTech Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+</head>
+<body>
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        // Permission kontrolü için helper
+        var permissionsClaim = User.FindFirst("Permissions")?.Value ?? "0";
+        var userPermissions = int.TryParse(permissionsClaim, out var p) ? p : 0;
+        
+        // Permission check fonksiyonu
+        bool HasPerm(int perm) => userPermissions == int.MaxValue || (userPermissions & perm) == perm;
+        
+        // Permission sabitleri
+        const int Dashboard = 1;
+        const int Orders = 2;
+        const int Returns = 4;
+        const int Products = 8;
+        const int Categories = 16;
+        const int DeviceModels = 32;
+        const int BulkOperations = 64;
+        const int CariHesap = 128;
+        const int Customers = 256;
+        const int Members = 512;
+        const int Dealers = 1024;
+        const int PriceList = 2048;
+        const int Reports = 4096;
+        const int Finance = 8192;
+        const int Banners = 16384;
+        const int Settings = 32768;
+        const int AdminUsers = 65536;
+        
+        var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "Admin";
+        
+        <div class="admin-layout">
+            <!-- Sidebar -->
+            <aside class="sidebar" id="sidebar">
+                <div class="sidebar-header">
+                    <div class="logo">
+                        <i class="fas fa-mobile-alt"></i>
+                        <span>UpexTech</span>
+                    </div>
+                </div>
+                
+                <nav class="sidebar-nav">
+                    <!-- GENEL BAKIŞ -->
+                    @if (HasPerm(Dashboard))
+                    {
+                        <div class="nav-section">
+                            <div class="nav-section-title">GENEL BAKIŞ</div>
+                            <a href="@Url.Action("Index", "Dashboard")" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Dashboard" ? "active" : "")">
+                                <i class="fas fa-chart-pie"></i>
+                                <span>Kontrol Paneli</span>
+                            </a>
+                        </div>
+                    }
+
+                    <!-- SİPARİŞ YÖNETİMİ -->
+                    @if (HasPerm(Orders) || HasPerm(Returns))
+                    {
+                        <div class="nav-section">
+                            <div class="nav-section-title">SİPARİŞ YÖNETİMİ</div>
+                            @if (HasPerm(Orders))
+                            {
+                                <a href="@Url.Action("Index", "Order")" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Order" ? "active" : "")">
+                                    <i class="fas fa-shopping-cart"></i>
+                                    <span>Tüm Siparişler</span>
+                                </a>
+                            }
+                            @if (HasPerm(Returns))
+                            {
+                                <a href="@Url.Action("Index", "Return")" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Return" ? "active" : "")">
+                                    <i class="fas fa-undo"></i>
+                                    <span>İade & İptal Talepleri</span>
+                                </a>
+                            }
+                        </div>
+                    }
+
+                    <!-- KATALOG & ENVANTER -->
+                    @if (HasPerm(Products) || HasPerm(Categories) || HasPerm(DeviceModels) || HasPerm(BulkOperations))
+                    {
+                        <div class="nav-section">
+                            <div class="nav-section-title">KATALOG & ENVANTER</div>
+                            @if (HasPerm(Products))
+                            {
+                                <a href="@Url.Action("Index", "Product")" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Product" ? "active" : "")">
+                                    <i class="fas fa-box"></i>
+                                    <span>Ürün Listesi</span>
+                                </a>
+                            }
+                            @if (HasPerm(Categories))
+                            {
+                                <a href="@Url.Action("Index", "Category")" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Category" ? "active" : "")">
+                                    <i class="fas fa-folder-tree"></i>
+                                    <span>Kategoriler</span>
+                                </a>
+                            }
+                            @if (HasPerm(DeviceModels))
+                            {
+                                <a href="@Url.Action("Index", "DeviceModel")" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "DeviceModel" ? "active" : "")">
+                                    <i class="fas fa-mobile-screen"></i>
+                                    <span>Cihaz & Model Ağacı</span>
+                                </a>
+                            }
+                            @if (HasPerm(BulkOperations))
+                            {
+                                <a href="@Url.Action("Index", "BulkOperation")" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "BulkOperation" ? "active" : "")">
+                                    <i class="fas fa-file-excel"></i>
+                                    <span>Toplu İşlemler</span>
+                                </a>
+                            }
+                        </div>
+                    }
+
+                    <!-- MÜŞTERİLER -->
+                    @if (HasPerm(CariHesap) || HasPerm(Customers) || HasPerm(Members) || HasPerm(Dealers) || HasPerm(PriceList))
+                    {
+                        <div class="nav-section">
+                            <div class="nav-section-title">MÜŞTERİLER</div>
+                            @if (HasPerm(CariHesap))
+                            {
+                                <a href="@Url.Action("Index", "CariHesap")" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "CariHesap" ? "active" : "")">
+                                    <i class="fas fa-wallet"></i>
+                                    <span>Cari Hesaplar</span>
+                                </a>
+                            }
+                            @if (HasPerm(Customers))
+                            {
+                                <a href="@Url.Action("Index", "Customer")" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Customer" ? "active" : "")">
+                                    <i class="fas fa-users"></i>
+                                    <span>Müşteri Listesi</span>
+                                </a>
+                            }
+                            @if (HasPerm(Members))
+                            {
+                                <a href="@Url.Action("Index", "Member")" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Member" ? "active" : "")">
+                                    <i class="fas fa-user-circle"></i>
+                                    <span>Üyeler</span>
+                                </a>
+                            }
+                            @if (HasPerm(Dealers))
+                            {
+                                <a href="@Url.Action("Index", "Dealer")" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Dealer" ? "active" : "")">
+                                    <i class="fas fa-user-check"></i>
+                                    <span>Bayilik Başvuruları</span>
+                                </a>
+                            }
+                            @if (HasPerm(PriceList))
+                            {
+                                <a href="@Url.Action("Index", "PriceList")" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "PriceList" ? "active" : "")">
+                                    <i class="fas fa-file-invoice-dollar"></i>
+                                    <span>Fiyat Listesi</span>
+                                </a>
+                            }
+                        </div>
+                    }
+
+                    <!-- RAPORLAR -->
+                    @if (HasPerm(Reports))
+                    {
+                        <div class="nav-section">
+                            <div class="nav-section-title">RAPORLAR</div>
+                            
+                            <!-- Performans Detayları - Dropdown -->
+                            @{
+                                var isPerformanceActive = ViewContext.RouteData.Values["controller"]?.ToString() == "Report" && 
+                                    (ViewContext.RouteData.Values["action"]?.ToString() == "GeneralPerformance" || 
+                                     ViewContext.RouteData.Values["action"]?.ToString() == "ProductPerformance");
+                            }
+                            <div class="nav-dropdown @(isPerformanceActive ? "open" : "")">
+                                <button type="button" class="nav-item nav-dropdown-toggle @(isPerformanceActive ? "active" : "")" onclick="toggleNavDropdown(this)">
+                                    <i class="fas fa-chart-line"></i>
+                                    <span>Performans Detayları</span>
+                                    <i class="fas fa-chevron-down dropdown-arrow"></i>
+                                </button>
+                                <div class="nav-dropdown-menu">
+                                    <a href="@Url.Action("GeneralPerformance", "Report")" class="nav-dropdown-item @(ViewContext.RouteData.Values["action"]?.ToString() == "GeneralPerformance" ? "active" : "")">
+                                        Genel Performans
+                                    </a>
+                                    <a href="@Url.Action("ProductPerformance", "Report")" class="nav-dropdown-item @(ViewContext.RouteData.Values["action"]?.ToString() == "ProductPerformance" ? "active" : "")">
+                                        Ürün Performansı
+                                    </a>
+                                </div>
+                            </div>
+                            
+                            <a href="@Url.Action("Index", "Report")" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Report" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")">
+                                <i class="fas fa-chart-bar"></i>
+                                <span>Müşteri Davranışı</span>
+                            </a>
+                            <a href="@Url.Action("SalesReport", "Report")" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Report" && ViewContext.RouteData.Values["action"]?.ToString() == "SalesReport" ? "active" : "")">
+                                <i class="fas fa-file-invoice-dollar"></i>
+                                <span>Detaylı Satış Raporu</span>
+                            </a>
+                        </div>
+                    }
+
+
+                    <!-- FİNANS & MUHASEBE -->
+                    @if (HasPerm(Finance))
+                    {
+                        <div class="nav-section">
+                            <div class="nav-section-title">FİNANS & MUHASEBE</div>
+                            <a href="@Url.Action("Index", "Finance")" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")">
+                                <i class="fas fa-cash-register"></i>
+                                <span>Kasalar</span>
+                            </a>
+                            <a href="@Url.Action("PaymentsAndCollections", "Finance")" class="nav-item @(ViewContext.RouteData.Values["action"]?.ToString() == "PaymentsAndCollections" ? "active" : "")">
+                                <i class="fas fa-money-bill-transfer"></i>
+                                <span>Ödemeler & Tahsilatlar</span>
+                            </a>
+                        </div>
+                    }
+
+
+                    <!-- AYARLAR -->
+                    @if (HasPerm(Banners) || HasPerm(Settings) || HasPerm(AdminUsers))
+                    {
+                        <div class="nav-section">
+                            <div class="nav-section-title">AYARLAR</div>
+                            @if (HasPerm(Banners))
+                            {
+                                <a href="@Url.Action("Index", "Banner")" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Banner" ? "active" : "")">
+                                    <i class="fas fa-images"></i>
+                                    <span>Banner Yönetimi</span>
+                                </a>
+                            }
+                            @if (HasPerm(Settings))
+                            {
+                                <a href="@Url.Action("Index", "Settings")" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Settings" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")">
+                                    <i class="fas fa-cog"></i>
+                                    <span>Genel Ayarlar</span>
+                                </a>
+                            }
+                            @if (HasPerm(AdminUsers))
+                            {
+                                <a href="@Url.Action("Roles", "Settings")" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Settings" && ViewContext.RouteData.Values["action"]?.ToString() == "Roles" ? "active" : "")">
+                                    <i class="fas fa-user-cog"></i>
+                                    <span>Yöneticiler & Roller</span>
+                                </a>
+                            }
+                        </div>
+                    }
+                </nav>
+
+                <div class="sidebar-footer">
+                    <p>UpexTech Admin v1.0</p>
+                </div>
+            </aside>
+
+            <!-- Main Content -->
+            <div class="main-content">
+                <!-- Header -->
+                <header class="header">
+                    <div class="header-left">
+                        <button class="menu-toggle" id="menuToggle">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" placeholder="Ara...">
+                        </div>
+                    </div>
+                    <div class="header-right">
+                        <button class="header-icon">
+                            <i class="fas fa-bell"></i>
+                            <span class="badge">3</span>
+                        </button>
+                        <div class="user-menu">
+                            <div class="user-avatar">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="user-info">
+                                <span class="user-name">@User.Identity?.Name</span>
+                                <span class="user-role">@userRole</span>
+                            </div>
+                            <form asp-controller="Account" asp-action="Logout" method="post" class="logout-form">
+                                <button type="submit" class="logout-btn" title="Çıkış Yap">
+                                    <i class="fas fa-sign-out-alt"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- Page Content -->
+                <main class="page-content">
+                    @RenderBody()
+                </main>
+            </div>
+        </div>
+    }
+    else
+    {
+        @RenderBody()
+    }
+
+    <!-- jQuery (required for DataTables and AJAX) -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Sidebar toggle
+        document.getElementById('menuToggle')?.addEventListener('click', function() {
+            document.getElementById('sidebar').classList.toggle('collapsed');
+            document.querySelector('.main-content').classList.toggle('expanded');
+        });
+
+        // Nav dropdown toggle
+        function toggleNavDropdown(button) {
+            const dropdown = button.closest('.nav-dropdown');
+            dropdown.classList.toggle('open');
+        }
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

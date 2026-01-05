@@ -1,0 +1,1797 @@
+@model UpexTech.Admin.Models.CariHesapIndexViewModel
+@{
+    ViewData["Title"] = "Cari Hesaplar";
+    var totalAccounts = Model.Dealers.Count();
+    var totalDebt = Model.Dealers.Where(d => d.Balance > 0).Sum(d => d.Balance);
+    var riskyCount = Model.Dealers.Count(d => d.Balance > 0 && d.Balance > 500000);
+    var newThisMonth = 3; // Mock value
+}
+
+<div class="page-header-actions">
+    <div>
+        <h1 class="page-title">Cari Hesaplar (B2B Portföyü)</h1>
+        <p class="page-subtitle">Kurumsal müşterilerinizi ve bakiyelerini yönetin</p>
+    </div>
+    <div class="actions">
+        <button class="btn btn-primary" onclick="openNewDealerModal()">
+            <i class="fas fa-plus"></i>
+            Yeni Cari Kart Ekle
+        </button>
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success" style="background: var(--success-100); color: var(--success-700); padding: 16px 24px; border-radius: var(--radius-lg); margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
+        <i class="fas fa-check-circle"></i>
+        @TempData["SuccessMessage"]
+    </div>
+}
+
+<div id="alertContainer"></div>
+
+<!-- KPI Cards - 4 Columns (Figma Design) -->
+<div class="kpi-grid-4" style="margin-bottom: 24px;">
+    <div class="kpi-card">
+        <div class="kpi-card-header">
+            <div class="kpi-card-icon-round blue">
+                <i class="fas fa-building"></i>
+            </div>
+            <span class="kpi-card-label">Toplam Bayi Sayısı</span>
+        </div>
+        <div class="kpi-card-value blue">@Model.TotalDealerCount</div>
+        <div class="kpi-card-subtitle">Aktif B2B müşteri</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-card-header">
+            <div class="kpi-card-icon-round green">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <span class="kpi-card-label">Toplam Ciro (Yıllık)</span>
+        </div>
+        <div class="kpi-card-value green">₺@Model.TotalRevenue.ToString("N0")</div>
+        <div class="kpi-card-subtitle">Yıl içi toplam satış</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-card-header">
+            <div class="kpi-card-icon-round purple">
+                <i class="fas fa-user-clock"></i>
+            </div>
+            <span class="kpi-card-label">Bu Ay Aktif Bayiler</span>
+        </div>
+        <div class="kpi-card-value purple">@Model.ActiveDealersThisMonth</div>
+        <div class="kpi-card-subtitle">Son 30 günde sipariş veren</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-card-header">
+            <div class="kpi-card-icon-round orange">
+                <i class="fas fa-shopping-basket"></i>
+            </div>
+            <span class="kpi-card-label">Ortalama Sepet Tutarı</span>
+        </div>
+        <div class="kpi-card-value orange">₺@Model.AverageBasket.ToString("N0")</div>
+        <div class="kpi-card-subtitle">Sipariş başına ortalama</div>
+    </div>
+</div>
+
+<!-- Search and Filter Bar -->
+<div class="filter-bar" style="display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 24px; background: white; padding: 16px 20px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+    <!-- Left: Search -->
+    <div style="flex: 1; max-width: 400px;">
+        <div style="position: relative;">
+            <i class="fas fa-search" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--gray-400);"></i>
+            <input type="text" id="searchInput" placeholder="Firma adı veya cari kodu ara..." 
+                   style="width: 100%; padding: 12px 14px 12px 40px; border: 1px solid var(--gray-200); border-radius: 10px; font-size: 14px; transition: all 0.2s;"
+                   onkeyup="filterTable(this.value)">
+        </div>
+    </div>
+    
+    <!-- Right: Sort and Advanced Filter -->
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <!-- Sort Dropdown -->
+        <div class="outlined-input" style="min-width: 180px; margin: 0;">
+            <select id="sortSelect" onchange="sortTable(this.value)" style="padding: 10px 14px; border-radius: 10px;">
+                <option value="">Sırala</option>
+                <option value="name-asc">Firma Adı (A-Z)</option>
+                <option value="name-desc">Firma Adı (Z-A)</option>
+                <option value="revenue-desc">Ciro (Yüksek-Düşük)</option>
+                <option value="revenue-asc">Ciro (Düşük-Yüksek)</option>
+                <option value="order-desc">Son Sipariş (Yeni)</option>
+                <option value="order-asc">Son Sipariş (Eski)</option>
+                <option value="balance-desc">Bakiye (Yüksek)</option>
+                <option value="balance-asc">Bakiye (Düşük)</option>
+            </select>
+        </div>
+        
+        <!-- Advanced Filter Button -->
+        <button class="btn btn-outline" onclick="openAdvancedFilter()" style="display: flex; align-items: center; gap: 8px;">
+            <i class="fas fa-sliders-h"></i>
+            Gelişmiş Filtre
+        </button>
+        
+        <!-- Export Button -->
+        <a href="javascript:void(0);" class="btn btn-outline" onclick="exportToExcel();" style="display: flex; align-items: center; gap: 8px; text-decoration: none;">
+            <i class="fas fa-file-excel"></i>
+            Excel
+        </a>
+    </div>
+</div>
+
+<!-- Advanced Filter Sidebar -->
+<div id="advancedFilterSidebar" class="sidebar-overlay" style="display: none;">
+    <div class="sidebar-backdrop" onclick="closeAdvancedFilter()"></div>
+    <div class="sidebar-panel">
+        <div class="sidebar-header">
+            <h3><i class="fas fa-sliders-h" style="margin-right: 8px;"></i>Gelişmiş Filtre</h3>
+            <button class="btn-close" onclick="closeAdvancedFilter()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="sidebar-body">
+            <!-- Revenue Range -->
+            <div class="filter-group">
+                <label class="filter-label">Ciro Aralığı</label>
+                <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+                    <div class="outlined-input" style="flex: 1;">
+                        <label>Min (₺)</label>
+                        <input type="number" id="minRevenue" placeholder="0" style="width: 100%;">
+                    </div>
+                    <div class="outlined-input" style="flex: 1;">
+                        <label>Max (₺)</label>
+                        <input type="number" id="maxRevenue" placeholder="10.000.000" style="width: 100%;">
+                    </div>
+                </div>
+                <input type="range" id="revenueSlider" min="0" max="10000000" step="100000" value="5000000" 
+                       style="width: 100%; accent-color: var(--primary-500);"
+                       oninput="updateRevenueRange(this.value)">
+                <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--gray-500); margin-top: 4px;">
+                    <span>₺0</span>
+                    <span id="revenueValue">₺5.000.000</span>
+                    <span>₺10M+</span>
+                </div>
+            </div>
+            
+            <!-- Last Order Date -->
+            <div class="filter-group">
+                <label class="filter-label">Son Sipariş Tarihi</label>
+                <select id="lastOrderFilter" class="filter-select">
+                    <option value="">Tümü</option>
+                    <option value="7">Son 7 Gün</option>
+                    <option value="30">Son 30 Gün</option>
+                    <option value="90">Son 90 Gün</option>
+                    <option value="180">Son 6 Ay</option>
+                    <option value="365">Son 1 Yıl</option>
+                    <option value="inactive">Aktif Değil (90+ gün)</option>
+                </select>
+            </div>
+            
+            <!-- City Filter -->
+            <div class="filter-group">
+                <label class="filter-label">Şehir</label>
+                <select id="cityFilter" class="filter-select">
+                    <option value="">Tüm Şehirler</option>
+                    @foreach (var city in Model.Cities)
+                    {
+                        <option value="@city">@city</option>
+                    }
+                </select>
+            </div>
+            
+            <!-- Representative Filter -->
+            <div class="filter-group">
+                <label class="filter-label">Satış Temsilcisi</label>
+                <select id="representativeFilter" class="filter-select">
+                    <option value="">Tüm Temsilciler</option>
+                    @foreach (var rep in Model.Representatives)
+                    {
+                        <option value="@rep">@rep</option>
+                    }
+                </select>
+            </div>
+            
+            <!-- Balance Status -->
+            <div class="filter-group">
+                <label class="filter-label">Bakiye Durumu</label>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                    <label class="chip-checkbox">
+                        <input type="checkbox" id="balanceAll" checked onchange="toggleBalanceFilter('all')">
+                        <span>Tümü</span>
+                    </label>
+                    <label class="chip-checkbox">
+                        <input type="checkbox" id="balancePositive" onchange="toggleBalanceFilter('positive')">
+                        <span style="color: var(--danger-500);">Borçlu</span>
+                    </label>
+                    <label class="chip-checkbox">
+                        <input type="checkbox" id="balanceNegative" onchange="toggleBalanceFilter('negative')">
+                        <span style="color: var(--success-500);">Alacaklı</span>
+                    </label>
+                    <label class="chip-checkbox">
+                        <input type="checkbox" id="balanceZero" onchange="toggleBalanceFilter('zero')">
+                        <span>Bakiyesiz</span>
+                    </label>
+                </div>
+            </div>
+            
+            <!-- Customer Tier -->
+            <div class="filter-group">
+                <label class="filter-label">Müşteri Segmenti</label>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                    <label class="chip-checkbox">
+                        <input type="checkbox" value="platinum">
+                        <span>Platinum</span>
+                    </label>
+                    <label class="chip-checkbox">
+                        <input type="checkbox" value="gold">
+                        <span>Gold</span>
+                    </label>
+                    <label class="chip-checkbox">
+                        <input type="checkbox" value="silver">
+                        <span>Silver</span>
+                    </label>
+                    <label class="chip-checkbox">
+                        <input type="checkbox" value="standard">
+                        <span>Standart</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="sidebar-footer">
+            <button class="btn btn-outline" onclick="resetFilters()" style="flex: 1;">
+                <i class="fas fa-undo"></i> Sıfırla
+            </button>
+            <button class="btn btn-primary" onclick="applyFilters()" style="flex: 1;">
+                <i class="fas fa-check"></i> Uygula
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Order Panel (Hızlı Sipariş Paneli) -->
+<div id="quickOrderPanel" class="sidebar-overlay" style="display: none;">
+    <div class="sidebar-backdrop" onclick="closeQuickOrderPanel()"></div>
+    <div class="sidebar-panel" style="width: 500px;">
+        <div class="sidebar-header" style="background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: white;">
+            <h3><i class="fas fa-shopping-cart" style="margin-right: 8px;"></i>Hızlı Sipariş</h3>
+            <button class="btn-close" onclick="closeQuickOrderPanel()" style="color: white;">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <!-- Customer Info -->
+        <div style="padding: 16px 24px; background: var(--gray-50); border-bottom: 1px solid var(--gray-200);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <p style="font-weight: 600; color: var(--gray-900); margin: 0;" id="quickOrderCompany">-</p>
+                    <p style="font-size: 13px; color: var(--gray-500); margin: 0;" id="quickOrderCode">-</p>
+                </div>
+                <div style="text-align: right;">
+                    <p style="font-size: 12px; color: var(--gray-500); margin: 0;">Güncel Bakiye</p>
+                    <p style="font-weight: 600; font-size: 16px; margin: 0;" id="quickOrderBalance">₺0</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="sidebar-body" style="padding: 16px 24px;">
+            <!-- Product Search -->
+            <div style="margin-bottom: 20px;">
+                <label class="filter-label">Ürün Ara</label>
+                <div style="position: relative;">
+                    <i class="fas fa-search" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--gray-400);"></i>
+                    <input type="text" id="quickOrderSearch" placeholder="Barkod, Stok Kodu veya Ürün Adı..." 
+                           style="width: 100%; padding: 12px 14px 12px 40px; border: 1px solid var(--gray-200); border-radius: 10px; font-size: 14px;"
+                           onkeyup="searchProducts(this.value)">
+                </div>
+            </div>
+            
+            <!-- Product Results -->
+            <div id="productResults" style="display: none; margin-bottom: 20px; max-height: 200px; overflow-y: auto; border: 1px solid var(--gray-200); border-radius: 10px;">
+                <!-- Products will be populated here -->
+            </div>
+            
+            <!-- Cart Items -->
+            <div style="margin-bottom: 20px;">
+                <label class="filter-label" style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>Sepet</span>
+                    <span id="cartItemCount" style="background: var(--primary-500); color: white; padding: 2px 8px; border-radius: 9999px; font-size: 11px;">0 ürün</span>
+                </label>
+                <div id="cartItems" style="border: 1px solid var(--gray-200); border-radius: 10px; min-height: 100px;">
+                    <div id="emptyCartMessage" style="padding: 24px; text-align: center; color: var(--gray-400);">
+                        <i class="fas fa-shopping-basket" style="font-size: 32px; margin-bottom: 8px;"></i>
+                        <p style="margin: 0;">Sepetiniz boş</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Order Summary Footer -->
+        <div class="sidebar-footer" style="flex-direction: column; gap: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <span style="color: var(--gray-600);">Toplam Tutar:</span>
+                <span id="cartTotal" style="font-size: 24px; font-weight: 700; color: var(--primary-500);">₺0</span>
+            </div>
+            <button class="btn btn-primary" onclick="submitQuickOrder()" style="width: 100%; padding: 14px; font-size: 16px;">
+                <i class="fas fa-check"></i> Siparişi Onayla
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Table Card -->
+<div class="data-table-container">
+    @if (Model.Dealers.Any())
+    {
+        <div style="overflow-x: auto;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="width: 40px;">
+                            <input type="checkbox" id="selectAll">
+                        </th>
+                        <th>Firma Kimliği</th>
+                        <th>Konum</th>
+                        <th style="text-align: right;">Toplam Alım</th>
+                        <th>Son Sipariş</th>
+                        <th style="text-align: center;">Sipariş Adedi</th>
+                        <th style="text-align: right;">Güncel Bakiye</th>
+                        <th style="text-align: center;">İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var dealer in Model.Dealers)
+                    {
+                        var balanceColor = dealer.Balance > 0 ? "var(--danger-500)" : (dealer.Balance < 0 ? "var(--success-500)" : "var(--gray-500)");
+                        var growthColor = dealer.GrowthRate >= 0 ? "var(--success-500)" : "var(--danger-500)";
+                        var growthIcon = dealer.GrowthRate >= 0 ? "fa-arrow-up" : "fa-arrow-down";
+                        var creditLimit = dealer.CreditLimit > 0 ? dealer.CreditLimit : Math.Max(dealer.TotalDebit * 1.25m, 100000m);
+                        
+                        <tr data-dealer-id="@dealer.UserId" data-company="@dealer.CompanyName" data-contact="@dealer.FullName" data-phone="@(dealer.Phone ?? "+90 216 555 12 34")" data-email="@dealer.Email" data-balance="@dealer.Balance" data-limit="@creditLimit">
+                            <td onclick="event.stopPropagation();">
+                                <input type="checkbox" class="dealer-checkbox" value="@dealer.UserId">
+                            </td>
+                            <!-- Firma Kimliği -->
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <div style="width: 44px; height: 44px; background: linear-gradient(135deg, #3b82f6, #8b5cf6); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px;">
+                                        <i class="fas fa-building"></i>
+                                    </div>
+                                    <div>
+                                        <p style="color: var(--gray-900); font-weight: 600; margin: 0;">@dealer.CompanyName</p>
+                                        <p style="color: var(--gray-500); font-size: 12px; margin: 0;">C-@dealer.UserId.ToString("D5")</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <!-- Konum -->
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <i class="fas fa-map-marker-alt" style="color: var(--gray-400); font-size: 12px;"></i>
+                                    <span style="color: var(--gray-700);">@(dealer.City ?? "İstanbul"), @(dealer.District ?? "Kadıköy")</span>
+                                </div>
+                            </td>
+                            <!-- Toplam Alım -->
+                            <td style="text-align: right;">
+                                <div style="display: flex; flex-direction: column; align-items: flex-end;">
+                                    <span style="font-weight: 600; color: var(--gray-900);">₺@dealer.TotalDebit.ToString("N0")</span>
+                                    <div style="display: flex; align-items: center; gap: 4px; font-size: 12px; color: @growthColor;">
+                                        <i class="fas @growthIcon" style="font-size: 10px;"></i>
+                                        <span>%@Math.Abs(dealer.GrowthRate).ToString("N0")</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <!-- Son Sipariş -->
+                            <td>
+                                @if (dealer.LastOrderDate.HasValue)
+                                {
+                                    var daysDiff = (DateTime.Now - dealer.LastOrderDate.Value).Days;
+                                    var dateColor = daysDiff > 30 ? "var(--orange-500)" : "var(--gray-700)";
+                                    <div style="display: flex; flex-direction: column;">
+                                        <span style="color: @dateColor;">@dealer.LastOrderDate.Value.ToString("dd MMM yyyy")</span>
+                                        <span style="font-size: 11px; color: var(--gray-500);">@daysDiff gün önce</span>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span style="color: var(--gray-400);">-</span>
+                                }
+                            </td>
+                            <!-- Sipariş Adedi -->
+                            <td style="text-align: center;">
+                                <span style="display: inline-flex; align-items: center; justify-content: center; min-width: 32px; padding: 4px 12px; background: var(--gray-100); border-radius: 8px; font-weight: 600; color: var(--gray-700);">
+                                    @dealer.OrderCount
+                                </span>
+                            </td>
+                            <!-- Güncel Bakiye -->
+                            <td style="text-align: right;">
+                                <span style="font-weight: 600; font-size: 15px; color: @balanceColor;">
+                                    @(dealer.Balance > 0 ? "+" : "")₺@dealer.Balance.ToString("N0")
+                                </span>
+                            </td>
+                            <!-- İşlemler -->
+                            <td>
+                                <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                    <a href="@Url.Action("Statement", new { id = dealer.UserId })" class="btn btn-outline btn-sm">
+                                        Detay
+                                    </a>
+                                    <div class="dropdown">
+                                        <button class="btn-menu" onclick="toggleDropdown(this)">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                        <div class="dropdown-menu">
+                                            <a href="@Url.Action("Statement", new { id = dealer.UserId })" class="dropdown-item">
+                                                <i class="fas fa-file-invoice"></i>
+                                                Hesap Ekstresi
+                                            </a>
+                                            <button class="dropdown-item" onclick="openOrderModal(@dealer.UserId, '@dealer.CompanyName')">
+                                                <i class="fas fa-shopping-cart"></i>
+                                                Hızlı Sipariş
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination">
+            <div class="pagination-info">
+                Toplam @totalAccounts cari hesap gösteriliyor
+            </div>
+            <div class="pagination-buttons">
+                <button class="btn-page" onclick="changePage(-1)">Önceki</button>
+                <button class="btn-page active">1</button>
+                <button class="btn-page" onclick="changePage(2)">2</button>
+                <button class="btn-page" onclick="changePage(1)">Sonraki</button>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card" style="text-align: center; padding: 60px;">
+            <div style="margin-bottom: 24px;">
+                <i class="fas fa-wallet" style="font-size: 64px; color: var(--gray-300);"></i>
+            </div>
+            <h2 style="color: var(--gray-700); margin-bottom: 12px;">Kayıt Bulunamadı</h2>
+            <p style="color: var(--gray-500);">Seçili filtreye uygun cari hesap bulunamadı.</p>
+        </div>
+    }
+</div>
+
+<!-- Yeni Cari Kart Modal -->
+<div id="newDealerModal" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header">
+            <h3><i class="fas fa-plus-circle"></i> Yeni Cari Kart Ekle</h3>
+            <button class="modal-close" onclick="closeModal('newDealerModal')">&times;</button>
+        </div>
+        <form id="newDealerForm" onsubmit="submitNewDealer(event)">
+            @Html.AntiForgeryToken()
+            <div class="modal-body">
+                <div class="form-grid">
+                    <div class="outlined-input">
+                        <label>Firma Adı *</label>
+                        <input type="text" name="companyName" required placeholder="Örn: ABC Elektronik Ltd. Şti.">
+                    </div>
+                    <div class="outlined-input">
+                        <label>Vergi Numarası *</label>
+                        <input type="text" name="taxNumber" required maxlength="11" placeholder="10-11 haneli vergi no">
+                    </div>
+                    <div class="outlined-input">
+                        <label>Yetkili Adı *</label>
+                        <input type="text" name="firstName" required placeholder="Ad">
+                    </div>
+                    <div class="outlined-input">
+                        <label>Yetkili Soyadı *</label>
+                        <input type="text" name="lastName" required placeholder="Soyad">
+                    </div>
+                    <div class="outlined-input">
+                        <label>E-posta *</label>
+                        <input type="email" name="email" required placeholder="ornek@firma.com">
+                    </div>
+                    <div class="outlined-input">
+                        <label>Telefon</label>
+                        <input type="tel" name="phone" placeholder="+90 5XX XXX XX XX">
+                    </div>
+                    <div class="outlined-input">
+                        <label>Müşteri Grubu</label>
+                        <select name="tier">
+                            <option value="Standard">Standart</option>
+                            <option value="Silver">Kurumsal</option>
+                            <option value="Gold">Distribütör</option>
+                            <option value="Platinum">Ana Bayi</option>
+                        </select>
+                    </div>
+                    <div class="outlined-input">
+                        <label>Risk Limiti (₺)</label>
+                        <input type="number" name="creditLimit" value="100000" min="0" step="10000">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeModal('newDealerModal')">İptal</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Kaydet
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- İletişim Bilgileri Modal -->
+<div id="contactModal" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">
+            <h3><i class="fas fa-address-book"></i> İletişim Bilgileri</h3>
+            <button class="modal-close" onclick="closeModal('contactModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="contact-info">
+                <div class="contact-row">
+                    <i class="fas fa-building"></i>
+                    <div>
+                        <label>Firma</label>
+                        <span id="contactCompany">-</span>
+                    </div>
+                </div>
+                <div class="contact-row">
+                    <i class="fas fa-user"></i>
+                    <div>
+                        <label>Yetkili Kişi</label>
+                        <span id="contactPerson">-</span>
+                    </div>
+                </div>
+                <div class="contact-row">
+                    <i class="fas fa-phone"></i>
+                    <div>
+                        <label>Telefon</label>
+                        <a href="#" id="contactPhone">-</a>
+                    </div>
+                </div>
+                <div class="contact-row">
+                    <i class="fas fa-envelope"></i>
+                    <div>
+                        <label>E-posta</label>
+                        <a href="#" id="contactEmail">-</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeModal('contactModal')">Kapat</button>
+            <button class="btn btn-primary" onclick="copyContactInfo()">
+                <i class="fas fa-copy"></i> Kopyala
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Risk Limiti Modal -->
+<div id="riskLimitModal" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 450px;">
+        <div class="modal-header">
+            <h3><i class="fas fa-chart-line"></i> Risk Limitini Düzenle</h3>
+            <button class="modal-close" onclick="closeModal('riskLimitModal')">&times;</button>
+        </div>
+        <form id="riskLimitForm" onsubmit="submitRiskLimit(event)">
+            @Html.AntiForgeryToken()
+            <div class="modal-body">
+                <p style="margin-bottom: 16px; color: var(--gray-600);">
+                    <strong id="riskLimitCompany">-</strong> firması için risk limitini güncelleyin.
+                </p>
+                <input type="hidden" id="riskLimitDealerId" name="dealerId">
+                <div class="outlined-input">
+                    <label>Yeni Risk Limiti (₺)</label>
+                    <input type="number" id="riskLimitAmount" name="amount" min="0" step="10000" required>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeModal('riskLimitModal')">İptal</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Güncelle
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Ödeme Planı Modal -->
+<div id="paymentPlanModal" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 550px;">
+        <div class="modal-header">
+            <h3><i class="fas fa-calendar-alt"></i> Ödeme Planı</h3>
+            <button class="modal-close" onclick="closeModal('paymentPlanModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p style="margin-bottom: 16px; color: var(--gray-600);">
+                <strong id="paymentPlanCompany">-</strong> | Borç: <strong id="paymentPlanBalance">-</strong>
+            </p>
+            <div id="paymentPlanContent">
+                <table class="data-table" style="margin-top: 12px;">
+                    <thead>
+                        <tr>
+                            <th>Taksit</th>
+                            <th>Vade Tarihi</th>
+                            <th>Tutar</th>
+                            <th>Durum</th>
+                        </tr>
+                    </thead>
+                    <tbody id="paymentPlanBody"></tbody>
+                </table>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeModal('paymentPlanModal')">Kapat</button>
+            <button class="btn btn-primary" onclick="printPaymentPlan()">
+                <i class="fas fa-print"></i> Yazdır
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Sipariş Gir Modal -->
+<div id="orderModal" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">
+            <h3><i class="fas fa-shopping-cart"></i> Yeni Sipariş</h3>
+            <button class="modal-close" onclick="closeModal('orderModal')">&times;</button>
+        </div>
+        <form onsubmit="submitOrder(event)">
+            <div class="modal-body">
+                <p style="margin-bottom: 16px; color: var(--gray-600);">
+                    <strong id="orderCompany">-</strong> için sipariş oluşturun.
+                </p>
+                <input type="hidden" id="orderDealerId" name="dealerId">
+                <div class="outlined-input" style="margin-bottom: 16px;">
+                    <label>Sipariş Tutarı (₺) *</label>
+                    <input type="number" id="orderAmount" name="amount" min="1" step="0.01" required placeholder="0.00">
+                </div>
+                <div class="outlined-input" style="margin-bottom: 16px;">
+                    <label>Vade (Gün)</label>
+                    <select name="dueDay">
+                        <option value="0">Peşin</option>
+                        <option value="7">7 Gün</option>
+                        <option value="15">15 Gün</option>
+                        <option value="30" selected>30 Gün</option>
+                        <option value="60">60 Gün</option>
+                        <option value="90">90 Gün</option>
+                    </select>
+                </div>
+                <div class="outlined-input">
+                    <label>Not</label>
+                    <textarea name="note" rows="2" placeholder="Sipariş notu..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeModal('orderModal')">İptal</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-check"></i> Siparişi Oluştur
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .kpi-grid-4 {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+    }
+    
+    .kpi-card {
+        background: var(--white);
+        border-radius: var(--radius-xl);
+        padding: 24px;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+    
+    .kpi-card-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+    
+    .kpi-card-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: var(--radius-lg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+    }
+    
+    /* Yuvarlak gradient ikonlar - Figma tasarımına uygun */
+    .kpi-card-icon-round {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        color: white;
+    }
+    
+    .kpi-card-icon-round.blue { 
+        background: linear-gradient(135deg, #4318FF 0%, #868CFF 100%); 
+    }
+    .kpi-card-icon-round.red { 
+        background: linear-gradient(135deg, #ef4444 0%, #f97316 100%); 
+    }
+    .kpi-card-icon-round.orange { 
+        background: linear-gradient(135deg, #f97316 0%, #fbbf24 100%); 
+    }
+    .kpi-card-icon-round.green { 
+        background: linear-gradient(135deg, #10b981 0%, #34d399 100%); 
+    }
+    
+    .kpi-card-icon.blue { background: var(--primary-100); color: var(--primary-500); }
+    .kpi-card-icon.red { background: var(--danger-100); color: var(--danger-500); }
+    .kpi-card-icon.orange { background: var(--orange-100); color: var(--orange-500); }
+    .kpi-card-icon.green { background: var(--success-100); color: var(--success-500); }
+    
+    .kpi-card-label {
+        color: var(--gray-600);
+        font-size: 14px;
+    }
+    
+    .kpi-card-value {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--gray-900);
+        margin-bottom: 4px;
+    }
+    
+    /* Colored values */
+    .kpi-card-value.blue { color: #4318FF; }
+    .kpi-card-value.red { color: var(--danger-500); }
+    .kpi-card-value.orange { color: var(--orange-500); }
+    .kpi-card-value.green { color: var(--success-500); }
+    
+    .kpi-card-subtitle {
+        font-size: 13px;
+        color: var(--gray-500);
+    }
+    
+    .kpi-card-subtitle.blue { color: #4318FF; }
+    .kpi-card-subtitle.red { color: var(--danger-500); }
+    .kpi-card-subtitle.orange { color: var(--orange-500); }
+    .kpi-card-subtitle.green { color: var(--success-500); }
+    
+    /* Modal Styles */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        animation: fadeIn 0.2s;
+    }
+    
+    .modal-content {
+        background: white;
+        border-radius: var(--radius-xl);
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        animation: slideUp 0.3s;
+    }
+    
+    .modal-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--gray-200);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .modal-header h3 {
+        margin: 0;
+        color: var(--gray-900);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: var(--gray-500);
+    }
+    
+    .modal-body {
+        padding: 24px;
+    }
+    
+    .modal-footer {
+        padding: 16px 24px;
+        border-top: 1px solid var(--gray-200);
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+    }
+    
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+    
+    .contact-info {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+    
+    .contact-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
+        padding: 12px;
+        background: var(--gray-50);
+        border-radius: var(--radius-lg);
+    }
+    
+    .contact-row i {
+        color: var(--primary-500);
+        font-size: 18px;
+        margin-top: 4px;
+    }
+    
+    .contact-row label {
+        display: block;
+        font-size: 12px;
+        color: var(--gray-500);
+        margin-bottom: 4px;
+    }
+    
+    .contact-row span, .contact-row a {
+        color: var(--gray-900);
+        font-weight: 500;
+    }
+    
+    @@keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    @@keyframes slideUp {
+        from { transform: translateY(20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+    
+    @@media (max-width: 1200px) {
+        .kpi-grid-4 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    
+    @@media (max-width: 768px) {
+        .kpi-grid-4 {
+            grid-template-columns: 1fr;
+        }
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    /* Purple color for KPI cards */
+    .kpi-card-icon-round.purple { 
+        background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%); 
+    }
+    .kpi-card-value.purple { color: #8b5cf6; }
+    .kpi-card-subtitle.purple { color: #8b5cf6; }
+    
+    /* Sidebar Panel Styles */
+    .sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1000;
+    }
+    
+    .sidebar-backdrop {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.4);
+        animation: fadeIn 0.2s;
+    }
+    
+    .sidebar-panel {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 400px;
+        max-width: 100%;
+        height: 100%;
+        background: white;
+        box-shadow: -4px 0 24px rgba(0,0,0,0.15);
+        display: flex;
+        flex-direction: column;
+        animation: slideInRight 0.3s ease-out;
+    }
+    
+    .sidebar-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--gray-200);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .sidebar-header h3 {
+        margin: 0;
+        color: var(--gray-900);
+        font-size: 18px;
+        display: flex;
+        align-items: center;
+    }
+    
+    .sidebar-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 24px;
+    }
+    
+    .sidebar-footer {
+        padding: 16px 24px;
+        border-top: 1px solid var(--gray-200);
+        display: flex;
+        gap: 12px;
+    }
+    
+    /* Filter Group Styles */
+    .filter-group {
+        margin-bottom: 24px;
+    }
+    
+    .filter-label {
+        display: block;
+        font-weight: 600;
+        color: var(--gray-700);
+        margin-bottom: 10px;
+        font-size: 14px;
+    }
+    
+    .filter-select {
+        width: 100%;
+        padding: 12px 14px;
+        border: 1px solid var(--gray-200);
+        border-radius: 10px;
+        font-size: 14px;
+        color: var(--gray-700);
+        background: white;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .filter-select:focus {
+        outline: none;
+        border-color: var(--primary-500);
+        box-shadow: 0 0 0 3px rgba(67, 24, 255, 0.1);
+    }
+    
+    /* Chip Checkbox Styles */
+    .chip-checkbox {
+        display: inline-flex;
+        align-items: center;
+        cursor: pointer;
+    }
+    
+    .chip-checkbox input {
+        display: none;
+    }
+    
+    .chip-checkbox span {
+        padding: 8px 14px;
+        border: 1px solid var(--gray-200);
+        border-radius: 9999px;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--gray-600);
+        background: white;
+        transition: all 0.2s;
+    }
+    
+    .chip-checkbox input:checked + span {
+        background: var(--primary-500);
+        color: white;
+        border-color: var(--primary-500);
+    }
+    
+    .chip-checkbox:hover span {
+        border-color: var(--primary-300);
+    }
+    
+    /* Dropdown Divider */
+    .dropdown-divider {
+        height: 1px;
+        background: var(--gray-200);
+        margin: 8px 0;
+    }
+    
+    @@keyframes slideInRight {
+        from { transform: translateX(100%); }
+        to { transform: translateX(0); }
+    }
+</style>
+
+@section Scripts {
+    <script>
+        // Toggle dropdown
+        function toggleDropdown(btn) {
+            const dropdown = btn.nextElementSibling;
+            const allDropdowns = document.querySelectorAll('.dropdown-menu');
+            
+            allDropdowns.forEach(d => {
+                if (d !== dropdown) d.classList.remove('show');
+            });
+            
+            dropdown.classList.toggle('show');
+        }
+        
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.dropdown')) {
+                document.querySelectorAll('.dropdown-menu').forEach(d => d.classList.remove('show'));
+            }
+        });
+        
+        // Select all checkbox
+        document.getElementById('selectAll')?.addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('.dealer-checkbox');
+            checkboxes.forEach(cb => cb.checked = this.checked);
+        });
+        
+        // Modal functions
+        function openModal(id) {
+            document.getElementById(id).style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+            document.body.style.overflow = '';
+        }
+        
+        // Close modal on overlay click
+        document.querySelectorAll('.modal-overlay').forEach(modal => {
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.style.display = 'none';
+                    document.body.style.overflow = '';
+                }
+            });
+        });
+        
+        // Alert function
+        function showAlert(message, type = 'success') {
+            const alertHtml = `
+                <div class="alert alert-${type}" style="background: var(--${type === 'success' ? 'success' : 'danger'}-100); color: var(--${type === 'success' ? 'success' : 'danger'}-700); padding: 16px 24px; border-radius: var(--radius-lg); margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
+                    <i class="fas fa-${type === 'success' ? 'check' : 'times'}-circle"></i>
+                    ${message}
+                </div>
+            `;
+            document.getElementById('alertContainer').innerHTML = alertHtml;
+            setTimeout(() => {
+                document.getElementById('alertContainer').innerHTML = '';
+            }, 5000);
+        }
+        
+        // Excel Export
+        function exportToExcel() {
+            // Tablo verilerini al
+            var table = document.querySelector('.data-table');
+            if (!table) {
+                showAlert('Dışa aktarılacak veri bulunamadı.', 'error');
+                return;
+            }
+            
+            // CSV formatında veri oluştur
+            var csv = [];
+            var rows = table.querySelectorAll('tr');
+            
+            for (var i = 0; i < rows.length; i++) {
+                var row = rows[i];
+                var cols = row.querySelectorAll('td, th');
+                var rowData = [];
+                
+                for (var j = 1; j < cols.length - 1; j++) {
+                    var text = cols[j].innerText.replace(/[\n\r]+/g, ' ').trim();
+                    // Virgül ve tırnak işaretlerini temizle
+                    text = text.replace(/"/g, '""');
+                    if (text.indexOf(',') > -1 || text.indexOf('"') > -1) {
+                        text = '"' + text + '"';
+                    }
+                    rowData.push(text);
+                }
+                
+                if (rowData.length > 0) {
+                    csv.push(rowData.join(';'));
+                }
+            }
+            
+            // BOM ekle (Excel'de Türkçe karakterler için)
+            var csvContent = '\uFEFF' + csv.join('\r\n');
+            
+            // Dosyayı indir
+            var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            var link = document.createElement('a');
+            
+            if (navigator.msSaveBlob) {
+                // IE için
+                navigator.msSaveBlob(blob, 'cari_hesaplar.csv');
+            } else {
+                var url = URL.createObjectURL(blob);
+                link.href = url;
+                link.download = 'cari_hesaplar.csv';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            }
+            
+            showAlert('Cari hesaplar Excel dosyası olarak indirildi!', 'success');
+        }
+        
+        // New Dealer Modal
+        function openNewDealerModal() {
+            document.getElementById('newDealerForm').reset();
+            openModal('newDealerModal');
+        }
+        
+        function submitNewDealer(e) {
+            e.preventDefault();
+            const form = e.target;
+            const formData = new FormData(form);
+            
+            // Show loading state
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Kaydediliyor...';
+            submitBtn.disabled = true;
+            
+            // Submit to server
+            fetch('/CariHesap/CreateDealer', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+                closeModal('newDealerModal');
+                
+                if (data.success) {
+                    showAlert(data.message, 'success');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showAlert(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+                showAlert('Bir hata oluştu. Lütfen tekrar deneyin.', 'error');
+            });
+        }
+        
+        // Contact Modal
+        function openContactModal(dealerId) {
+            const row = document.querySelector(`tr[data-dealer-id="${dealerId}"]`);
+            if (row) {
+                document.getElementById('contactCompany').textContent = row.dataset.company;
+                document.getElementById('contactPerson').textContent = row.dataset.contact;
+                document.getElementById('contactPhone').textContent = row.dataset.phone;
+                document.getElementById('contactPhone').href = 'tel:' + row.dataset.phone;
+                document.getElementById('contactEmail').textContent = row.dataset.email || '-';
+                document.getElementById('contactEmail').href = 'mailto:' + row.dataset.email;
+            }
+            openModal('contactModal');
+        }
+        
+        function copyContactInfo() {
+            const company = document.getElementById('contactCompany').textContent;
+            const person = document.getElementById('contactPerson').textContent;
+            const phone = document.getElementById('contactPhone').textContent;
+            const email = document.getElementById('contactEmail').textContent;
+            
+            const text = `${company}\n${person}\n${phone}\n${email}`;
+            navigator.clipboard.writeText(text);
+            showAlert('İletişim bilgileri panoya kopyalandı!', 'success');
+        }
+        
+        // Risk Limit Modal
+        function openRiskLimitModal(dealerId, companyName, currentLimit) {
+            document.getElementById('riskLimitDealerId').value = dealerId;
+            document.getElementById('riskLimitCompany').textContent = companyName;
+            document.getElementById('riskLimitAmount').value = currentLimit;
+            openModal('riskLimitModal');
+        }
+        
+        function submitRiskLimit(e) {
+            e.preventDefault();
+            const form = document.getElementById('riskLimitForm');
+            const formData = new FormData(form);
+            
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Güncelleniyor...';
+            submitBtn.disabled = true;
+            
+            fetch('/CariHesap/UpdateRiskLimit', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+                closeModal('riskLimitModal');
+                
+                if (data.success) {
+                    showAlert(data.message, 'success');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showAlert(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+                showAlert('Bir hata oluştu. Lütfen tekrar deneyin.', 'error');
+            });
+        }
+        
+        // Payment Plan Modal
+        function openPaymentPlanModal(dealerId, companyName, balance) {
+            document.getElementById('paymentPlanCompany').textContent = companyName;
+            document.getElementById('paymentPlanBalance').textContent = '₺' + Math.abs(balance).toLocaleString('tr-TR');
+            
+            // Generate mock payment plan
+            const tbody = document.getElementById('paymentPlanBody');
+            tbody.innerHTML = '';
+            
+            const installments = 3;
+            const installmentAmount = Math.abs(balance) / installments;
+            const today = new Date();
+            
+            for (let i = 1; i <= installments; i++) {
+                const dueDate = new Date(today);
+                dueDate.setDate(dueDate.getDate() + (i * 30));
+                const isPaid = i === 1;
+                
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong>${i}. Taksit</strong></td>
+                        <td>${dueDate.toLocaleDateString('tr-TR')}</td>
+                        <td>₺${installmentAmount.toLocaleString('tr-TR', {maximumFractionDigits: 0})}</td>
+                        <td>
+                            <span style="padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: 500; ${isPaid ? 'background: var(--success-100); color: var(--success-700);' : 'background: var(--orange-100); color: var(--orange-700);'}">
+                                ${isPaid ? 'Ödendi' : 'Bekliyor'}
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            }
+            
+            openModal('paymentPlanModal');
+        }
+        
+        function printPaymentPlan() {
+            window.print();
+        }
+        
+        // Order Modal
+        function openOrderModal(dealerId, companyName) {
+            document.getElementById('orderDealerId').value = dealerId;
+            document.getElementById('orderCompany').textContent = companyName;
+            document.getElementById('orderAmount').value = '';
+            openModal('orderModal');
+        }
+        
+        function submitOrder(e) {
+            e.preventDefault();
+            const dealerId = document.getElementById('orderDealerId').value;
+            const amount = document.getElementById('orderAmount').value;
+            
+            closeModal('orderModal');
+            showAlert(`₺${Number(amount).toLocaleString('tr-TR')} tutarında sipariş oluşturuldu!`, 'success');
+            
+            setTimeout(() => location.reload(), 1500);
+        }
+        
+        // Pagination (mock)
+        function changePage(direction) {
+            showAlert('Sayfa değiştirme işlevi demo amaçlıdır.', 'success');
+        }
+
+        // Payment Modal (Figma Design)
+        function openPaymentModal(dealerId, companyName, balance) {
+            const paymentModalHtml = `
+                <div class="modal-backdrop" id="paymentModal" onclick="closeModal('paymentModal')">
+                    <div class="modal" onclick="event.stopPropagation()">
+                        <div class="modal-header">
+                            <h3>Ödeme Ekle</h3>
+                            <button class="btn-close" onclick="closeModal('paymentModal')">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <p style="color: var(--gray-600); margin-bottom: 16px;"><strong>${companyName}</strong> için ödeme kaydı oluşturun.</p>
+                            <div class="outlined-input" style="margin-bottom: 16px;">
+                                <label>Ödeme Tutarı (₺)</label>
+                                <input type="number" id="paymentAmount" placeholder="Örn: 50000" required>
+                            </div>
+                            <div class="outlined-input" style="margin-bottom: 16px;">
+                                <label>Ödeme Tarihi</label>
+                                <input type="date" id="paymentDate" value="${new Date().toISOString().split('T')[0]}" required>
+                            </div>
+                            <div class="outlined-input" style="margin-bottom: 16px;">
+                                <label>Ödeme Yöntemi</label>
+                                <select id="paymentMethod">
+                                    <option value="bank">Banka Transferi</option>
+                                    <option value="cash">Nakit</option>
+                                    <option value="check">Çek</option>
+                                    <option value="credit_card">Kredi Kartı</option>
+                                </select>
+                            </div>
+                            <div class="outlined-input">
+                                <label>Açıklama</label>
+                                <input type="text" id="paymentNote" placeholder="Opsiyonel açıklama">
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn btn-outline" onclick="closeModal('paymentModal')">İptal</button>
+                            <button class="btn btn-primary" onclick="submitPayment(${dealerId})">
+                                <i class="fas fa-check"></i> Ödeme Kaydet
+                            </button>
+                        </div>
+                    </div>
+                </div>`;
+            document.body.insertAdjacentHTML('beforeend', paymentModalHtml);
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function submitPayment(dealerId) {
+            const amount = document.getElementById('paymentAmount').value;
+            const date = document.getElementById('paymentDate').value;
+            
+            if (!amount) {
+                showAlert('Lütfen ödeme tutarını girin.', 'error');
+                return;
+            }
+            
+            closeModal('paymentModal');
+            showAlert(`₺${Number(amount).toLocaleString('tr-TR')} ödeme başarıyla kaydedildi!`, 'success');
+            setTimeout(() => location.reload(), 1500);
+        }
+
+        // Price List Modal (Figma Design)
+        function openPriceListModal(dealerId, companyName) {
+            const priceListModalHtml = `
+                <div class="modal-backdrop" id="priceListModal" onclick="closeModal('priceListModal')">
+                    <div class="modal" onclick="event.stopPropagation()">
+                        <div class="modal-header">
+                            <h3>Fiyat Listesi Ata</h3>
+                            <button class="btn-close" onclick="closeModal('priceListModal')">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <p style="color: var(--gray-600); margin-bottom: 16px;"><strong>${companyName}</strong> için bir fiyat listesi seçin.</p>
+                            <div class="outlined-input" style="margin-bottom: 16px;">
+                                <label>Fiyat Listesi</label>
+                                <select id="selectedPriceList">
+                                    <option value="">Seçiniz...</option>
+                                    <option value="1">Standart Fiyat Listesi</option>
+                                    <option value="2">Bayi Fiyat Listesi (%10 indirim)</option>
+                                    <option value="3">VIP Fiyat Listesi (%15 indirim)</option>
+                                    <option value="4">Platinum Fiyat Listesi (%20 indirim)</option>
+                                    <option value="5">Distribütör Fiyat Listesi (%25 indirim)</option>
+                                </select>
+                            </div>
+                            <div style="background: var(--gray-50); padding: 12px; border-radius: 8px; font-size: 13px; color: var(--gray-600);">
+                                <i class="fas fa-info-circle" style="margin-right: 6px;"></i>
+                                Seçilen fiyat listesi tüm yeni siparişlere uygulanacaktır.
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn btn-outline" onclick="closeModal('priceListModal')">İptal</button>
+                            <button class="btn btn-primary" onclick="submitPriceList(${dealerId})">
+                                <i class="fas fa-check"></i> Fiyat Listesi Ata
+                            </button>
+                        </div>
+                    </div>
+                </div>`;
+            document.body.insertAdjacentHTML('beforeend', priceListModalHtml);
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function submitPriceList(dealerId) {
+            const priceList = document.getElementById('selectedPriceList').value;
+            
+            if (!priceList) {
+                showAlert('Lütfen bir fiyat listesi seçin.', 'error');
+                return;
+            }
+            
+            closeModal('priceListModal');
+            showAlert('Fiyat listesi başarıyla atandı!', 'success');
+        }
+
+        // Deactivate Account Modal (Figma Design)
+        function openDeactivateModal(dealerId, companyName) {
+            const deactivateModalHtml = `
+                <div class="modal-backdrop" id="deactivateModal" onclick="closeModal('deactivateModal')">
+                    <div class="modal" onclick="event.stopPropagation()">
+                        <div class="modal-header">
+                            <h3 style="color: var(--danger-500);"><i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>Hesabı Pasife Al</h3>
+                            <button class="btn-close" onclick="closeModal('deactivateModal')">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <div style="background: var(--danger-50); padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+                                <p style="color: var(--danger-700); font-weight: 500;"><strong>${companyName}</strong> hesabını pasife almak üzeresiniz.</p>
+                                <p style="color: var(--danger-600); font-size: 13px; margin-top: 8px;">Bu işlem sonucunda:</p>
+                                <ul style="color: var(--danger-600); font-size: 13px; margin-left: 16px; margin-top: 8px;">
+                                    <li>Bayi yeni sipariş veremez</li>
+                                    <li>Mevcut bakiye korunur</li>
+                                    <li>Hesap tekrar aktif edilebilir</li>
+                                </ul>
+                            </div>
+                            <div class="outlined-input">
+                                <label>Pasife Alma Sebebi</label>
+                                <select id="deactivateReason">
+                                    <option value="">Seçiniz...</option>
+                                    <option value="payment">Ödeme problemi</option>
+                                    <option value="inactive">Uzun süredir aktif değil</option>
+                                    <option value="request">Müşteri talebi</option>
+                                    <option value="other">Diğer</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn btn-outline" onclick="closeModal('deactivateModal')">Vazgeç</button>
+                            <button class="btn btn-danger" onclick="submitDeactivate(${dealerId})">
+                                <i class="fas fa-ban"></i> Hesabı Pasife Al
+                            </button>
+                        </div>
+                    </div>
+                </div>`;
+            document.body.insertAdjacentHTML('beforeend', deactivateModalHtml);
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function submitDeactivate(dealerId) {
+            const reason = document.getElementById('deactivateReason').value;
+            
+            if (!reason) {
+                showAlert('Lütfen bir sebep seçin.', 'error');
+                return;
+            }
+            
+            closeModal('deactivateModal');
+            showAlert('Hesap başarıyla pasife alındı.', 'success');
+            setTimeout(() => location.reload(), 1500);
+        }
+
+        // Advanced Filter Functions
+        function openAdvancedFilter() {
+            document.getElementById('advancedFilterSidebar').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeAdvancedFilter() {
+            document.getElementById('advancedFilterSidebar').style.display = 'none';
+            document.body.style.overflow = '';
+        }
+        
+        function updateRevenueRange(value) {
+            const formattedValue = new Intl.NumberFormat('tr-TR').format(value);
+            document.getElementById('revenueValue').textContent = '₺' + formattedValue;
+            document.getElementById('maxRevenue').value = value;
+        }
+        
+        function toggleBalanceFilter(type) {
+            const allCheckbox = document.getElementById('balanceAll');
+            const positiveCheckbox = document.getElementById('balancePositive');
+            const negativeCheckbox = document.getElementById('balanceNegative');
+            const zeroCheckbox = document.getElementById('balanceZero');
+            
+            if (type === 'all') {
+                positiveCheckbox.checked = false;
+                negativeCheckbox.checked = false;
+                zeroCheckbox.checked = false;
+            } else {
+                allCheckbox.checked = false;
+            }
+        }
+        
+        function resetFilters() {
+            document.getElementById('minRevenue').value = '';
+            document.getElementById('maxRevenue').value = '';
+            document.getElementById('revenueSlider').value = 5000000;
+            document.getElementById('revenueValue').textContent = '₺5.000.000';
+            document.getElementById('lastOrderFilter').value = '';
+            document.getElementById('cityFilter').value = '';
+            document.getElementById('representativeFilter').value = '';
+            document.getElementById('balanceAll').checked = true;
+            document.getElementById('balancePositive').checked = false;
+            document.getElementById('balanceNegative').checked = false;
+            document.getElementById('balanceZero').checked = false;
+            
+            document.querySelectorAll('.filter-group input[type="checkbox"][value]').forEach(cb => {
+                cb.checked = false;
+            });
+            
+            showAlert('Filtreler sıfırlandı.', 'success');
+        }
+        
+        function applyFilters() {
+            const minRevenue = document.getElementById('minRevenue').value;
+            const maxRevenue = document.getElementById('maxRevenue').value;
+            const lastOrder = document.getElementById('lastOrderFilter').value;
+            const city = document.getElementById('cityFilter').value;
+            const representative = document.getElementById('representativeFilter').value;
+            
+            // Build query string
+            let params = new URLSearchParams();
+            if (minRevenue) params.append('minRevenue', minRevenue);
+            if (maxRevenue) params.append('maxRevenue', maxRevenue);
+            if (lastOrder) params.append('lastOrder', lastOrder);
+            if (city) params.append('city', city);
+            if (representative) params.append('representative', representative);
+            
+            closeAdvancedFilter();
+            showAlert('Filtreler uygulandı.', 'success');
+            
+            // For demo, just close the sidebar
+            // In production: window.location.href = '?' + params.toString();
+        }
+        
+        // Search and Sort Functions
+        function filterTable(searchTerm) {
+            const rows = document.querySelectorAll('.data-table tbody tr');
+            const term = searchTerm.toLowerCase();
+            
+            rows.forEach(row => {
+                const companyName = row.querySelector('td:nth-child(2)')?.textContent.toLowerCase() || '';
+                const location = row.querySelector('td:nth-child(3)')?.textContent.toLowerCase() || '';
+                
+                if (companyName.includes(term) || location.includes(term)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+        
+        function sortTable(sortBy) {
+            if (!sortBy) return;
+            
+            const tbody = document.querySelector('.data-table tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            
+            rows.sort((a, b) => {
+                let aVal, bVal;
+                
+                switch(sortBy) {
+                    case 'name-asc':
+                    case 'name-desc':
+                        aVal = a.querySelector('td:nth-child(2)')?.textContent.trim() || '';
+                        bVal = b.querySelector('td:nth-child(2)')?.textContent.trim() || '';
+                        return sortBy === 'name-asc' ? aVal.localeCompare(bVal, 'tr') : bVal.localeCompare(aVal, 'tr');
+                    case 'revenue-asc':
+                    case 'revenue-desc':
+                        aVal = parseFloat(a.querySelector('td:nth-child(4)')?.textContent.replace(/[^\d]/g, '') || 0);
+                        bVal = parseFloat(b.querySelector('td:nth-child(4)')?.textContent.replace(/[^\d]/g, '') || 0);
+                        return sortBy === 'revenue-asc' ? aVal - bVal : bVal - aVal;
+                    case 'balance-asc':
+                    case 'balance-desc':
+                        aVal = parseFloat(a.dataset.balance || 0);
+                        bVal = parseFloat(b.dataset.balance || 0);
+                        return sortBy === 'balance-asc' ? aVal - bVal : bVal - aVal;
+                    default:
+                        return 0;
+                }
+            });
+            
+            rows.forEach(row => tbody.appendChild(row));
+            showAlert('Liste sıralandı.', 'success');
+        }
+        
+        // exportToExcel function is defined earlier in the script section
+
+        // Quick Order Panel Functions
+        let quickOrderCart = [];
+        let currentDealerId = null;
+        
+        // Sample products for demo
+        const sampleProducts = [
+            { id: 1, name: 'iPhone 15 Pro Max 256GB', sku: 'APL-IP15PM-256', barcode: '8901234567890', price: 78999 },
+            { id: 2, name: 'Samsung Galaxy S24 Ultra', sku: 'SAM-S24U-256', barcode: '8901234567891', price: 72999 },
+            { id: 3, name: 'MacBook Air M3 13"', sku: 'APL-MBA-M3-13', barcode: '8901234567892', price: 54999 },
+            { id: 4, name: 'iPad Pro 12.9" M4', sku: 'APL-IPADP-M4', barcode: '8901234567893', price: 62999 },
+            { id: 5, name: 'AirPods Pro 2nd Gen', sku: 'APL-APP2', barcode: '8901234567894', price: 8999 },
+            { id: 6, name: 'Apple Watch Ultra 2', sku: 'APL-AWU2', barcode: '8901234567895', price: 29999 },
+            { id: 7, name: 'Sony WH-1000XM5', sku: 'SNY-WH5', barcode: '8901234567896', price: 12999 },
+            { id: 8, name: 'Samsung 65" OLED TV', sku: 'SAM-TV65-OLED', barcode: '8901234567897', price: 89999 }
+        ];
+        
+        function openQuickOrderPanel(dealerId, companyName, balance) {
+            currentDealerId = dealerId;
+            quickOrderCart = [];
+            
+            document.getElementById('quickOrderCompany').textContent = companyName;
+            document.getElementById('quickOrderCode').textContent = 'C-' + String(dealerId).padStart(5, '0');
+            document.getElementById('quickOrderBalance').textContent = '₺' + Math.abs(balance).toLocaleString('tr-TR');
+            document.getElementById('quickOrderBalance').style.color = balance > 0 ? 'var(--danger-500)' : 'var(--success-500)';
+            document.getElementById('quickOrderSearch').value = '';
+            document.getElementById('productResults').style.display = 'none';
+            
+            updateCart();
+            
+            document.getElementById('quickOrderPanel').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeQuickOrderPanel() {
+            document.getElementById('quickOrderPanel').style.display = 'none';
+            document.body.style.overflow = '';
+        }
+        
+        function searchProducts(term) {
+            const resultsDiv = document.getElementById('productResults');
+            
+            if (term.length < 2) {
+                resultsDiv.style.display = 'none';
+                return;
+            }
+            
+            const filtered = sampleProducts.filter(p => 
+                p.name.toLowerCase().includes(term.toLowerCase()) ||
+                p.sku.toLowerCase().includes(term.toLowerCase()) ||
+                p.barcode.includes(term)
+            );
+            
+            if (filtered.length === 0) {
+                resultsDiv.innerHTML = '<div style="padding: 16px; text-align: center; color: var(--gray-500);">Ürün bulunamadı</div>';
+            } else {
+                resultsDiv.innerHTML = filtered.map(p => `
+                    <div class="product-result-item" onclick="addToCart(${p.id})" style="padding: 12px; border-bottom: 1px solid var(--gray-100); cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s;">
+                        <div>
+                            <p style="margin: 0; font-weight: 500; color: var(--gray-900);">${p.name}</p>
+                            <p style="margin: 0; font-size: 12px; color: var(--gray-500);">${p.sku}</p>
+                        </div>
+                        <div style="text-align: right;">
+                            <p style="margin: 0; font-weight: 600; color: var(--primary-500);">₺${p.price.toLocaleString('tr-TR')}</p>
+                            <button class="btn btn-sm" style="padding: 4px 8px; font-size: 11px; background: var(--success-500); color: white; border: none; border-radius: 6px;">
+                                <i class="fas fa-plus"></i> Ekle
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            resultsDiv.style.display = 'block';
+        }
+        
+        function addToCart(productId) {
+            const product = sampleProducts.find(p => p.id === productId);
+            if (!product) return;
+            
+            const existingItem = quickOrderCart.find(item => item.id === productId);
+            if (existingItem) {
+                existingItem.quantity++;
+            } else {
+                quickOrderCart.push({ ...product, quantity: 1 });
+            }
+            
+            updateCart();
+            document.getElementById('quickOrderSearch').value = '';
+            document.getElementById('productResults').style.display = 'none';
+            showAlert(`${product.name} sepete eklendi.`, 'success');
+        }
+        
+        function updateCartItemQuantity(productId, delta) {
+            const item = quickOrderCart.find(i => i.id === productId);
+            if (!item) return;
+            
+            item.quantity += delta;
+            if (item.quantity <= 0) {
+                quickOrderCart = quickOrderCart.filter(i => i.id !== productId);
+            }
+            
+            updateCart();
+        }
+        
+        function removeFromCart(productId) {
+            quickOrderCart = quickOrderCart.filter(i => i.id !== productId);
+            updateCart();
+        }
+        
+        function updateCart() {
+            const cartItemsDiv = document.getElementById('cartItems');
+            const emptyMessage = document.getElementById('emptyCartMessage');
+            const cartCount = document.getElementById('cartItemCount');
+            const cartTotal = document.getElementById('cartTotal');
+            
+            if (quickOrderCart.length === 0) {
+                emptyMessage.style.display = 'block';
+                cartItemsDiv.innerHTML = '';
+                cartItemsDiv.appendChild(emptyMessage);
+                cartCount.textContent = '0 ürün';
+                cartTotal.textContent = '₺0';
+                return;
+            }
+            
+            const totalItems = quickOrderCart.reduce((sum, item) => sum + item.quantity, 0);
+            const totalPrice = quickOrderCart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            
+            cartCount.textContent = totalItems + ' ürün';
+            cartTotal.textContent = '₺' + totalPrice.toLocaleString('tr-TR');
+            
+            cartItemsDiv.innerHTML = quickOrderCart.map(item => `
+                <div style="padding: 12px; border-bottom: 1px solid var(--gray-100); display: flex; justify-content: space-between; align-items: center;">
+                    <div style="flex: 1;">
+                        <p style="margin: 0; font-weight: 500; color: var(--gray-900); font-size: 13px;">${item.name}</p>
+                        <p style="margin: 0; font-size: 12px; color: var(--gray-500);">₺${item.price.toLocaleString('tr-TR')} x ${item.quantity}</p>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div style="display: flex; align-items: center; gap: 4px; background: var(--gray-100); border-radius: 8px; padding: 4px;">
+                            <button onclick="updateCartItemQuantity(${item.id}, -1)" style="width: 28px; height: 28px; border: none; background: white; border-radius: 6px; cursor: pointer; font-weight: bold;">-</button>
+                            <span style="min-width: 24px; text-align: center; font-weight: 600;">${item.quantity}</span>
+                            <button onclick="updateCartItemQuantity(${item.id}, 1)" style="width: 28px; height: 28px; border: none; background: white; border-radius: 6px; cursor: pointer; font-weight: bold;">+</button>
+                        </div>
+                        <button onclick="removeFromCart(${item.id})" style="width: 28px; height: 28px; border: none; background: var(--danger-100); color: var(--danger-500); border-radius: 6px; cursor: pointer;">
+                            <i class="fas fa-trash" style="font-size: 12px;"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function submitQuickOrder() {
+            if (quickOrderCart.length === 0) {
+                showAlert('Sepetiniz boş. Lütfen ürün ekleyin.', 'error');
+                return;
+            }
+            
+            const totalPrice = quickOrderCart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            
+            closeQuickOrderPanel();
+            showAlert(`₺${totalPrice.toLocaleString('tr-TR')} tutarında sipariş başarıyla oluşturuldu!`, 'success');
+            
+            // Reset cart
+            quickOrderCart = [];
+        }
+        
+        // Update openOrderModal to use Quick Order Panel
+        function openOrderModal(dealerId, companyName) {
+            // Get balance from row data
+            const row = document.querySelector(`tr[data-dealer-id="${dealerId}"]`);
+            const balance = row ? parseFloat(row.dataset.balance || 0) : 0;
+            
+            openQuickOrderPanel(dealerId, companyName, balance);
+        }
+    </script>
+}

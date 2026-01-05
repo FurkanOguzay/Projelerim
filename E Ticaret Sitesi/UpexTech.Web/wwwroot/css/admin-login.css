@@ -1,0 +1,383 @@
+/* ================================================
+   ADMIN LOGIN PAGE STYLES
+   Figma tasarımına uygun split-screen layout
+   ================================================ */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #ffffff;
+    min-height: 100vh;
+}
+
+/* ================================================
+   CONTAINER - Ana Yapı
+   ================================================ */
+
+.admin-login-container {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* ================================================
+   LEFT PANEL - %40 Görsel Bölüm
+   ================================================ */
+
+.admin-login-left {
+    display: none;
+    width: 40%;
+    background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #3b82f6 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+@media (min-width: 1024px) {
+    .admin-login-left {
+        display: flex;
+    }
+}
+
+/* Arka Plan Görseli */
+.admin-login-bg-image {
+    position: absolute;
+    inset: 0;
+    opacity: 0.3;
+}
+
+.admin-login-bg-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Sol Panel İçerik */
+.admin-login-left-content {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    padding: 3rem;
+    color: #ffffff;
+}
+
+.admin-login-left-inner {
+    max-width: 400px;
+    text-align: center;
+}
+
+/* İkon Kutusu */
+.admin-login-icon-box {
+    width: 80px;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 2rem;
+}
+
+.admin-login-icon {
+    width: 48px;
+    height: 48px;
+    color: #ffffff;
+}
+
+/* Başlıklar */
+.admin-login-title {
+    font-size: 1.875rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: #ffffff;
+}
+
+.admin-login-subtitle {
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.8);
+    line-height: 1.6;
+}
+
+/* Dekoratif Blur Elementleri */
+.admin-login-blur-1 {
+    position: absolute;
+    top: 40px;
+    left: 40px;
+    width: 128px;
+    height: 128px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 50%;
+    filter: blur(60px);
+}
+
+.admin-login-blur-2 {
+    position: absolute;
+    bottom: 80px;
+    right: 40px;
+    width: 160px;
+    height: 160px;
+    background: rgba(96, 165, 250, 0.1);
+    border-radius: 50%;
+    filter: blur(60px);
+}
+
+/* ================================================
+   RIGHT PANEL - %60 Form Bölümü
+   ================================================ */
+
+.admin-login-right {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #ffffff;
+    padding: 2rem;
+}
+
+@media (min-width: 1024px) {
+    .admin-login-right {
+        width: 60%;
+    }
+}
+
+.admin-login-form-wrapper {
+    width: 100%;
+    max-width: 400px;
+}
+
+/* ================================================
+   HEADER - Logo ve Başlık
+   ================================================ */
+
+.admin-login-header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+}
+
+.admin-login-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+}
+
+.admin-login-logo img {
+    height: 64px;
+    width: auto;
+}
+
+.admin-login-welcome {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 0.5rem;
+}
+
+.admin-login-description {
+    font-size: 0.9375rem;
+    color: #6b7280;
+}
+
+/* ================================================
+   FORM STYLES
+   ================================================ */
+
+.admin-login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.admin-form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.admin-form-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.5rem;
+}
+
+.admin-form-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-family: inherit;
+    color: #1f2937;
+    background-color: #ffffff;
+    transition: all 0.2s ease;
+}
+
+.admin-form-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.admin-form-input::placeholder {
+    color: #9ca3af;
+}
+
+.admin-form-error {
+    font-size: 0.75rem;
+    color: #ef4444;
+    margin-top: 0.25rem;
+}
+
+/* Password Wrapper */
+.admin-password-wrapper {
+    position: relative;
+}
+
+.admin-password-wrapper .admin-form-input {
+    padding-right: 3rem;
+}
+
+.admin-password-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    color: #6b7280;
+    transition: color 0.2s ease;
+}
+
+.admin-password-toggle:hover {
+    color: #374151;
+}
+
+.admin-password-icon {
+    width: 20px;
+    height: 20px;
+}
+
+/* ================================================
+   FORM OPTIONS - Beni Hatırla & Şifremi Unuttum
+   ================================================ */
+
+.admin-form-options {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.admin-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: #374151;
+}
+
+.admin-checkbox {
+    width: 16px;
+    height: 16px;
+    accent-color: #3b82f6;
+    cursor: pointer;
+}
+
+.admin-forgot-link {
+    font-size: 0.875rem;
+    color: #3b82f6;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.admin-forgot-link:hover {
+    color: #1e3a8a;
+}
+
+/* ================================================
+   ALERTS
+   ================================================ */
+
+.admin-alert-error {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1rem;
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    color: #dc2626;
+}
+
+.admin-alert-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.admin-alert-error p {
+    font-size: 0.875rem;
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* ================================================
+   LOGIN BUTTON
+   ================================================ */
+
+.admin-login-button {
+    width: 100%;
+    padding: 0.875rem 1.5rem;
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+    color: #ffffff;
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: inherit;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 14px rgba(59, 130, 246, 0.35);
+}
+
+.admin-login-button:hover {
+    background: linear-gradient(135deg, #1e40af 0%, #60a5fa 100%);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.45);
+    transform: translateY(-1px);
+}
+
+.admin-login-button:active {
+    transform: translateY(0);
+}
+
+.admin-login-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ================================================
+   FOOTER
+   ================================================ */
+
+.admin-login-footer {
+    margin-top: 2rem;
+    text-align: center;
+}
+
+.admin-login-footer p {
+    font-size: 0.875rem;
+    color: #6b7280;
+}

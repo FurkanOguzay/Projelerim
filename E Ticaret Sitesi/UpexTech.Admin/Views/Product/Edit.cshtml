@@ -1,0 +1,145 @@
+@model UpexTech.Entity.Product
+@{
+    ViewData["Title"] = "Ürün Düzenle";
+}
+
+<div class="page-header">
+    <h1>Ürün Düzenle</h1>
+    <p>@Model.Name ürününü düzenliyorsunuz</p>
+</div>
+
+<div class="card" style="max-width: 800px;">
+    <form asp-action="Edit" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="CreatedAt" />
+        
+        <div style="display: grid; gap: 20px;">
+            <!-- Ürün Adı -->
+            <div class="filter-group">
+                <label asp-for="Name">Ürün Adı <span style="color: var(--danger-500);">*</span></label>
+                <input asp-for="Name" class="filter-input" style="padding-left: 12px;" placeholder="Ürün adını girin" required />
+                <span asp-validation-for="Name" style="color: var(--danger-500); font-size: 13px;"></span>
+            </div>
+
+            <!-- Açıklama -->
+            <div class="filter-group">
+                <label asp-for="Description">Açıklama</label>
+                <textarea asp-for="Description" class="filter-input" style="padding-left: 12px; min-height: 100px; resize: vertical;" placeholder="Ürün açıklaması"></textarea>
+            </div>
+
+            <!-- Kategori ve Marka -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div class="filter-group">
+                    <label asp-for="CategoryId">Kategori <span style="color: var(--danger-500);">*</span></label>
+                    <select asp-for="CategoryId" asp-items="ViewBag.Categories" class="filter-input" style="padding-left: 12px;" id="categorySelect" required>
+                        <option value="">Kategori seçin</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label asp-for="BrandId">Marka <span style="color: var(--danger-500);">*</span></label>
+                    <select asp-for="BrandId" asp-items="ViewBag.Brands" class="filter-input" style="padding-left: 12px;" id="brandSelect" required>
+                        <option value="">Marka seçin</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Fiyatlar -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div class="filter-group">
+                    <label asp-for="PriceB2C">B2C Fiyat (₺) <span style="color: var(--danger-500);">*</span></label>
+                    <input asp-for="PriceB2C" type="number" step="0.01" min="0" class="filter-input" style="padding-left: 12px;" placeholder="0.00" required />
+                </div>
+                <div class="filter-group">
+                    <label asp-for="PriceB2B">B2B Fiyat (₺) <span style="color: var(--danger-500);">*</span></label>
+                    <input asp-for="PriceB2B" type="number" step="0.01" min="0" class="filter-input" style="padding-left: 12px;" placeholder="0.00" required />
+                </div>
+            </div>
+
+            <!-- Stok ve Görsel -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div class="filter-group">
+                    <label asp-for="Stock">Stok Adedi <span style="color: var(--danger-500);">*</span></label>
+                    <input asp-for="Stock" type="number" min="0" class="filter-input" style="padding-left: 12px;" placeholder="0" required />
+                </div>
+                <div class="filter-group">
+                    <label asp-for="Image">Görsel Dosya Adı</label>
+                    <input asp-for="Image" class="filter-input" style="padding-left: 12px;" placeholder="ornek.png" />
+                </div>
+            </div>
+
+            <!-- Özellikler -->
+            <div style="display: flex; gap: 24px; padding: 16px; background: var(--gray-50); border-radius: var(--radius-lg);">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input asp-for="IsPopular" type="checkbox" style="width: 18px; height: 18px;" />
+                    <span>Popüler Ürün</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input asp-for="IsImmediateDelivery" type="checkbox" style="width: 18px; height: 18px;" />
+                    <span>Hızlı Teslimat</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input asp-for="IsActive" type="checkbox" style="width: 18px; height: 18px;" />
+                    <span>Aktif</span>
+                </label>
+            </div>
+
+            <!-- Butonlar -->
+            <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 12px;">
+                <a href="@Url.Action("Index")" class="btn-filter secondary">
+                    <i class="fas fa-times"></i>
+                    İptal
+                </a>
+                <button type="submit" class="btn-filter primary">
+                    <i class="fas fa-save"></i>
+                    Kaydet
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        // Tüm marka verilerini sakla
+        var allBrands = @Html.Raw(Json.Serialize(ViewBag.Brands as IEnumerable<SelectListItem>));
+        var currentBrandId = '@Model.BrandId';
+        
+        document.getElementById('categorySelect').addEventListener('change', function() {
+            var categoryId = this.value;
+            var brandSelect = document.getElementById('brandSelect');
+            
+            if (categoryId) {
+                fetch('/Product/GetBrandsByCategory?categoryId=' + categoryId)
+                    .then(response => response.json())
+                    .then(data => {
+                        brandSelect.innerHTML = '<option value="">Marka seçin</option>';
+                        if (data.length > 0) {
+                            data.forEach(function(brand) {
+                                var selected = brand.value == currentBrandId ? ' selected' : '';
+                                brandSelect.innerHTML += '<option value="' + brand.value + '"' + selected + '>' + brand.text + '</option>';
+                            });
+                        } else {
+                            brandSelect.innerHTML = '<option value="">Bu kategoride marka yok</option>';
+                        }
+                    })
+                    .catch(function() {
+                        brandSelect.innerHTML = '<option value="">Marka seçin</option>';
+                        if (allBrands) {
+                            allBrands.forEach(function(brand) {
+                                brandSelect.innerHTML += '<option value="' + brand.value + '">' + brand.text + '</option>';
+                            });
+                        }
+                    });
+            } else {
+                brandSelect.innerHTML = '<option value="">Marka seçin</option>';
+                if (allBrands) {
+                    allBrands.forEach(function(brand) {
+                        brandSelect.innerHTML += '<option value="' + brand.value + '">' + brand.text + '</option>';
+                    });
+                }
+            }
+        });
+    </script>
+}
+

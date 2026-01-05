@@ -1,0 +1,335 @@
+@model Cart?
+@using UpexTech.Entity
+@{
+    ViewData["Title"] = "Sepetim";
+    var isB2B = ViewBag.IsB2B ?? false;
+    var userRole = ViewBag.UserRole as string ?? "B2C";
+    var limit = isB2B ? 100 : 5;
+    var userPriceList = ViewBag.UserPriceList as PriceList;
+    
+    // Fiyat hesaplama fonksiyonu
+    decimal CalculatePrice(Product product) {
+        decimal defaultPrice = isB2B ? product.PriceB2B : product.PriceB2C;
+        
+        if (userPriceList == null) {
+            return defaultPrice;
+        }
+        
+        decimal basePrice = product.PurchasePrice > 0 ? product.PurchasePrice : defaultPrice;
+        decimal calculatedPrice = basePrice * userPriceList.Factor;
+        
+        calculatedPrice = userPriceList.Rounding switch {
+            RoundingMethod.Ending90 => Math.Floor(calculatedPrice) + 0.90m,
+            RoundingMethod.Ending99 => Math.Floor(calculatedPrice) + 0.99m,
+            RoundingMethod.NearestFive => Math.Round(calculatedPrice / 5) * 5,
+            _ => Math.Round(calculatedPrice, 2)
+        };
+        
+        return calculatedPrice > 0 ? calculatedPrice : defaultPrice;
+    }
+}
+
+<div class="container py-5">
+    @if (Model == null || !Model.Items.Any())
+    {
+        @* Boş Sepet *@
+        <div class="text-center py-5">
+            <div class="mb-4">
+                <i data-lucide="shopping-cart" style="width: 80px; height: 80px;" class="text-muted"></i>
+            </div>
+            <h2 class="text-dark mb-4" style="font-size: 2rem;">Sepetinde Ürün Bulunmamaktadır.</h2>
+            <a href="/Catalog" class="btn btn-primary btn-lg px-5 py-3" style="background-color: var(--primary-color); border-color: var(--primary-color);">
+                Alışverişe Başla
+            </a>
+        </div>
+    }
+    else
+    {
+        @* Sepetim Başlık *@
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <i data-lucide="shopping-cart" style="width: 40px; height: 40px; color: var(--primary-color);"></i>
+            <h2 class="mb-0" style="font-size: 2rem; color: var(--gray-900);">Sepetim</h2>
+        </div>
+
+        <div class="row g-4">
+            @* Sepet Ürünleri *@
+            <div class="col-lg-8">
+                <div id="cart-items">
+                    @foreach (var item in Model.Items)
+                    {
+                        var price = CalculatePrice(item.Product);
+                        <div class="cart-item bg-white rounded-4 shadow-sm p-4 mb-4" data-product-id="@item.ProductId">
+                            <div class="d-flex gap-4">
+                                <img src="~/images/@item.Product.Image" alt="@item.Product.Name" 
+                                     class="rounded-3" style="width: 128px; height: 128px; object-fit: cover;">
+                                
+                                <div class="flex-grow-1">
+                                    <h5 class="mb-2" style="color: var(--gray-900);">@item.Product.Name</h5>
+                                    <p class="text-muted small mb-3">Kategori: @item.Product.Category?.Name</p>
+                                    
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <div>
+                                            <div class="fs-4 mb-1" style="color: var(--primary-color); font-weight: 600;">
+                                                ₺@price.ToString("N0")
+                                            </div>
+                                            @if (isB2B)
+                                            {
+                                                <span class="badge" style="background-color: var(--green-100); color: var(--green-700); font-size: 0.75rem;">
+                                                    Bayi Fiyatı
+                                                </span>
+                                            }
+                                        </div>
+                                        
+                                        <div class="d-flex align-items-center gap-4">
+                                            @* Miktar Kontrolleri *@
+                                            <div class="d-flex align-items-center gap-3">
+                                                <button class="btn qty-control-btn" 
+                                                        onclick="updateQuantity(@item.ProductId, -1)"
+                                                        style="width: 32px; height: 32px; background-color: var(--gray-200); border-radius: 8px; border: none; display: flex; align-items: center; justify-content: center;">
+                                                    <i data-lucide="minus" style="width: 16px; height: 16px;"></i>
+                                                </button>
+                                                <span class="qty-display" style="font-size: 1.125rem; min-width: 2rem; text-align: center;">@item.Quantity</span>
+                                                <button class="btn qty-control-btn" 
+                                                        onclick="updateQuantity(@item.ProductId, 1)"
+                                                        data-max-stock="@item.Product.Stock"
+                                                        style="width: 32px; height: 32px; background-color: var(--gray-200); border-radius: 8px; border: none; display: flex; align-items: center; justify-content: center;"
+                                                        @(item.Quantity >= item.Product.Stock ? "disabled" : "")>
+                                                    <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+                                                </button>
+                                            </div>
+                                            
+                                            @* Silme Butonu *@
+                                            <button class="btn p-2" onclick="removeItem(@item.ProductId)"
+                                                    style="color: var(--red-500); border-radius: 8px; transition: background-color 0.15s;"
+                                                    onmouseover="this.style.backgroundColor='var(--red-50)'"
+                                                    onmouseout="this.style.backgroundColor='transparent'">
+                                                <i data-lucide="trash-2" style="width: 20px; height: 20px;"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mt-3 small text-muted">
+                                        Stok: @item.Product.Stock adet | Maksimum alım: @limit adet
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            @* Sepet Özeti *@
+            <div class="col-lg-4">
+                <div class="bg-white rounded-4 shadow-sm p-4 sticky-top" style="top: 100px;">
+                    <h4 class="mb-4" style="font-size: 1.5rem; color: var(--gray-900);">Sepet Özeti</h4>
+                    
+                    @{
+                        var subtotal = Model.Items.Sum(i => i.Quantity * CalculatePrice(i.Product));
+                        var tax = subtotal * 0.20m; // KDV %20
+                        var shipping = subtotal > 500 ? 0 : 49.90m;
+                        var total = subtotal + tax + shipping;
+                    }
+                    
+                    <div class="d-flex flex-column gap-3 mb-4">
+                        <div class="d-flex justify-content-between" style="color: var(--gray-600);">
+                            <span>Ara Toplam</span>
+                            <span id="subtotal">₺@subtotal.ToString("N2")</span>
+                        </div>
+                        <div class="d-flex justify-content-between" style="color: var(--gray-600);">
+                            <span>KDV (%20)</span>
+                            <span id="tax">₺@tax.ToString("N2")</span>
+                        </div>
+                        <div class="d-flex justify-content-between" style="color: var(--gray-600);">
+                            <span>Kargo</span>
+                            @if (shipping == 0)
+                            {
+                                <span style="color: var(--green-600);">ÜCRETSİZ</span>
+                            }
+                            else
+                            {
+                                <span id="shipping">₺@shipping.ToString("N2")</span>
+                            }
+                        </div>
+                        
+                        @if (subtotal < 500)
+                        {
+                            <div class="p-2 rounded" style="background-color: #fff7ed; color: #9a3412; font-size: 0.875rem;">
+                                ₺@((500 - subtotal).ToString("N2")) daha alışveriş yapın, kargo ücretsiz!
+                            </div>
+                        }
+                    </div>
+                    
+                    <div class="border-top pt-4 mb-4" style="border-color: var(--gray-200) !important;">
+                        <div class="d-flex justify-content-between" style="font-size: 1.25rem;">
+                            <span>Toplam</span>
+                            <span id="cart-total" style="color: var(--primary-color); font-weight: 600;">₺@total.ToString("N2")</span>
+                        </div>
+                    </div>
+                    
+                    <button onclick="proceedToCheckout()" class="btn w-100 py-3 mb-3 text-white"
+                            style="background-color: var(--primary-color); border-radius: 8px; font-weight: 500;">
+                        Sepeti Onayla
+                    </button>
+                    <a href="/Catalog" class="btn w-100 py-3 text-dark"
+                       style="background-color: var(--gray-100); border-radius: 8px; font-weight: 500;">
+                        Alışverişe Devam Et
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        @* Tab Menüsü *@
+        <div class="border-top mt-5 pt-4" style="border-color: var(--gray-200) !important;">
+            <div class="d-flex gap-2 mb-4" style="border-bottom: 1px solid var(--gray-200);">
+                <button class="cart-tab-btn active" onclick="showTab('previous', this)" 
+                        style="padding: 0.75rem 1.5rem; border: none; background: none; border-bottom: 2px solid var(--primary-color); color: var(--primary-color); cursor: pointer; transition: all 0.2s;">
+                    Önceden Eklediklerim
+                </button>
+                <button class="cart-tab-btn" onclick="showTab('reorder', this)"
+                        style="padding: 0.75rem 1.5rem; border: none; background: none; border-bottom: 2px solid transparent; color: var(--gray-600); cursor: pointer; transition: all 0.2s;">
+                    Tekrar Satın Al
+                </button>
+                <button class="cart-tab-btn" onclick="showTab('favorites', this)"
+                        style="padding: 0.75rem 1.5rem; border: none; background: none; border-bottom: 2px solid transparent; color: var(--gray-600); cursor: pointer; transition: all 0.2s;">
+                    Favorilerim
+                </button>
+            </div>
+            
+            <div id="tab-previous" class="cart-tab-content">
+                <div class="text-center py-5 rounded" style="background-color: var(--gray-50); color: var(--gray-500);">
+                    Önceden eklediğiniz ürün bulunmamaktadır.
+                </div>
+            </div>
+            
+            <div id="tab-reorder" class="cart-tab-content" style="display: none;">
+                <div class="text-center py-5 rounded" style="background-color: var(--gray-50); color: var(--gray-500);">
+                    Tekrar satın alabileceğiniz ürün bulunmamaktadır.
+                </div>
+            </div>
+            
+            <div id="tab-favorites" class="cart-tab-content" style="display: none;">
+                <div class="text-center py-5 rounded" style="background-color: var(--gray-50); color: var(--gray-500);">
+                    Favori ürününüz bulunmamaktadır.
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+<script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+    
+    function updateQuantity(productId, change) {
+        const cartItem = document.querySelector(`.cart-item[data-product-id="${productId}"]`);
+        const qtyDisplay = cartItem.querySelector('.qty-display');
+        const currentQty = parseInt(qtyDisplay.textContent);
+        let newQty = currentQty + change;
+        
+        if (newQty < 1) {
+            removeItem(productId);
+            return;
+        }
+        
+        const maxLimit = @limit;
+        if (newQty > maxLimit) {
+            showToast(`Maksimum ${maxLimit} adet alabilirsiniz.`, 'warning');
+            return;
+        }
+        
+        setQuantity(productId, newQty);
+    }
+
+    function setQuantity(productId, quantity) {
+        quantity = parseInt(quantity);
+        if (quantity < 1) quantity = 1;
+
+        fetch('/Cart/UpdateQuantity', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `productId=${productId}&quantity=${quantity}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                if (data.removed) {
+                    document.querySelector(`.cart-item[data-product-id="${productId}"]`).remove();
+                    updateCartBadge(data.cartCount);
+                    if (data.cartCount === 0) {
+                        location.reload();
+                    }
+                } else {
+                    const cartItem = document.querySelector(`.cart-item[data-product-id="${productId}"]`);
+                    cartItem.querySelector('.qty-display').textContent = data.quantity;
+                }
+                
+                // Sepet toplamlarını güncelle
+                recalculateTotals();
+                updateCartBadge(data.cartCount);
+            }
+        });
+    }
+
+    function removeItem(productId) {
+        if (!confirm('Bu ürünü sepetten kaldırmak istediğinize emin misiniz?')) return;
+
+        fetch('/Cart/Remove', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `productId=${productId}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.querySelector(`.cart-item[data-product-id="${productId}"]`).remove();
+                updateCartBadge(data.cartCount);
+                
+                if (data.cartCount === 0) {
+                    location.reload();
+                } else {
+                    recalculateTotals();
+                }
+            }
+        });
+    }
+
+    function recalculateTotals() {
+        // Bu fonksiyon sayfa yenilemeden toplam güncelleme için
+        // Backend'den güncel sepet toplamı alınabilir
+        location.reload(); // Şimdilik sayfayı yenile
+    }
+
+    function proceedToCheckout() {
+        window.location.href = '/Checkout';
+    }
+
+    function updateCartBadge(count) {
+        const badge = document.getElementById('cartBadge');
+        if (badge) {
+            badge.textContent = count;
+            badge.style.display = count > 0 ? 'flex' : 'none';
+        }
+    }
+
+    function showTab(tabName, btn) {
+        // Tüm tab içeriklerini gizle
+        document.querySelectorAll('.cart-tab-content').forEach(content => {
+            content.style.display = 'none';
+        });
+        
+        // Tüm tab butonlarını pasif yap
+        document.querySelectorAll('.cart-tab-btn').forEach(tabBtn => {
+            tabBtn.style.borderBottomColor = 'transparent';
+            tabBtn.style.color = 'var(--gray-600)';
+        });
+        
+        // Seçilen tab içeriğini göster
+        document.getElementById('tab-' + tabName).style.display = 'block';
+        
+        // Seçilen butonu aktif yap
+        btn.style.borderBottomColor = 'var(--primary-color)';
+        btn.style.color = 'var(--primary-color)';
+    }
+</script>
+}

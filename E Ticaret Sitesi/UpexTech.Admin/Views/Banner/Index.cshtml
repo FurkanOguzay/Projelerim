@@ -1,0 +1,257 @@
+@model IEnumerable<UpexTech.Entity.Banner>
+@{
+    ViewData["Title"] = "Banner Yönetimi";
+}
+
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
+    <div>
+        <h1>Banner Yönetimi</h1>
+        <p>Kampanya görsellerini yönetin, yayınlanma tarihlerini belirleyin</p>
+    </div>
+    <a href="@Url.Action("Create")" class="btn-new">
+        <i class="fas fa-plus"></i>
+        Yeni Banner Ekle
+    </a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success" style="background: var(--success-100); color: var(--success-700); padding: 16px 24px; border-radius: var(--radius-lg); margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
+        <i class="fas fa-check-circle"></i>
+        @TempData["SuccessMessage"]
+    </div>
+}
+
+<!-- Filtre Paneli -->
+<div class="filter-panel" style="background: var(--white); border-radius: var(--radius-lg); padding: 20px; margin-bottom: 24px; box-shadow: var(--shadow-sm);">
+    <form method="get" asp-action="Index" style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end;">
+        <div style="flex: 1; min-width: 200px;">
+            <label style="display: block; margin-bottom: 6px; font-size: 13px; color: var(--gray-600);">Pozisyon</label>
+            <select name="position" asp-items="ViewBag.Positions as SelectList" 
+                    style="width: 100%; padding: 10px 14px; border: 1px solid var(--gray-200); border-radius: var(--radius-md);">
+                <option value="">Tümü</option>
+            </select>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" name="activeOnly" value="true" id="activeOnly" @(ViewBag.ActiveOnly == true ? "checked" : "")>
+            <label for="activeOnly" style="font-size: 14px; color: var(--gray-700);">Sadece Aktif Olanlar</label>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <button type="submit" class="btn-new" style="padding: 10px 20px;">
+                <i class="fas fa-search"></i> Filtrele
+            </button>
+            <a href="@Url.Action("Index")" style="padding: 10px 20px; background: var(--gray-100); color: var(--gray-600); border-radius: var(--radius-md); text-decoration: none;">
+                <i class="fas fa-times"></i> Temizle
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- KPI Cards -->
+<div class="kpi-grid" style="margin-bottom: 24px;">
+    <div class="kpi-simple">
+        <div class="kpi-simple-header">
+            <div class="kpi-simple-icon blue">
+                <i class="fas fa-images"></i>
+            </div>
+            <span class="kpi-simple-value" style="color: var(--primary-500);">@Model.Count()</span>
+        </div>
+        <h3>Toplam Banner</h3>
+        <p>Tüm bannerlar</p>
+    </div>
+    <div class="kpi-simple">
+        <div class="kpi-simple-header">
+            <div class="kpi-simple-icon green">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            @{
+                var now = DateTime.Now;
+                var activeCount = Model.Count(b => b.IsActive && b.StartDate <= now && b.EndDate >= now);
+            }
+            <span class="kpi-simple-value" style="color: var(--success-500);">@activeCount</span>
+        </div>
+        <h3>Yayında</h3>
+        <p>Aktif ve tarih aralığında</p>
+    </div>
+    <div class="kpi-simple">
+        <div class="kpi-simple-header">
+            <div class="kpi-simple-icon orange">
+                <i class="fas fa-clock"></i>
+            </div>
+            @{
+                var scheduledCount = Model.Count(b => b.IsActive && b.StartDate > now);
+            }
+            <span class="kpi-simple-value" style="color: var(--orange-600);">@scheduledCount</span>
+        </div>
+        <h3>Zamanlanmış</h3>
+        <p>Gelecekte yayınlanacak</p>
+    </div>
+    <div class="kpi-simple">
+        <div class="kpi-simple-header">
+            <div class="kpi-simple-icon red">
+                <i class="fas fa-ban"></i>
+            </div>
+            <span class="kpi-simple-value" style="color: var(--danger-500);">@Model.Count(b => !b.IsActive)</span>
+        </div>
+        <h3>Pasif</h3>
+        <p>Devre dışı bannerlar</p>
+    </div>
+</div>
+
+<div class="data-table-container">
+    <div style="overflow-x: auto;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Görsel</th>
+                    <th>Başlık</th>
+                    <th>Pozisyon</th>
+                    <th>Tarih Aralığı</th>
+                    <th>Sıra</th>
+                    <th>Durum</th>
+                    <th>Aksiyonlar</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var banner in Model)
+                {
+                    var isLive = banner.IsActive && banner.StartDate <= now && banner.EndDate >= now;
+                    var isScheduled = banner.IsActive && banner.StartDate > now;
+                    var isExpired = banner.IsActive && banner.EndDate < now;
+                    
+                    <tr>
+                        <td>
+                            <img src="@banner.ImageUrl" alt="@banner.Title" 
+                                 style="width: 120px; height: 60px; object-fit: cover; border-radius: 8px; border: 1px solid var(--gray-200);" />
+                        </td>
+                        <td>
+                            <div>
+                                <p style="font-weight: 500; margin-bottom: 4px;">@banner.Title</p>
+                                @if (!string.IsNullOrEmpty(banner.TargetUrl))
+                                {
+                                    <a href="@banner.TargetUrl" target="_blank" style="color: var(--primary-500); font-size: 12px; text-decoration: none;">
+                                        <i class="fas fa-external-link-alt"></i> @banner.TargetUrl.Substring(0, Math.Min(40, banner.TargetUrl.Length))...
+                                    </a>
+                                }
+                            </div>
+                        </td>
+                        <td>
+                            @switch (banner.Position)
+                            {
+                                case UpexTech.Entity.BannerPosition.HomePage:
+                                    <span style="background: var(--primary-100); color: var(--primary-700); padding: 4px 12px; border-radius: 8px; font-size: 12px;">Ana Sayfa</span>
+                                    break;
+                                case UpexTech.Entity.BannerPosition.CategoryTop:
+                                    <span style="background: var(--purple-100); color: var(--purple-700); padding: 4px 12px; border-radius: 8px; font-size: 12px;">Kategori Üstü</span>
+                                    break;
+                                case UpexTech.Entity.BannerPosition.ProductDetail:
+                                    <span style="background: var(--orange-100); color: var(--orange-700); padding: 4px 12px; border-radius: 8px; font-size: 12px;">Ürün Detay</span>
+                                    break;
+                                case UpexTech.Entity.BannerPosition.Checkout:
+                                    <span style="background: var(--teal-100); color: var(--teal-700); padding: 4px 12px; border-radius: 8px; font-size: 12px;">Ödeme Sayfası</span>
+                                    break;
+                            }
+                        </td>
+                        <td>
+                            <div style="font-size: 13px;">
+                                <div><i class="fas fa-calendar-alt" style="color: var(--gray-400); margin-right: 6px;"></i>@banner.StartDate.ToString("dd.MM.yyyy")</div>
+                                <div style="color: var(--gray-500);">~</div>
+                                <div><i class="fas fa-calendar-check" style="color: var(--gray-400); margin-right: 6px;"></i>@banner.EndDate.ToString("dd.MM.yyyy")</div>
+                            </div>
+                        </td>
+                        <td>
+                            <span style="font-weight: 600; color: var(--gray-700);">@banner.DisplayOrder</span>
+                        </td>
+                        <td>
+                            @if (isLive)
+                            {
+                                <span class="badge-status delivered">
+                                    <i class="fas fa-circle" style="font-size: 8px; margin-right: 6px;"></i>Yayında
+                                </span>
+                            }
+                            else if (isScheduled)
+                            {
+                                <span class="badge-status" style="background: var(--orange-100); color: var(--orange-700);">
+                                    <i class="fas fa-clock" style="font-size: 10px; margin-right: 6px;"></i>Zamanlanmış
+                                </span>
+                            }
+                            else if (isExpired)
+                            {
+                                <span class="badge-status" style="background: var(--gray-100); color: var(--gray-600);">
+                                    <i class="fas fa-history" style="font-size: 10px; margin-right: 6px;"></i>Süresi Dolmuş
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge-status" style="background: var(--danger-100); color: var(--danger-700);">
+                                    <i class="fas fa-ban" style="font-size: 10px; margin-right: 6px;"></i>Pasif
+                                </span>
+                            }
+                        </td>
+                        <td>
+                            <div class="action-buttons" style="display: flex; gap: 8px;">
+                                <button type="button" class="btn-icon toggle-status" data-id="@banner.Id" data-active="@banner.IsActive.ToString().ToLower()" 
+                                        title="@(banner.IsActive ? "Pasife Al" : "Aktife Al")"
+                                        style="background: @(banner.IsActive ? "var(--success-100)" : "var(--gray-100)"); color: @(banner.IsActive ? "var(--success-600)" : "var(--gray-500)");">
+                                    <i class="fas @(banner.IsActive ? "fa-toggle-on" : "fa-toggle-off")"></i>
+                                </button>
+                                <a href="@Url.Action("Edit", new { id = banner.Id })" class="btn-icon" title="Düzenle">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <form asp-action="Delete" asp-route-id="@banner.Id" method="post" style="display: inline;">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn-icon danger" title="Sil" onclick="return confirm('Bu banner\'ı silmek istediğinize emin misiniz?')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 48px; color: var(--gray-500);">
+                            <i class="fas fa-images" style="font-size: 48px; margin-bottom: 16px; opacity: 0.3;"></i>
+                            <p style="font-size: 16px;">Henüz banner eklenmemiş</p>
+                            <a href="@Url.Action("Create")" class="btn-new" style="display: inline-flex; margin-top: 16px;">
+                                <i class="fas fa-plus"></i> İlk Banner'ı Ekle
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll('.toggle-status').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                const id = this.dataset.id;
+                const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                
+                try {
+                    const response = await fetch(`/Banner/ToggleStatus/${id}`, {
+                        method: 'POST',
+                        headers: {
+                            'RequestVerificationToken': token,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    const result = await response.json();
+                    if (result.success) {
+                        location.reload();
+                    }
+                } catch (error) {
+                    console.error('Toggle failed:', error);
+                }
+            });
+        });
+    </script>
+    <form id="tokenForm" style="display:none;">
+        @Html.AntiForgeryToken()
+    </form>
+}

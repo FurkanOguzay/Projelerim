@@ -1,0 +1,126 @@
+@model MyAccountViewModel
+
+<div class="mb-4">
+    <h4 class="fw-semibold mb-3">
+        <i data-lucide="refresh-cw" class="me-2 text-success" style="width: 24px; height: 24px;"></i>
+        Tekrar Satın Al
+    </h4>
+    <p class="text-muted">Daha önce satın aldığınız ürünleri kolayca tekrar sepete ekleyebilirsiniz.</p>
+</div>
+
+@if (Model.ReorderProducts?.Any() == true)
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Ürün</th>
+                    <th>Son Alım</th>
+                    <th>Fiyat</th>
+                    <th>Adet</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var product in Model.ReorderProducts.OrderByDescending(p => p.LastPurchaseDate))
+                {
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="bg-light rounded p-1" style="width: 50px; height: 50px;">
+                                    <img src="@product.ProductImage" alt="@product.ProductName" 
+                                         class="w-100 h-100 rounded" style="object-fit: contain;"
+                                         onerror="this.style.display='none'">
+                                </div>
+                                <span class="fw-medium">@product.ProductName</span>
+                            </div>
+                        </td>
+                        <td class="text-muted">@product.LastPurchaseDate.ToString("dd.MM.yyyy")</td>
+                        <td class="fw-bold text-primary">₺@product.Price.ToString("N2")</td>
+                        <td>
+                            <span class="badge bg-success">@product.PurchaseCount kez</span>
+                        </td>
+                        <td>
+                            <button type="button" class="btn btn-primary btn-sm add-to-cart-btn" 
+                                    data-product-id="@product.ProductId">
+                                <i data-lucide="shopping-cart" style="width: 14px; height: 14px;" class="me-1"></i>
+                                Sepete Ekle
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <div class="text-center py-5">
+        <i data-lucide="refresh-cw" class="text-muted mb-3" style="width: 48px; height: 48px;"></i>
+        <h5 class="text-muted">Henüz satın aldığınız ürün bulunmuyor</h5>
+        <p class="text-muted small">Satın aldığınız ürünler burada listelenecek.</p>
+        <a href="/" class="btn btn-primary">Alışverişe Başla</a>
+    </div>
+}
+
+<!-- Toast bildirimi -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1050">
+    <div id="reorderToast" class="toast align-items-center text-white bg-success border-0" role="alert">
+        <div class="d-flex">
+            <div class="toast-body">
+                Ürün sepete eklendi!
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.add-to-cart-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var productId = this.getAttribute('data-product-id');
+            var button = this;
+            var originalText = button.innerHTML;
+            
+            button.disabled = true;
+            button.innerHTML = 'Ekleniyor...';
+            
+            fetch('/Cart/Add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: 'productId=' + productId + '&quantity=1'
+            })
+            .then(response => response.json())
+            .then(data => {
+                button.disabled = false;
+                button.innerHTML = originalText;
+                
+                if (data.success) {
+                    var toast = new bootstrap.Toast(document.getElementById('reorderToast'));
+                    toast.show();
+                    
+                    var cartBadge = document.querySelector('.cart-count');
+                    if (cartBadge) {
+                        cartBadge.textContent = data.cartCount;
+                    }
+                } else {
+                    alert(data.message || 'Bir hata oluştu.');
+                }
+            })
+            .catch(error => {
+                button.disabled = false;
+                button.innerHTML = originalText;
+                alert('Bir hata oluştu.');
+            });
+        });
+    });
+    
+    // Lucide ikonları yenile
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+});
+</script>

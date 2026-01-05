@@ -1,0 +1,25 @@
+  Geri y?klenecek projeler belirleniyor...
+  Geri y?kleme i?in t?m projeler g?ncel.
+  UpexTech.Entity -> C:\Users\bilal\Desktop\v7.8.2 (Geli?tirme)\UpexTech.Entity\bin\Debug\net10.0\UpexTech.Entity.dll
+  UpexTech.Data -> C:\Users\bilal\Desktop\v7.8.2 (Geli?tirme)\UpexTech.Data\bin\Debug\net10.0\UpexTech.Data.dll
+C:\Users\bilal\Desktop\v7.8.2 (Geli?tirme)\UpexTech.Business\Services\PerformanceReportService.cs(55,92): error CS1061: 'Product' bir 'ViewCount' tan?m? i?ermiyor ve 'Product' t?r?nde bir ilk ba??ms?z de?i?ken kabul eden hi?bir eri?ilebilir 'ViewCount' geni?letme y?ntemi bulunamad? (bir kullanma y?nergeniz veya derleme ba?vurunuz eksik olabilir mi?) [C:\Users\bilal\Desktop\v7.8.2 (Geli?tirme)\UpexTech.Business\UpexTech.Business.csproj]
+C:\Users\bilal\Desktop\v7.8.2 (Geli?tirme)\UpexTech.Business\Services\SalesReportService.cs(118,84): warning CS8602: Olas? bir null ba?vurunun ba?vurma i?lemi. [C:\Users\bilal\Desktop\v7.8.2 (Geli?tirme)\UpexTech.Business\UpexTech.Business.csproj]
+C:\Users\bilal\Desktop\v7.8.2 (Geli?tirme)\UpexTech.Business\Services\SalesReportService.cs(141,32): warning CS8602: Olas? bir null ba?vurunun ba?vurma i?lemi. [C:\Users\bilal\Desktop\v7.8.2 (Geli?tirme)\UpexTech.Business\UpexTech.Business.csproj]
+C:\Users\bilal\Desktop\v7.8.2 (Geli?tirme)\UpexTech.Business\Services\PerformanceReportService.cs(305,44): error CS1061: 'Product' bir 'ImageUrl' tan?m? i?ermiyor ve 'Product' t?r?nde bir ilk ba??ms?z de?i?ken kabul eden hi?bir eri?ilebilir 'ImageUrl' geni?letme y?ntemi bulunamad? (bir kullanma y?nergeniz veya derleme ba?vurunuz eksik olabilir mi?) [C:\Users\bilal\Desktop\v7.8.2 (Geli?tirme)\UpexTech.Business\UpexTech.Business.csproj]
+C:\Users\bilal\Desktop\v7.8.2 (Geli?tirme)\UpexTech.Business\Services\PerformanceReportService.cs(308,45): error CS1061: 'Product' bir 'Price' tan?m? i?ermiyor ve 'Product' t?r?nde bir ilk ba??ms?z de?i?ken kabul eden hi?bir eri?ilebilir 'Price' geni?letme y?ntemi bulunamad? (bir kullanma y?nergeniz veya derleme ba?vurunuz eksik olabilir mi?) [C:\Users\bilal\Desktop\v7.8.2 (Geli?tirme)\UpexTech.Business\UpexTech.Business.csproj]
+C:\Users\bilal\Desktop\v7.8.2 (Geli?tirme)\UpexTech.Business\Services\PerformanceReportService.cs(287,21): warning CS8602: Olas? bir null ba?vurunun ba?vurma i?lemi. [C:\Users\bilal\Desktop\v7.8.2 (Geli?tirme)\UpexTech.Business\UpexTech.Business.csproj]
+C:\Users\bilal\Desktop\v7.8.2 (Geli?tirme)\UpexTech.Business\Services\PerformanceReportService.cs(304,31): warning CS8601: Olas? null ba?vuru atamas?. [C:\Users\bilal\Desktop\v7.8.2 (Geli?tirme)\UpexTech.Business\UpexTech.Business.csproj]
+
+Olu?turma BA?ARISIZ OLDU.
+
+C:\Users\bilal\Desktop\v7.8.2 (Geli?tirme)\UpexTech.Business\Services\SalesReportService.cs(118,84): warning CS8602: Olas? bir null ba?vurunun ba?vurma i?lemi. [C:\Users\bilal\Desktop\v7.8.2 (Geli?tirme)\UpexTech.Business\UpexTech.Business.csproj]
+C:\Users\bilal\Desktop\v7.8.2 (Geli?tirme)\UpexTech.Business\Services\SalesReportService.cs(141,32): warning CS8602: Olas? bir null ba?vurunun ba?vurma i?lemi. [C:\Users\bilal\Desktop\v7.8.2 (Geli?tirme)\UpexTech.Business\UpexTech.Business.csproj]
+C:\Users\bilal\Desktop\v7.8.2 (Geli?tirme)\UpexTech.Business\Services\PerformanceReportService.cs(287,21): warning CS8602: Olas? bir null ba?vurunun ba?vurma i?lemi. [C:\Users\bilal\Desktop\v7.8.2 (Geli?tirme)\UpexTech.Business\UpexTech.Business.csproj]
+C:\Users\bilal\Desktop\v7.8.2 (Geli?tirme)\UpexTech.Business\Services\PerformanceReportService.cs(304,31): warning CS8601: Olas? null ba?vuru atamas?. [C:\Users\bilal\Desktop\v7.8.2 (Geli?tirme)\UpexTech.Business\UpexTech.Business.csproj]
+C:\Users\bilal\Desktop\v7.8.2 (Geli?tirme)\UpexTech.Business\Services\PerformanceReportService.cs(55,92): error CS1061: 'Product' bir 'ViewCount' tan?m? i?ermiyor ve 'Product' t?r?nde bir ilk ba??ms?z de?i?ken kabul eden hi?bir eri?ilebilir 'ViewCount' geni?letme y?ntemi bulunamad? (bir kullanma y?nergeniz veya derleme ba?vurunuz eksik olabilir mi?) [C:\Users\bilal\Desktop\v7.8.2 (Geli?tirme)\UpexTech.Business\UpexTech.Business.csproj]
+C:\Users\bilal\Desktop\v7.8.2 (Geli?tirme)\UpexTech.Business\Services\PerformanceReportService.cs(305,44): error CS1061: 'Product' bir 'ImageUrl' tan?m? i?ermiyor ve 'Product' t?r?nde bir ilk ba??ms?z de?i?ken kabul eden hi?bir eri?ilebilir 'ImageUrl' geni?letme y?ntemi bulunamad? (bir kullanma y?nergeniz veya derleme ba?vurunuz eksik olabilir mi?) [C:\Users\bilal\Desktop\v7.8.2 (Geli?tirme)\UpexTech.Business\UpexTech.Business.csproj]
+C:\Users\bilal\Desktop\v7.8.2 (Geli?tirme)\UpexTech.Business\Services\PerformanceReportService.cs(308,45): error CS1061: 'Product' bir 'Price' tan?m? i?ermiyor ve 'Product' t?r?nde bir ilk ba??ms?z de?i?ken kabul eden hi?bir eri?ilebilir 'Price' geni?letme y?ntemi bulunamad? (bir kullanma y?nergeniz veya derleme ba?vurunuz eksik olabilir mi?) [C:\Users\bilal\Desktop\v7.8.2 (Geli?tirme)\UpexTech.Business\UpexTech.Business.csproj]
+    4 Uyar?
+    3 Hata
+
+Ge?en S?re 00:00:01.87

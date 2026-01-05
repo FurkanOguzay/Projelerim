@@ -1,0 +1,120 @@
+@model ProductCardViewModel
+
+<div class="product-card" 
+     data-brand="@(Model.Product.Brand?.Name ?? "Belirtilmemiş")"
+     data-category="@(Model.Product.Category?.Name ?? "Belirtilmemiş")"
+     data-stock="@(Model.Product.Stock > 0 ? "Stokta" : "Stokta Yok")"
+     data-sku="@(Model.Product.SKU ?? "-")"
+     data-warranty="24 Ay"
+     data-weight="-"
+     data-dimensions="-"
+     data-power="-"
+     data-battery="-"
+     data-screen="-"
+     data-resolution="-"
+     data-material="-">
+    <div class="product-card-image">
+        <a href="/Catalog/Details/@Model.Product.Id">
+            <img src="~/images/@Model.Product.Image" alt="@Model.Product.Name">
+        </a>
+        
+        @* Low Stock Badge *@
+        @if (Model.Product.Stock > 0 && Model.Product.Stock < 10)
+        {
+            <div class="product-discount-badge">
+                Son @Model.Product.Stock adet!
+            </div>
+        }
+        
+        @* Action Buttons *@
+        <div class="product-action-buttons">
+            @if (Model.IsLoggedIn)
+            {
+                <button class="product-action-btn favorite @(Model.IsFavorite ? "active" : "")" 
+                        onclick="toggleFavorite(this, @Model.Product.Id)"
+                        title="Favorilere Ekle">
+                    @if (Model.IsFavorite)
+                    {
+                        <i data-lucide="heart" style="width: 20px; height: 20px; fill: #ef4444; stroke: #ef4444;"></i>
+                    }
+                    else
+                    {
+                        <i data-lucide="heart" style="width: 20px; height: 20px;"></i>
+                    }
+                </button>
+            }
+            else
+            {
+                <button class="product-action-btn favorite" 
+                        onclick="showLoginAlert()"
+                        title="Favorilere Eklemek İçin Giriş Yapın">
+                    <i data-lucide="heart" style="width: 20px; height: 20px;"></i>
+                </button>
+            }
+            
+            <button class="product-action-btn compare" 
+                    onclick="toggleCompare(this, @Model.Product.Id)"
+                    title="Karşılaştır">
+                <i data-lucide="arrow-left-right" style="width: 20px; height: 20px;"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="product-card-body">
+        <a href="/Catalog/Details/@Model.Product.Id" class="text-decoration-none">
+            <h3 class="product-card-title">@Model.Product.Name</h3>
+        </a>
+        
+        @* Rating *@
+        <div class="product-rating">
+            <div class="d-flex align-items-center">
+                <i data-lucide="star" style="width: 16px; height: 16px;" class="star"></i>
+                <span class="rating-value ms-1">@Model.Product.Rating.ToString("0.0")</span>
+            </div>
+            <span class="reviews-count">(@Model.Product.ReviewCount)</span>
+        </div>
+
+        @* Price Section *@
+        @if (Model.ShowPrice)
+        {
+            <div class="product-price-container">
+                <div class="product-current-price">₺@Model.CalculatedPrice.ToString("N0")</div>
+                @if (Model.IsB2B)
+                {
+                    <span class="product-dealer-badge">Bayi Fiyatı</span>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="product-price-container">
+                <div class="product-login-prompt">
+                    <p>Fiyatları görmek için giriş yapın</p>
+                </div>
+            </div>
+        }
+
+        @* Add to Cart Button *@
+        @if (Model.ShowPrice && Model.Product.Stock > 0)
+        {
+            <button class="product-add-to-cart enabled" onclick="addToCart(@Model.Product.Id)">
+                <i data-lucide="shopping-cart" style="width: 20px; height: 20px;"></i>
+                <span>Sepete Ekle</span>
+            </button>
+        }
+        else if (Model.Product.Stock <= 0)
+        {
+            <button class="product-add-to-cart disabled" disabled>
+                <i data-lucide="x-circle" style="width: 20px; height: 20px;"></i>
+                <span>Stokta Yok</span>
+            </button>
+        }
+        else
+        {
+            <a href="/Account/Login" class="product-add-to-cart disabled text-decoration-none">
+                <i data-lucide="user" style="width: 20px; height: 20px;"></i>
+                <span>Giriş Yapın</span>
+            </a>
+        }
+    </div>
+</div>

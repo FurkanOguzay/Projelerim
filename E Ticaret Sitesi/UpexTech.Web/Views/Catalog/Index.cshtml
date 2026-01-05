@@ -1,0 +1,605 @@
+@model IEnumerable<Product>
+@using UpexTech.Entity
+@{
+    ViewData["Title"] = "Katalog";
+    var categories = ViewBag.Categories as IEnumerable<Category>;
+    var isLoggedIn = ViewBag.IsLoggedIn ?? false;
+    var userRole = ViewBag.UserRole as UserRole?;
+    var selectedCategoryId = ViewBag.SelectedCategoryId as int?;
+    var selectedBrandId = ViewBag.SelectedBrandId as int?;
+    var hasMore = ViewBag.HasMore ?? false;
+    var userPriceList = ViewBag.UserPriceList as PriceList;
+    
+    // Fiyat hesaplama fonksiyonu
+    decimal CalculatePrice(Product product) {
+        // Varsayılan fiyat (fallback için)
+        decimal defaultPrice = userRole == UserRole.B2B ? product.PriceB2B : product.PriceB2C;
+        
+        if (userPriceList != null) {
+            // PurchasePrice 0 veya null ise fallback fiyat kullan
+            decimal basePrice = product.PurchasePrice > 0 ? product.PurchasePrice : defaultPrice;
+            
+            // PriceList Factor uygula
+            decimal calculatedPrice = basePrice * userPriceList.Factor;
+            
+            // Yuvarlama uygula
+            calculatedPrice = userPriceList.Rounding switch {
+                RoundingMethod.Ending90 => Math.Floor(calculatedPrice) + 0.90m,
+                RoundingMethod.Ending99 => Math.Floor(calculatedPrice) + 0.99m,
+                RoundingMethod.NearestFive => Math.Round(calculatedPrice / 5) * 5,
+                _ => Math.Round(calculatedPrice, 2)
+            };
+            
+            // Hesaplanan fiyat 0 ise fallback kullan
+            return calculatedPrice > 0 ? calculatedPrice : defaultPrice;
+        }
+        
+        // PriceList yoksa varsayılan fiyat
+        return defaultPrice;
+    }
+}
+
+<!-- Breadcrumb -->
+<div class="bg-light py-3">
+    <div class="container">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="/" class="text-decoration-none">Ana Sayfa</a></li>
+                <li class="breadcrumb-item active">Katalog</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="container py-4">
+    <div class="row">
+        <!-- Sidebar Filtreler -->
+        <div class="col-lg-3 mb-4">
+            <div class="card border-0 shadow-sm filter-panel">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="mb-0 fw-semibold"><i data-lucide="filter" style="width: 18px; height: 18px;" class="me-2"></i>Filtreler</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Uyumlu Model Filtresi -->
+                    <div class="filter-section mb-4">
+                        <h6 class="filter-title mb-3">Uyumlu Model</h6>
+                        <div class="filter-options" style="max-height: 180px; overflow-y: auto;">
+                            @{
+                                var deviceModels = new[] { "iPhone 11", "iPhone 12", "iPhone 13", "iPhone 14", "iPhone 15", "Galaxy S23", "Galaxy S24" };
+                            }
+                            @foreach (var deviceModel in deviceModels)
+                            {
+                                <label class="filter-checkbox-label">
+                                    <input type="checkbox" class="filter-checkbox model-filter" value="@deviceModel">
+                                    <span class="checkmark"></span>
+                                    <span class="filter-text">@deviceModel</span>
+                                </label>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Renk Filtresi -->
+                    <div class="filter-section mb-4">
+                        <h6 class="filter-title mb-3">Renk</h6>
+                        <div class="filter-options">
+                            @{
+                                var selectedColors = (ViewBag.SelectedColors as string ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries);
+                                var colors = new[] { "Siyah", "Beyaz", "Mavi", "Kırmızı", "Yeşil", "Gri", "Şeffaf" };
+                            }
+                            @foreach (var color in colors)
+                            {
+                                var isChecked = selectedColors.Contains(color) ? "checked" : "";
+                                <label class="filter-checkbox-label">
+                                    <input type="checkbox" class="filter-checkbox color-filter" value="@color" @isChecked>
+                                    <span class="checkmark"></span>
+                                    <span class="filter-text">@color</span>
+                                </label>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Malzeme Filtresi -->
+                    <div class="filter-section mb-4">
+                        <h6 class="filter-title mb-3">Malzeme</h6>
+                        <div class="filter-options" style="max-height: 180px; overflow-y: auto;">
+                            @{
+                                var selectedMaterials = (ViewBag.SelectedMaterials as string ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries);
+                                var materials = new[] { "Silikon", "Deri", "Plastik", "TPU", "Polikarbonat", "Cam", "Alüminyum", "Titanyum" };
+                            }
+                            @foreach (var material in materials)
+                            {
+                                var isChecked = selectedMaterials.Contains(material) ? "checked" : "";
+                                <label class="filter-checkbox-label">
+                                    <input type="checkbox" class="filter-checkbox material-filter" value="@material" @isChecked>
+                                    <span class="checkmark"></span>
+                                    <span class="filter-text">@material</span>
+                                </label>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Fiyat Aralığı -->
+                    <div class="filter-section mb-4">
+                        <h6 class="filter-title mb-3">Fiyat Aralığı</h6>
+                        <div class="price-range-container">
+                            <div class="price-inputs d-flex gap-2 mb-3">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">₺</span>
+                                    <input type="number" class="form-control" id="minPriceInput" placeholder="Min" value="@(ViewBag.MinPrice ?? 0)">
+                                </div>
+                                <span class="align-self-center">-</span>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">₺</span>
+                                    <input type="number" class="form-control" id="maxPriceInput" placeholder="Max" value="@(ViewBag.MaxPrice ?? 100000)">
+                                </div>
+                            </div>
+                            <input type="range" class="form-range" id="priceRangeSlider" min="0" max="100000" step="1000" value="@(ViewBag.MaxPrice ?? 100000)">
+                            <div class="d-flex justify-content-between text-muted small mt-1">
+                                <span>₺0</span>
+                                <span id="priceRangeValue">₺@((ViewBag.MaxPrice ?? 100000).ToString("N0"))</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stok Durumu -->
+                    <div class="filter-section mb-4">
+                        <label class="filter-checkbox-label">
+                            <input type="checkbox" class="filter-checkbox" id="inStockFilter" @(ViewBag.InStockOnly ? "checked" : "")>
+                            <span class="checkmark"></span>
+                            <span class="filter-text">Sadece Stoktakiler</span>
+                        </label>
+                    </div>
+
+                    <!-- Filtre Butonları -->
+                    <div class="filter-actions d-grid gap-2">
+                        <button type="button" class="btn btn-primary btn-sm" onclick="applyFilters()">
+                            <i data-lucide="check" style="width: 16px; height: 16px;" class="me-1"></i>Uygula
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="clearFilters()">
+                            <i data-lucide="x" style="width: 16px; height: 16px;" class="me-1"></i>Temizle
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ürün Listesi -->
+        <div class="col-lg-9">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4 class="mb-0">Ürünler <span class="text-muted small" id="product-count">(@Model.Count() ürün)</span></h4>
+                <div class="d-flex gap-2">
+                    <select class="form-select form-select-sm" style="width: auto;" id="sortSelect" onchange="sortProducts()">
+                        <option value="">Sırala</option>
+                        <option value="price_asc">Fiyat: Düşükten Yükseğe</option>
+                        <option value="price_desc">Fiyat: Yüksekten Düşüğe</option>
+                        <option value="newest">En Yeniler</option>
+                        <option value="rating">En Yüksek Puan</option>
+                    </select>
+                </div>
+            </div>
+
+            @if (Model.Any())
+            {
+                <div class="row g-4" id="products-container">
+                    @foreach (var product in Model)
+                    {
+                        var cardModel = new ProductCardViewModel
+                        {
+                            Product = product,
+                            ShowPrice = isLoggedIn,
+                            IsB2B = userRole == UserRole.B2B,
+                            IsFavorite = false,
+                            IsLoggedIn = isLoggedIn,
+                            CalculatedPrice = CalculatePrice(product)
+                        };
+                        <div class="col-sm-6 col-lg-4">
+                            <partial name="_ProductCard" model="cardModel" />
+                        </div>
+                    }
+                </div>
+
+                <!-- Loading & Load More -->
+                <div id="load-more-container" class="text-center mt-4 @(!hasMore ? "d-none" : "")">
+                    <div id="loading-spinner" class="d-none">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Yükleniyor...</span>
+                        </div>
+                        <p class="text-muted mt-2">Ürünler yükleniyor...</p>
+                    </div>
+                    <div id="scroll-trigger" style="height: 20px;"></div>
+                </div>
+
+                <div id="no-more-products" class="text-center mt-4 @(hasMore ? "d-none" : "")">
+                    <p class="text-muted"><i class="bi bi-check-circle me-2"></i>Tüm ürünler yüklendi</p>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>Bu kriterlere uygun ürün bulunamadı.
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    let currentPage = 1;
+    let isLoading = false;
+    let hasMore = @(hasMore.ToString().ToLower());
+    const categoryId = @(selectedCategoryId.HasValue ? selectedCategoryId.Value.ToString() : "null");
+    const brandId = @(selectedBrandId.HasValue ? selectedBrandId.Value.ToString() : "null");
+
+    // Intersection Observer for infinite scroll
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting && hasMore && !isLoading) {
+                loadMoreProducts();
+            }
+        });
+    }, { threshold: 0.1 });
+
+    const scrollTrigger = document.getElementById('scroll-trigger');
+    if (scrollTrigger && hasMore) {
+        observer.observe(scrollTrigger);
+    }
+
+    function loadMoreProducts() {
+        if (isLoading || !hasMore) return;
+        
+        isLoading = true;
+        currentPage++;
+        
+        document.getElementById('loading-spinner').classList.remove('d-none');
+
+        let url = `/Catalog/LoadMore?page=${currentPage}`;
+        if (categoryId) url += `&categoryId=${categoryId}`;
+        if (brandId) url += `&brandId=${brandId}`;
+
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                const container = document.getElementById('products-container');
+                
+                data.products.forEach(product => {
+                    const productHtml = createProductCard(product, data.isLoggedIn, data.isB2B);
+                    container.insertAdjacentHTML('beforeend', productHtml);
+                });
+
+                hasMore = data.hasMore;
+                
+                if (!hasMore) {
+                    document.getElementById('load-more-container').classList.add('d-none');
+                    document.getElementById('no-more-products').classList.remove('d-none');
+                    observer.disconnect();
+                }
+
+                isLoading = false;
+                document.getElementById('loading-spinner').classList.add('d-none');
+            })
+            .catch(error => {
+                console.error('Error loading products:', error);
+                isLoading = false;
+                document.getElementById('loading-spinner').classList.add('d-none');
+            });
+    }
+
+    function createProductCard(product, isLoggedIn, isB2B) {
+        const price = isB2B ? product.priceB2B : product.priceB2C;
+        const priceFormatted = new Intl.NumberFormat('tr-TR').format(price);
+        const favoriteIcon = product.isFavorite ? 'bi-heart-fill text-danger' : 'bi-heart text-muted';
+        
+        let priceHtml = '';
+        if (isLoggedIn) {
+            priceHtml = `<span class="fw-bold text-primary">${priceFormatted} ₺</span>`;
+        } else {
+            priceHtml = `<a href="/Account/Login" class="btn btn-sm btn-outline-primary">Fiyatı Gör</a>`;
+        }
+
+        let favoriteBtn = '';
+        if (isLoggedIn) {
+            favoriteBtn = `<button class="btn btn-link p-0 favorite-btn" onclick="toggleFavorite(this, ${product.id})">
+                <i class="bi ${favoriteIcon} fs-5"></i>
+            </button>`;
+        } else {
+            favoriteBtn = `<button class="btn btn-link p-0" onclick="showLoginAlert()">
+                <i class="bi bi-heart text-muted fs-5"></i>
+            </button>`;
+        }
+
+        return `
+            <div class="col-sm-6 col-lg-4">
+                <div class="card product-card h-100 border">
+                    <div class="position-relative">
+                        <a href="/Catalog/Details/${product.id}">
+                            <img src="/images/${product.image}" class="card-img-top product-image p-3" alt="${product.name}" 
+                                 style="height: 180px; object-fit: contain;">
+                        </a>
+                        <div class="position-absolute top-0 end-0 p-2">
+                            ${favoriteBtn}
+                        </div>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <small class="text-muted">${product.brandName || ''}</small>
+                        <a href="/Catalog/Details/${product.id}" class="text-decoration-none text-dark">
+                            <h6 class="card-title text-truncate-2 mb-2">${product.name}</h6>
+                        </a>
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-star-fill text-warning me-1"></i>
+                            <small>${product.rating} <span class="text-muted">(${product.reviewCount})</span></small>
+                        </div>
+                        <div class="mt-auto d-flex justify-content-between align-items-center">
+                            ${priceHtml}
+                            ${isLoggedIn ? `<button class="btn btn-sm btn-primary" onclick="addToCart(${product.id})">
+                                <i class="bi bi-cart-plus"></i>
+                            </button>` : ''}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function showLoginAlert() {
+        alert('Bu işlem için giriş yapmalısınız.');
+        window.location.href = '/Account/Login';
+    }
+
+    function toggleFavorite(btn, productId) {
+        fetch('/Favorites/Toggle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'productId=' + productId
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const svg = btn.querySelector('svg');
+                if (svg) {
+                    if (data.isFavorite) {
+                        // Kalbin içi kırmızı dolu
+                        svg.style.fill = '#ef4444';
+                        svg.style.stroke = '#ef4444';
+                        btn.classList.add('active');
+                    } else {
+                        // Kalp boş (sadece çizgi)
+                        svg.style.fill = 'none';
+                        svg.style.stroke = 'currentColor';
+                        btn.classList.remove('active');
+                    }
+                }
+                showToast(data.isFavorite ? 'Favorilere eklendi!' : 'Favorilerden çıkarıldı!');
+            }
+        });
+    }
+
+    function addToCart(productId) {
+        fetch('/Cart/Add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `productId=${productId}&quantity=1`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update cart badge
+                const badge = document.querySelector('.cart-badge');
+                if (badge) {
+                    badge.textContent = data.cartCount;
+                    badge.style.display = data.cartCount > 0 ? 'inline' : 'none';
+                }
+                // Show success feedback
+                showToast('Ürün sepete eklendi!');
+            } else {
+                showToast(data.message || 'Bir hata oluştu', 'error');
+            }
+        });
+    }
+
+    // Ürün Sıralama Fonksiyonu
+    function sortProducts() {
+        const sortValue = document.getElementById('sortSelect').value;
+        if (!sortValue) return;
+        
+        const url = new URL(window.location.href);
+        url.searchParams.set('sort', sortValue);
+        window.location.href = url.toString();
+    }
+
+    // Sayfa yüklendiğinde sort değerini koruma
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentSort = urlParams.get('sort');
+        if (currentSort) {
+            const sortSelect = document.getElementById('sortSelect');
+            if (sortSelect) {
+                sortSelect.value = currentSort;
+            }
+        }
+    });
+
+    function showToast(message, type = 'success') {
+        // Simple toast notification
+        const toast = document.createElement('div');
+        toast.className = `alert alert-${type === 'error' ? 'danger' : 'success'} position-fixed`;
+        toast.style.cssText = 'bottom: 20px; right: 20px; z-index: 9999; animation: fadeIn 0.3s;';
+        toast.innerHTML = `<i class="bi bi-${type === 'error' ? 'x-circle' : 'check-circle'} me-2"></i>${message}`;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.animation = 'fadeOut 0.3s';
+            setTimeout(() => toast.remove(), 300);
+        }, 2500);
+    }
+
+    // Filtre Fonksiyonları
+    function applyFilters() {
+        const url = new URL(window.location.href);
+        
+        // Renk filtresi
+        const selectedColors = Array.from(document.querySelectorAll('.color-filter:checked')).map(cb => cb.value);
+        if (selectedColors.length > 0) {
+            url.searchParams.set('colors', selectedColors.join(','));
+        } else {
+            url.searchParams.delete('colors');
+        }
+        
+        // Malzeme filtresi
+        const selectedMaterials = Array.from(document.querySelectorAll('.material-filter:checked')).map(cb => cb.value);
+        if (selectedMaterials.length > 0) {
+            url.searchParams.set('materials', selectedMaterials.join(','));
+        } else {
+            url.searchParams.delete('materials');
+        }
+        
+        // Fiyat aralığı
+        const minPrice = document.getElementById('minPriceInput').value;
+        const maxPrice = document.getElementById('maxPriceInput').value;
+        if (minPrice && parseInt(minPrice) > 0) {
+            url.searchParams.set('minPrice', minPrice);
+        } else {
+            url.searchParams.delete('minPrice');
+        }
+        if (maxPrice && parseInt(maxPrice) < 100000) {
+            url.searchParams.set('maxPrice', maxPrice);
+        } else {
+            url.searchParams.delete('maxPrice');
+        }
+        
+        // Stok durumu
+        const inStock = document.getElementById('inStockFilter').checked;
+        if (inStock) {
+            url.searchParams.set('inStockOnly', 'true');
+        } else {
+            url.searchParams.delete('inStockOnly');
+        }
+        
+        window.location.href = url.toString();
+    }
+
+    function clearFilters() {
+        const url = new URL(window.location.origin + window.location.pathname);
+        // Sadece categoryId ve brandId parametrelerini koru
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('categoryId')) {
+            url.searchParams.set('categoryId', urlParams.get('categoryId'));
+        }
+        if (urlParams.has('brandId')) {
+            url.searchParams.set('brandId', urlParams.get('brandId'));
+        }
+        window.location.href = url.toString();
+    }
+
+    // Fiyat slider senkronizasyonu
+    document.addEventListener('DOMContentLoaded', function() {
+        const priceSlider = document.getElementById('priceRangeSlider');
+        const maxPriceInput = document.getElementById('maxPriceInput');
+        const priceRangeValue = document.getElementById('priceRangeValue');
+        
+        if (priceSlider && maxPriceInput) {
+            priceSlider.addEventListener('input', function() {
+                maxPriceInput.value = this.value;
+                priceRangeValue.textContent = '₺' + parseInt(this.value).toLocaleString('tr-TR');
+            });
+            
+            maxPriceInput.addEventListener('input', function() {
+                priceSlider.value = this.value;
+                priceRangeValue.textContent = '₺' + parseInt(this.value).toLocaleString('tr-TR');
+            });
+        }
+        
+        // Lucide icons'ları yenile
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    });
+</script>
+<style>
+    @@keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @@keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+    
+    /* Figma Tasarımına Uygun Filtre Stilleri */
+    .filter-panel {
+        border-radius: 0.75rem;
+        position: sticky;
+        top: 6rem;
+    }
+    
+    .filter-section {
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--gray-200, #e5e7eb);
+    }
+    
+    .filter-section:last-of-type {
+        border-bottom: none;
+    }
+    
+    .filter-title {
+        font-weight: 600;
+        color: var(--gray-900, #111827);
+        font-size: 0.9rem;
+    }
+    
+    .filter-checkbox-label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        padding: 0.375rem 0;
+        transition: color 0.15s ease;
+    }
+    
+    .filter-checkbox-label:hover {
+        color: var(--primary-color, #2563eb);
+    }
+    
+    .filter-checkbox {
+        width: 18px;
+        height: 18px;
+        border-radius: 4px;
+        border: 2px solid var(--gray-300, #d1d5db);
+        cursor: pointer;
+        accent-color: var(--primary-color, #2563eb);
+    }
+    
+    .filter-text {
+        font-size: 0.875rem;
+        color: var(--gray-700, #374151);
+    }
+    
+    .filter-checkbox:checked + .checkmark + .filter-text {
+        color: var(--primary-color, #2563eb);
+        font-weight: 500;
+    }
+    
+    .price-range-container input[type="range"] {
+        width: 100%;
+        height: 6px;
+        border-radius: 3px;
+        background: var(--gray-200, #e5e7eb);
+        outline: none;
+        -webkit-appearance: none;
+    }
+    
+    .price-range-container input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: var(--primary-color, #2563eb);
+        cursor: pointer;
+        border: 2px solid white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .filter-options::-webkit-scrollbar {
+        width: 4px;
+    }
+    
+    .filter-options::-webkit-scrollbar-thumb {
+        background: var(--gray-300, #d1d5db);
+        border-radius: 2px;
+    }
+</style>
+}

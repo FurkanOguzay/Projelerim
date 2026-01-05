@@ -1,0 +1,146 @@
+@model FavoriteCollection
+@{
+    ViewData["Title"] = Model.Name + " - Koleksiyon";
+    var activeItems = Model.Items.Where(i => i.IsActive && i.Favorite?.Product != null).ToList();
+}
+
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/">Ana Sayfa</a></li>
+        <li class="breadcrumb-item"><a href="/Favorites">Favorilerim</a></li>
+        <li class="breadcrumb-item"><a href="/Favorites?tab=collections">Koleksiyonlar</a></li>
+        <li class="breadcrumb-item active">@Model.Name</li>
+    </ol>
+</nav>
+
+<!-- Başlık -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2>
+            <i class="bi bi-collection me-2"></i>@Model.Name
+        </h2>
+        <p class="text-muted mb-0">
+            <i class="bi bi-box me-1"></i>@activeItems.Count ürün
+        </p>
+    </div>
+    <div>
+        <a href="/Favorites?tab=collections" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-2"></i>Koleksiyonlara Dön
+        </a>
+    </div>
+</div>
+
+@if (activeItems.Any())
+{
+    <div class="row g-4">
+        @foreach (var item in activeItems)
+        {
+            var product = item.Favorite.Product;
+            <div class="col-md-6 col-lg-4 col-xl-3">
+                <div class="card h-100 product-card shadow-sm">
+                    <!-- Ürün Resmi -->
+                    <div class="position-relative">
+                        <a href="/Catalog/Details/@product.Id">
+                            <img src="/images/@product.Image" class="card-img-top p-3" alt="@product.Name" 
+                                 style="height: 200px; object-fit: contain;">
+                        </a>
+                        
+                        <!-- Koleksiyondan Çıkar Butonu -->
+                        <button class="btn btn-outline-danger btn-sm position-absolute top-0 end-0 m-2"
+                                onclick="removeFromCollection(@Model.Id, @product.Id)" 
+                                title="Koleksiyondan Çıkar">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="card-body d-flex flex-column">
+                        <!-- Marka & Kategori -->
+                        <div class="mb-2">
+                            <span class="badge bg-light text-dark me-1">@product.Brand?.Name</span>
+                            <span class="badge bg-light text-dark">@product.Category?.Name</span>
+                        </div>
+                        
+                        <!-- Ürün Adı -->
+                        <h6 class="card-title">
+                            <a href="/Catalog/Details/@product.Id" class="text-decoration-none text-dark">
+                                @product.Name
+                            </a>
+                        </h6>
+                        
+                        <!-- Fiyat -->
+                        <div class="mt-auto">
+                            <h5 class="text-primary mb-2">@product.PriceB2C.ToString("N0") ₺</h5>
+                            
+                            <!-- Sepete Ekle -->
+                            <button class="btn btn-primary w-100" onclick="addToCart(@product.Id)">
+                                <i class="bi bi-cart-plus me-2"></i>Sepete Ekle
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="text-center py-5">
+        <i class="bi bi-collection display-1 text-muted"></i>
+        <h4 class="mt-3">Bu koleksiyon boş</h4>
+        <p class="text-muted">Favori ürünlerinizi bu koleksiyona eklemek için Favoriler sekmesine gidin.</p>
+        <a href="/Favorites" class="btn btn-primary">
+            <i class="bi bi-heart me-2"></i>Favorilere Git
+        </a>
+    </div>
+}
+
+<style>
+    .product-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+        transition: all 0.3s ease;
+    }
+</style>
+
+@section Scripts {
+<script>
+    // Koleksiyondan çıkar
+    function removeFromCollection(collectionId, productId) {
+        if (confirm('Bu ürünü koleksiyondan çıkarmak istediğinizden emin misiniz?')) {
+            fetch('/Favorites/RemoveFromCollection', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'collectionId=' + collectionId + '&productId=' + productId
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert(data.message);
+                }
+            });
+        }
+    }
+
+    // Sepete ekle
+    function addToCart(productId) {
+        fetch('/Cart/Add', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'productId=' + productId + '&quantity=1'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Ürün sepete eklendi!');
+            }
+        });
+    }
+</script>
+}

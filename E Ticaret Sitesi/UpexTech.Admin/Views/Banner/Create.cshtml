@@ -1,0 +1,295 @@
+@model UpexTech.Entity.Banner
+@{
+    ViewData["Title"] = "Yeni Banner Ekle";
+}
+
+<div class="page-header">
+    <div>
+        <h1>Yeni Banner Ekle</h1>
+        <p>Kampanya görseli ekleyin ve yayınlanma ayarlarını belirleyin</p>
+    </div>
+</div>
+
+<div class="form-container" style="background: var(--white); border-radius: var(--radius-lg); padding: 32px; box-shadow: var(--shadow-sm); max-width: 900px;">
+    <form asp-action="Create" method="post" id="bannerForm">
+        @Html.AntiForgeryToken()
+        
+        <!-- Görsel Yükleme Alanı -->
+        <div class="form-group" style="margin-bottom: 24px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--gray-700);">
+                Banner Görseli <span style="color: var(--danger-500);">*</span>
+            </label>
+            
+            <div id="dropZone" style="border: 2px dashed var(--gray-300); border-radius: var(--radius-lg); padding: 48px; text-align: center; cursor: pointer; transition: all 0.3s; background: var(--gray-50);">
+                <div id="dropZoneContent">
+                    <i class="fas fa-cloud-upload-alt" style="font-size: 48px; color: var(--gray-400); margin-bottom: 16px;"></i>
+                    <p style="font-size: 16px; color: var(--gray-600); margin-bottom: 8px;">Görseli sürükleyip bırakın</p>
+                    <p style="font-size: 13px; color: var(--gray-500);">veya <span style="color: var(--primary-500); text-decoration: underline;">dosya seçin</span></p>
+                    <p style="font-size: 12px; color: var(--gray-400); margin-top: 12px;">PNG, JPG, GIF, WebP - Maksimum 5MB</p>
+                </div>
+                <div id="previewContainer" style="display: none;">
+                    <img id="imagePreview" src="" alt="Preview" style="max-width: 100%; max-height: 300px; border-radius: var(--radius-md);" />
+                    <button type="button" id="removeImage" style="margin-top: 12px; padding: 8px 16px; background: var(--danger-100); color: var(--danger-600); border: none; border-radius: var(--radius-md); cursor: pointer;">
+                        <i class="fas fa-times"></i> Görseli Kaldır
+                    </button>
+                </div>
+            </div>
+            <input type="file" id="fileInput" accept="image/*" style="display: none;" />
+            <input type="hidden" asp-for="ImageUrl" id="imageUrlInput" />
+            <span asp-validation-for="ImageUrl" class="text-danger" style="color: var(--danger-500); font-size: 13px;"></span>
+            <div id="uploadError" style="color: var(--danger-500); font-size: 13px; margin-top: 8px; display: none;"></div>
+            <div id="uploadProgress" style="display: none; margin-top: 12px;">
+                <div style="background: var(--gray-200); border-radius: 4px; height: 8px; overflow: hidden;">
+                    <div id="progressBar" style="background: var(--primary-500); height: 100%; width: 0%; transition: width 0.3s;"></div>
+                </div>
+                <p style="font-size: 12px; color: var(--gray-500); margin-top: 4px;">Yükleniyor...</p>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+            <!-- Başlık -->
+            <div class="form-group" style="grid-column: span 2;">
+                <label asp-for="Title" style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--gray-700);">
+                    Başlık <span style="color: var(--danger-500);">*</span>
+                </label>
+                <input asp-for="Title" class="form-control" placeholder="Banner başlığını girin" 
+                       style="width: 100%; padding: 12px 16px; border: 1px solid var(--gray-200); border-radius: var(--radius-md); font-size: 14px;" />
+                <span asp-validation-for="Title" class="text-danger" style="color: var(--danger-500); font-size: 13px;"></span>
+            </div>
+
+            <!-- Yönlendirme URL -->
+            <div class="form-group" style="grid-column: span 2;">
+                <label asp-for="TargetUrl" style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--gray-700);">
+                    Yönlendirme URL'i
+                </label>
+                <input asp-for="TargetUrl" class="form-control" placeholder="https://example.com/kampanya" 
+                       style="width: 100%; padding: 12px 16px; border: 1px solid var(--gray-200); border-radius: var(--radius-md); font-size: 14px;" />
+                <span asp-validation-for="TargetUrl" class="text-danger" style="color: var(--danger-500); font-size: 13px;"></span>
+            </div>
+
+            <!-- Pozisyon -->
+            <div class="form-group">
+                <label asp-for="Position" style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--gray-700);">
+                    Banner Pozisyonu <span style="color: var(--danger-500);">*</span>
+                </label>
+                <select asp-for="Position" asp-items="ViewBag.Positions as SelectList" class="form-control"
+                        style="width: 100%; padding: 12px 16px; border: 1px solid var(--gray-200); border-radius: var(--radius-md); font-size: 14px; background: white;">
+                </select>
+                <span asp-validation-for="Position" class="text-danger" style="color: var(--danger-500); font-size: 13px;"></span>
+            </div>
+
+            <!-- Sıralama -->
+            <div class="form-group">
+                <label asp-for="DisplayOrder" style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--gray-700);">
+                    Sıralama
+                </label>
+                <input asp-for="DisplayOrder" type="number" min="0" class="form-control" 
+                       style="width: 100%; padding: 12px 16px; border: 1px solid var(--gray-200); border-radius: var(--radius-md); font-size: 14px;" />
+                <p style="font-size: 12px; color: var(--gray-500); margin-top: 4px;">Küçük numara önce gösterilir</p>
+            </div>
+
+            <!-- Başlangıç Tarihi -->
+            <div class="form-group">
+                <label asp-for="StartDate" style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--gray-700);">
+                    Başlangıç Tarihi <span style="color: var(--danger-500);">*</span>
+                </label>
+                <input asp-for="StartDate" type="datetime-local" class="form-control"
+                       style="width: 100%; padding: 12px 16px; border: 1px solid var(--gray-200); border-radius: var(--radius-md); font-size: 14px;" />
+                <span asp-validation-for="StartDate" class="text-danger" style="color: var(--danger-500); font-size: 13px;"></span>
+            </div>
+
+            <!-- Bitiş Tarihi -->
+            <div class="form-group">
+                <label asp-for="EndDate" style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--gray-700);">
+                    Bitiş Tarihi <span style="color: var(--danger-500);">*</span>
+                </label>
+                <input asp-for="EndDate" type="datetime-local" class="form-control"
+                       style="width: 100%; padding: 12px 16px; border: 1px solid var(--gray-200); border-radius: var(--radius-md); font-size: 14px;" />
+                <span asp-validation-for="EndDate" class="text-danger" style="color: var(--danger-500); font-size: 13px;"></span>
+            </div>
+
+            <!-- Aktif/Pasif Toggle -->
+            <div class="form-group" style="grid-column: span 2;">
+                <div style="display: flex; align-items: center; gap: 12px; padding: 16px; background: var(--gray-50); border-radius: var(--radius-md);">
+                    <label class="toggle-switch" style="position: relative; display: inline-block; width: 52px; height: 28px;">
+                        <input type="checkbox" asp-for="IsActive" style="opacity: 0; width: 0; height: 0;" checked />
+                        <span class="toggle-slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--gray-300); transition: .3s; border-radius: 28px;"></span>
+                    </label>
+                    <div>
+                        <span style="font-weight: 500; color: var(--gray-700);">Aktif</span>
+                        <p style="font-size: 12px; color: var(--gray-500); margin: 0;">Banner yayınlansın mı?</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--gray-200);">
+            <button type="submit" class="btn-new" style="padding: 14px 28px;">
+                <i class="fas fa-save"></i> Kaydet
+            </button>
+            <a href="@Url.Action("Index")" style="padding: 14px 28px; background: var(--gray-100); color: var(--gray-600); border-radius: var(--radius-md); text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+                <i class="fas fa-times"></i> İptal
+            </a>
+        </div>
+    </form>
+</div>
+
+<style>
+    #dropZone.dragover {
+        border-color: var(--primary-500);
+        background: var(--primary-50);
+    }
+    
+    .toggle-switch input:checked + .toggle-slider {
+        background-color: var(--success-500);
+    }
+    
+    .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 22px;
+        width: 22px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: .3s;
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .toggle-switch input:checked + .toggle-slider:before {
+        transform: translateX(24px);
+    }
+</style>
+
+@section Scripts {
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const imageUrlInput = document.getElementById('imageUrlInput');
+        const previewContainer = document.getElementById('previewContainer');
+        const dropZoneContent = document.getElementById('dropZoneContent');
+        const imagePreview = document.getElementById('imagePreview');
+        const removeImageBtn = document.getElementById('removeImage');
+        const uploadError = document.getElementById('uploadError');
+        const uploadProgress = document.getElementById('uploadProgress');
+        const progressBar = document.getElementById('progressBar');
+        
+        // Click to select file
+        dropZone.addEventListener('click', () => fileInput.click());
+        
+        // Drag and drop events
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+        
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+        
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+        
+        removeImageBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            resetUpload();
+        });
+        
+        function handleFile(file) {
+            // Validate file type
+            const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+            if (!allowedTypes.includes(file.type)) {
+                showError('Geçersiz dosya türü. Sadece JPG, PNG, GIF ve WebP dosyaları yüklenebilir.');
+                return;
+            }
+            
+            // Validate file size (5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                showError('Dosya boyutu 5MB\'dan büyük olamaz.');
+                return;
+            }
+            
+            uploadFile(file);
+        }
+        
+        async function uploadFile(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            uploadError.style.display = 'none';
+            uploadProgress.style.display = 'block';
+            progressBar.style.width = '0%';
+            
+            try {
+                // Simulate progress
+                let progress = 0;
+                const progressInterval = setInterval(() => {
+                    progress += 10;
+                    if (progress <= 90) {
+                        progressBar.style.width = progress + '%';
+                    }
+                }, 100);
+                
+                const response = await fetch('/Banner/UploadImage', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                clearInterval(progressInterval);
+                progressBar.style.width = '100%';
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    imageUrlInput.value = result.imageUrl;
+                    imagePreview.src = result.imageUrl;
+                    dropZoneContent.style.display = 'none';
+                    previewContainer.style.display = 'block';
+                    uploadProgress.style.display = 'none';
+                } else {
+                    showError(result.error);
+                    uploadProgress.style.display = 'none';
+                }
+            } catch (error) {
+                showError('Görsel yüklenirken bir hata oluştu.');
+                uploadProgress.style.display = 'none';
+            }
+        }
+        
+        function showError(message) {
+            uploadError.textContent = message;
+            uploadError.style.display = 'block';
+        }
+        
+        function resetUpload() {
+            imageUrlInput.value = '';
+            imagePreview.src = '';
+            dropZoneContent.style.display = 'block';
+            previewContainer.style.display = 'none';
+            fileInput.value = '';
+            uploadError.style.display = 'none';
+        }
+        
+        // Form validation
+        document.getElementById('bannerForm').addEventListener('submit', function(e) {
+            if (!imageUrlInput.value) {
+                e.preventDefault();
+                showError('Lütfen bir görsel yükleyin.');
+                dropZone.scrollIntoView({ behavior: 'smooth' });
+            }
+        });
+    </script>
+}

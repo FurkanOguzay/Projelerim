@@ -1,0 +1,293 @@
+@model Cart
+@using UpexTech.Entity
+@{
+    ViewData["Title"] = "Siparişi Tamamla";
+    var isB2B = ViewBag.IsB2B ?? false;
+    var userPriceList = ViewBag.UserPriceList as PriceList;
+    decimal kdvOrani = 0.20m;
+    
+    // Fiyat hesaplama fonksiyonu
+    decimal CalculatePrice(Product product) {
+        decimal defaultPrice = isB2B ? product.PriceB2B : product.PriceB2C;
+        
+        if (userPriceList == null) {
+            return defaultPrice;
+        }
+        
+        decimal basePrice = product.PurchasePrice > 0 ? product.PurchasePrice : defaultPrice;
+        decimal calculatedPrice = basePrice * userPriceList.Factor;
+        
+        calculatedPrice = userPriceList.Rounding switch {
+            RoundingMethod.Ending90 => Math.Floor(calculatedPrice) + 0.90m,
+            RoundingMethod.Ending99 => Math.Floor(calculatedPrice) + 0.99m,
+            RoundingMethod.NearestFive => Math.Round(calculatedPrice / 5) * 5,
+            _ => Math.Round(calculatedPrice, 2)
+        };
+        
+        return calculatedPrice > 0 ? calculatedPrice : defaultPrice;
+    }
+    
+    decimal araToplam = Model.Items.Sum(i => i.Quantity * CalculatePrice(i.Product));
+    decimal kdvTutari = araToplam * kdvOrani;
+    decimal genelToplam = araToplam + kdvTutari;
+}
+
+<!-- Breadcrumb -->
+<div class="bg-light py-3">
+    <div class="container">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="/" class="text-decoration-none">Ana Sayfa</a></li>
+                <li class="breadcrumb-item"><a href="/Cart" class="text-decoration-none">Sepetim</a></li>
+                <li class="breadcrumb-item active">Siparişi Tamamla</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="container py-4">
+    <h2 class="mb-4"><i class="bi bi-credit-card me-2"></i>Siparişi Tamamla</h2>
+
+    <div class="row">
+        <!-- Teslimat Bilgileri -->
+        <div class="col-lg-8">
+            <!-- Adres Bilgileri -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white py-3">
+                    <span class="fw-semibold"><i class="bi bi-geo-alt me-2"></i>Teslimat Adresi</span>
+                </div>
+                <div class="card-body">
+                    <form id="checkout-form">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Ad <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="firstName" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Soyad <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="lastName" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Telefon <span class="text-danger">*</span></label>
+                                <input type="tel" class="form-control" name="phone" placeholder="05XX XXX XX XX" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">E-posta <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" name="email" required>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Adres <span class="text-danger">*</span></label>
+                                <textarea class="form-control" name="address" rows="3" placeholder="Mahalle, sokak, bina no, daire no..." required></textarea>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">İl <span class="text-danger">*</span></label>
+                                <select class="form-select" name="city" required>
+                                    <option value="">Seçiniz</option>
+                                    <option value="istanbul">İstanbul</option>
+                                    <option value="ankara">Ankara</option>
+                                    <option value="izmir">İzmir</option>
+                                    <option value="bursa">Bursa</option>
+                                    <option value="antalya">Antalya</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">İlçe <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="district" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Posta Kodu</label>
+                                <input type="text" class="form-control" name="postalCode">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Ödeme Bilgileri -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white py-3">
+                    <span class="fw-semibold"><i class="bi bi-credit-card me-2"></i>Ödeme Bilgileri</span>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Bilgilendirme:</strong> Ödeme sistemi yakında aktif olacaktır. 
+                        Şu anda sipariş kapıda ödeme olarak işlenecektir.
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="radio" name="paymentMethod" id="paymentCod" value="cod" checked>
+                        <label class="form-check-label" for="paymentCod">
+                            <i class="bi bi-cash-stack me-2 text-success"></i>Kapıda Ödeme
+                        </label>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="radio" name="paymentMethod" id="paymentCard" value="card" disabled>
+                        <label class="form-check-label text-muted" for="paymentCard">
+                            <i class="bi bi-credit-card me-2"></i>Kredi Kartı <span class="badge bg-secondary">Yakında</span>
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="paymentMethod" id="paymentTransfer" value="transfer" disabled>
+                        <label class="form-check-label text-muted" for="paymentTransfer">
+                            <i class="bi bi-bank me-2"></i>Havale/EFT <span class="badge bg-secondary">Yakında</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sipariş Notları -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <span class="fw-semibold"><i class="bi bi-chat-left-text me-2"></i>Sipariş Notları (İsteğe Bağlı)</span>
+                </div>
+                <div class="card-body">
+                    <textarea class="form-control" name="orderNotes" rows="3" placeholder="Siparişinizle ilgili eklemek istediğiniz notlar..."></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sipariş Özeti -->
+        <div class="col-lg-4 mt-4 mt-lg-0">
+            <div class="card border-0 shadow-sm sticky-top" style="top: 100px;">
+                <div class="card-header bg-white py-3">
+                    <span class="fw-semibold"><i class="bi bi-receipt me-2"></i>Sipariş Özeti</span>
+                </div>
+                <div class="card-body">
+                    <!-- Ürün Listesi -->
+                    <div class="order-items mb-3" style="max-height: 250px; overflow-y: auto;">
+                        @foreach (var item in Model.Items)
+                        {
+                            var price = CalculatePrice(item.Product);
+                            <div class="d-flex align-items-center mb-3 pb-2 border-bottom">
+                                <img src="~/images/@item.Product.Image" alt="@item.Product.Name" 
+                                     class="rounded me-2" style="width: 50px; height: 50px; object-fit: contain;">
+                                <div class="flex-grow-1">
+                                    <small class="d-block text-truncate" style="max-width: 150px;">@item.Product.Name</small>
+                                    <small class="text-muted">@item.Quantity x @price.ToString("N0") ₺</small>
+                                </div>
+                                <span class="fw-semibold">@((item.Quantity * price).ToString("N0")) ₺</span>
+                            </div>
+                        }
+                    </div>
+
+                    <hr>
+
+                    <!-- Fiyat Detayları -->
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Ara Toplam</span>
+                        <span>@araToplam.ToString("N0") ₺</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Kargo</span>
+                        <span class="text-success">Ücretsiz</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>KDV (%20)</span>
+                        <span>@kdvTutari.ToString("N0") ₺</span>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="fw-bold">Ödenecek Toplam</span>
+                        <span class="fw-bold text-primary fs-5">@genelToplam.ToString("N0") ₺</span>
+                    </div>
+                    
+                    @if (userPriceList != null)
+                    {
+                        <div class="alert alert-info small mb-3">
+                            <i class="bi bi-info-circle me-1"></i>Fiyat listesi uygulaması: @userPriceList.Name
+                        </div>
+                    }
+                    else if (isB2B)
+                    {
+                        <div class="alert alert-info small mb-3">
+                            <i class="bi bi-info-circle me-1"></i>Bayi fiyatları uygulanmaktadır.
+                        </div>
+                    }
+
+                    <!-- Sözleşme Onayı -->
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="termsCheck" required>
+                        <label class="form-check-label small" for="termsCheck">
+                            <a href="#" class="text-decoration-none">Ön bilgilendirme formu</a> ve 
+                            <a href="#" class="text-decoration-none">mesafeli satış sözleşmesi</a>'ni okudum, onaylıyorum.
+                        </label>
+                    </div>
+
+                    <!-- Siparişi Tamamla Butonu -->
+                    <button type="button" class="btn btn-primary w-100 btn-lg" onclick="placeOrder(event)">
+                        <i class="bi bi-check-circle me-2"></i>Siparişi Onayla
+                    </button>
+                    
+                    <a href="/Cart" class="btn btn-outline-secondary w-100 mt-2">
+                        <i class="bi bi-arrow-left me-2"></i>Sepete Dön
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function placeOrder(event) {
+        const termsCheck = document.getElementById('termsCheck');
+        if (!termsCheck.checked) {
+            alert('Lütfen sözleşmeleri okuyup onaylayın.');
+            return;
+        }
+
+        const form = document.getElementById('checkout-form');
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        // Form verilerini topla
+        const formData = new FormData(form);
+        const orderNotes = document.querySelector('textarea[name="orderNotes"]').value;
+        if (orderNotes) {
+            formData.append('orderNotes', orderNotes);
+        }
+
+        // Sipariş butonunu devre dışı bırak
+        const submitBtn = event.target;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>İşleniyor...';
+
+        // Sipariş isteğini gönder
+        fetch('/Checkout/PlaceOrder', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`Siparişiniz başarıyla oluşturuldu!\n\nSipariş Numarası: ${data.orderNumber}\n\nSipariş detayları e-posta adresinize gönderilecektir.`);
+                
+                // Sepet badge'ini güncelle
+                const badge = document.getElementById('cartBadge');
+                if (badge) {
+                    badge.textContent = '0';
+                    badge.style.display = 'none';
+                }
+                
+                // Sipariş sayfasına yönlendir
+                window.location.href = '/MyAccount?tab=orders';
+            } else {
+                alert('Hata: ' + data.message);
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Siparişi Onayla';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Sipariş oluşturulurken bir hata oluştu. Lütfen tekrar deneyin.');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Siparişi Onayla';
+        });
+    }
+</script>
+}

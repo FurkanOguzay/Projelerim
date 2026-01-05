@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - UpexTech</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="~/css/site.css" />
+</head>
+<body>
+    <partial name="_Header" />
+
+    <main>
+        @RenderBody()
+    </main>
+
+    <!-- Kampanya Popup Script -->
+    <script>
+        function closeCampaignPopup() {
+            var popup = document.getElementById('campaignPopup');
+            if (popup) {
+                popup.classList.add('hidden');
+            }
+        }
+        
+        @if (TempData["ShowCampaignPopup"] != null)
+        {
+            <text>
+            // Reset session storage to show popup after login
+            sessionStorage.removeItem('campaignPopupShown');
+            </text>
+        }
+    </script>
+    
+    <!-- Kampanya Popup -->
+    <div id="campaignPopup" class="campaign-popup-overlay" onclick="if(event.target === this) closeCampaignPopup()">
+        <div class="campaign-popup-container">
+            <button class="campaign-popup-close" onclick="closeCampaignPopup()" type="button">
+                <i data-lucide="x" style="width: 28px; height: 28px;"></i>
+            </button>
+            
+            <div class="campaign-popup-content">
+                <div class="campaign-popup-badge">🔥 SÜPER FIRSAT</div>
+                <h1 class="campaign-popup-title">%50'ye VARAN İNDİRİM!</h1>
+                <p class="campaign-popup-subtitle">Yılın en büyük kampanyasını kaçırma!</p>
+                
+                <div class="campaign-popup-features">
+                    <div class="campaign-feature">
+                        <i data-lucide="truck" style="width: 24px; height: 24px;"></i>
+                        <span>Ücretsiz Kargo</span>
+                    </div>
+                    <div class="campaign-feature">
+                        <i data-lucide="shield-check" style="width: 24px; height: 24px;"></i>
+                        <span>2 Yıl Garanti</span>
+                    </div>
+                    <div class="campaign-feature">
+                        <i data-lucide="gift" style="width: 24px; height: 24px;"></i>
+                        <span>Hediye Aksesuar</span>
+                    </div>
+                </div>
+                
+                <div class="campaign-popup-timer">
+                    <span class="timer-label">Kampanya bitimine kalan süre:</span>
+                    <div class="timer-boxes">
+                        <div class="timer-box">
+                            <span id="popup-days">02</span>
+                            <small>Gün</small>
+                        </div>
+                        <div class="timer-box">
+                            <span id="popup-hours">14</span>
+                            <small>Saat</small>
+                        </div>
+                        <div class="timer-box">
+                            <span id="popup-minutes">32</span>
+                            <small>Dakika</small>
+                        </div>
+                        <div class="timer-box">
+                            <span id="popup-seconds">45</span>
+                            <small>Saniye</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <a href="/Catalog" class="campaign-popup-btn" onclick="closeCampaignPopup()">
+                    <i data-lucide="shopping-bag" style="width: 20px; height: 20px;"></i>
+                    Fırsatları Keşfet
+                </a>
+                
+                <p class="campaign-popup-note">
+                    <i data-lucide="info" style="width: 14px; height: 14px;"></i>
+                    Kampanya stoklar tükenene kadar geçerlidir.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <partial name="_Footer" />
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Initialize Lucide Icons -->
+    <script>
+        lucide.createIcons();
+    </script>
+    
+    <!-- Custom JS -->
+    <script src="~/js/site.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

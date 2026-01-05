@@ -1,0 +1,792 @@
+@model UpexTech.Admin.Controllers.MemberDetailViewModel
+@{
+    ViewData["Title"] = "Üye Detayı - " + Model.FullName;
+    
+    // Helper for relative time
+    string GetRelativeTime(DateTime date)
+    {
+        var diff = DateTime.Now - date;
+        if (diff.TotalMinutes < 60) return $"{(int)diff.TotalMinutes} dakika önce";
+        if (diff.TotalHours < 24) return $"{(int)diff.TotalHours} saat önce";
+        if (diff.TotalDays < 7) return $"{(int)diff.TotalDays} gün önce";
+        return date.ToString("dd.MM.yyyy");
+    }
+}
+
+<!-- Page Header -->
+<div class="detail-header">
+    <a href="@Url.Action("Index")" class="back-link">
+        <i class="fas fa-arrow-left"></i>
+    </a>
+    <div class="header-text">
+        <h1>Üye Detayı</h1>
+        <p class="subtitle">Müşteri profili ve sipariş geçmişi</p>
+    </div>
+</div>
+
+<div class="member-detail-layout">
+    <!-- Left Panel: Profile Card -->
+    <div class="profile-card">
+        <div class="avatar-section">
+            <div class="avatar-wrapper">
+                <img src="https://ui-avatars.com/api/?name=@Uri.EscapeDataString(Model.FullName)&background=E0E7FF&color=4318FF&size=96&font-size=0.4" 
+                     alt="@Model.FullName" class="profile-avatar">
+                <div class="verified-badge">
+                    <i class="fas fa-check"></i>
+                </div>
+            </div>
+            <h2 class="profile-name">@Model.FullName</h2>
+            <p class="member-id">@Model.MemberId</p>
+            <span class="verified-text">
+                <i class="fas fa-check-circle"></i>
+                Doğrulanmış Üye
+            </span>
+        </div>
+        
+        <div class="profile-info">
+            <div class="info-row">
+                <i class="fas fa-calendar-alt"></i>
+                <div>
+                    <span class="info-label">Üyelik Tarihi</span>
+                    <span class="info-value">@Model.CreatedAt.ToString("dd.MM.yyyy")</span>
+                </div>
+            </div>
+            <div class="info-row">
+                <i class="fas fa-phone"></i>
+                <div>
+                    <span class="info-label">Telefon</span>
+                    <span class="info-value">@Model.Phone</span>
+                </div>
+            </div>
+            <div class="info-row">
+                <i class="fas fa-envelope"></i>
+                <div>
+                    <span class="info-label">E-posta</span>
+                    <span class="info-value">@Model.Email</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="profile-actions">
+            <button class="btn-action" onclick="resetPassword(@Model.Id, '@Model.FullName')">
+                <i class="fas fa-lock"></i>
+                Şifre Sıfırla
+            </button>
+            <form asp-action="ToggleStatus" asp-route-id="@Model.Id" method="post" style="width: 100%;">
+                @Html.AntiForgeryToken()
+                @if (Model.UserStatus == UpexTech.Entity.UserStatus.Active)
+                {
+                    <button type="submit" class="btn-action danger">
+                        <i class="fas fa-ban"></i>
+                        Hesabı Dondur
+                    </button>
+                }
+                else
+                {
+                    <button type="submit" class="btn-action success">
+                        <i class="fas fa-check"></i>
+                        Hesabı Aktifleştir
+                    </button>
+                }
+            </form>
+        </div>
+    </div>
+    
+    <!-- Right Panel: Main Content -->
+    <div class="main-content">
+        <!-- KPI Cards -->
+        <div class="kpi-cards-row">
+            <div class="kpi-card purple">
+                <div class="kpi-header">
+                    <span>Toplam Sipariş</span>
+                    <div class="kpi-icon"><i class="fas fa-shopping-bag"></i></div>
+                </div>
+                <div class="kpi-value">@Model.TotalOrders</div>
+                <div class="kpi-subtitle">Adet</div>
+            </div>
+            <div class="kpi-card green">
+                <div class="kpi-header">
+                    <span>Toplam Harcama (LTV)</span>
+                    <div class="kpi-icon"><i class="fas fa-chart-line"></i></div>
+                </div>
+                <div class="kpi-value">₺@Model.TotalSpent.ToString("N0")</div>
+                <div class="kpi-subtitle">Yaşam Boyu Değer</div>
+            </div>
+            <div class="kpi-card white">
+                <div class="kpi-header">
+                    <span>Ortalama Sepet</span>
+                    <div class="kpi-icon"><i class="fas fa-shopping-cart"></i></div>
+                </div>
+                <div class="kpi-value">₺@Model.AverageOrderValue.ToString("N0")</div>
+                <div class="kpi-subtitle">Sipariş Başına</div>
+            </div>
+        </div>
+        
+        <!-- Activities Section -->
+        <div class="section-card">
+            <div class="section-header">
+                <i class="fas fa-clock"></i>
+                <h3>Son Aktiviteler</h3>
+            </div>
+            <div class="activity-timeline">
+                @if (Model.Activities.Any())
+                {
+                    @foreach (var activity in Model.Activities)
+                    {
+                        <div class="activity-item">
+                            <div class="activity-dot @(activity.Type == "login" ? "blue" : "blue")"></div>
+                            <div class="activity-content">
+                                <span class="activity-title">@activity.Title</span>
+                                <span class="activity-desc">@activity.Description</span>
+                            </div>
+                            <span class="activity-time">@GetRelativeTime(activity.Timestamp)</span>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <p>Henüz aktivite bulunmuyor</p>
+                    </div>
+                }
+            </div>
+        </div>
+        
+        <!-- Address Section -->
+        <div class="section-card">
+            <div class="section-header">
+                <i class="fas fa-map-marker-alt"></i>
+                <h3>Adres Defteri</h3>
+            </div>
+            <div class="address-cards">
+                <div class="address-card">
+                    <div class="address-icon home">
+                        <i class="fas fa-home"></i>
+                    </div>
+                    <div class="address-content">
+                        <div class="address-header">
+                            <span class="address-title">Ev Adresi</span>
+                            <span class="badge default">Varsayılan</span>
+                        </div>
+                        <p class="address-text">@(Model.Address != "-" ? Model.Address : "Adres bilgisi girilmemiş")</p>
+                    </div>
+                </div>
+                <div class="address-card">
+                    <div class="address-icon work">
+                        <i class="fas fa-building"></i>
+                    </div>
+                    <div class="address-content">
+                        <div class="address-header">
+                            <span class="address-title">İş Adresi</span>
+                        </div>
+                        <p class="address-text muted">Henüz eklenmemiş</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Orders Section -->
+        <div class="section-card">
+            <div class="section-header">
+                <i class="fas fa-shopping-bag"></i>
+                <h3>Son Siparişler</h3>
+            </div>
+            @if (Model.RecentOrders.Any())
+            {
+                <table class="orders-table">
+                    <thead>
+                        <tr>
+                            <th>Sipariş No</th>
+                            <th>Tarih</th>
+                            <th>Tutar</th>
+                            <th>Durum</th>
+                            <th>İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var order in Model.RecentOrders.Take(4))
+                        {
+                            <tr>
+                                <td class="order-number">@order.OrderNumber</td>
+                                <td class="order-date">@order.CreatedAt.ToString("dd.MM.yyyy")</td>
+                                <td class="order-amount">₺@order.TotalAmount.ToString("N0")</td>
+                                <td>
+                                    @switch (order.Status)
+                                    {
+                                        case UpexTech.Entity.OrderStatus.Pending:
+                                            <span class="order-badge pending">Beklemede</span>
+                                            break;
+                                        case UpexTech.Entity.OrderStatus.Confirmed:
+                                            <span class="order-badge confirmed">Onaylandı</span>
+                                            break;
+                                        case UpexTech.Entity.OrderStatus.Shipped:
+                                            <span class="order-badge shipped">Kargoda</span>
+                                            break;
+                                        case UpexTech.Entity.OrderStatus.Delivered:
+                                            <span class="order-badge delivered">Teslim Edildi</span>
+                                            break;
+                                        case UpexTech.Entity.OrderStatus.Cancelled:
+                                            <span class="order-badge cancelled">İptal</span>
+                                            break;
+                                        default:
+                                            <span class="order-badge">@order.Status</span>
+                                            break;
+                                    }
+                                </td>
+                                <td>
+                                    <a href="@Url.Action("Details", "Order", new { id = order.Id })" class="view-link">
+                                        <i class="fas fa-eye"></i>
+                                        Görüntüle
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                <div class="view-all">
+                    <a href="@Url.Action("Index", "Order", new { userId = Model.Id })" class="btn-view-all">
+                        Tüm Siparişleri Görüntüle
+                    </a>
+                </div>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <i class="fas fa-shopping-bag"></i>
+                    <p>Henüz sipariş bulunmuyor</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Layout */
+    .detail-header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+    
+    .back-link {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border: 1px solid var(--gray-200);
+        border-radius: 8px;
+        color: var(--gray-600);
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+    
+    .back-link:hover {
+        background: var(--gray-50);
+        color: var(--primary);
+    }
+    
+    .header-text h1 {
+        font-size: 24px;
+        font-weight: 600;
+        color: var(--gray-900);
+        margin: 0;
+    }
+    
+    .header-text .subtitle {
+        font-size: 14px;
+        color: var(--gray-500);
+        margin: 4px 0 0;
+    }
+    
+    .member-detail-layout {
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        gap: 24px;
+    }
+    
+    /* Profile Card */
+    .profile-card {
+        background: white;
+        border-radius: 16px;
+        padding: 32px 24px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        height: fit-content;
+    }
+    
+    .avatar-section {
+        text-align: center;
+        margin-bottom: 24px;
+    }
+    
+    .avatar-wrapper {
+        position: relative;
+        width: 96px;
+        height: 96px;
+        margin: 0 auto 16px;
+    }
+    
+    .profile-avatar {
+        width: 96px;
+        height: 96px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+    
+    .verified-badge {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 28px;
+        height: 28px;
+        background: #22C55E;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        border: 3px solid white;
+    }
+    
+    .profile-name {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--gray-900);
+        margin: 0 0 4px;
+    }
+    
+    .member-id {
+        font-size: 14px;
+        color: var(--gray-500);
+        margin: 0 0 12px;
+    }
+    
+    .verified-text {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        color: #22C55E;
+    }
+    
+    .profile-info {
+        border-top: 1px solid var(--gray-100);
+        padding-top: 24px;
+        margin-bottom: 24px;
+    }
+    
+    .info-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+    
+    .info-row:last-child { margin-bottom: 0; }
+    
+    .info-row i {
+        width: 20px;
+        color: var(--primary);
+        margin-top: 2px;
+    }
+    
+    .info-row .info-label {
+        display: block;
+        font-size: 12px;
+        color: var(--gray-500);
+        margin-bottom: 2px;
+    }
+    
+    .info-row .info-value {
+        display: block;
+        font-size: 14px;
+        color: var(--gray-900);
+        font-weight: 500;
+    }
+    
+    .profile-actions {
+        border-top: 1px solid var(--gray-100);
+        padding-top: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .btn-action {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 12px 16px;
+        border: 1px solid var(--gray-200);
+        background: white;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--gray-700);
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .btn-action:hover {
+        background: var(--gray-50);
+        border-color: var(--gray-300);
+    }
+    
+    .btn-action.danger {
+        color: #DC2626;
+        border-color: #FECACA;
+    }
+    
+    .btn-action.danger:hover {
+        background: #FEF2F2;
+    }
+    
+    .btn-action.success {
+        color: #22C55E;
+        border-color: #BBF7D0;
+    }
+    
+    .btn-action.success:hover {
+        background: #F0FDF4;
+    }
+    
+    /* KPI Cards */
+    .kpi-cards-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+    
+    .kpi-card {
+        padding: 20px;
+        border-radius: 12px;
+        color: white;
+    }
+    
+    .kpi-card.purple {
+        background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+    }
+    
+    .kpi-card.green {
+        background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
+    }
+    
+    .kpi-card.white {
+        background: white;
+        color: var(--gray-900);
+        border: 1px solid var(--gray-200);
+    }
+    
+    .kpi-card .kpi-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 12px;
+    }
+    
+    .kpi-card .kpi-header span {
+        font-size: 13px;
+        opacity: 0.9;
+    }
+    
+    .kpi-card.white .kpi-header span {
+        color: var(--gray-600);
+    }
+    
+    .kpi-card .kpi-icon {
+        width: 32px;
+        height: 32px;
+        background: rgba(255,255,255,0.2);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .kpi-card.white .kpi-icon {
+        background: var(--gray-100);
+        color: var(--gray-600);
+    }
+    
+    .kpi-card .kpi-value {
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 4px;
+    }
+    
+    .kpi-card .kpi-subtitle {
+        font-size: 13px;
+        opacity: 0.8;
+    }
+    
+    .kpi-card.white .kpi-subtitle {
+        color: var(--gray-500);
+    }
+    
+    /* Section Cards */
+    .section-card {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    
+    .section-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .section-header i {
+        color: var(--primary);
+    }
+    
+    .section-header h3 {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--gray-900);
+        margin: 0;
+    }
+    
+    /* Activity Timeline */
+    .activity-timeline {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+    
+    .activity-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    
+    .activity-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-top: 6px;
+        flex-shrink: 0;
+    }
+    
+    .activity-dot.blue { background: #3B82F6; }
+    
+    .activity-content {
+        flex: 1;
+    }
+    
+    .activity-title {
+        display: block;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--gray-900);
+    }
+    
+    .activity-desc {
+        display: block;
+        font-size: 13px;
+        color: var(--gray-500);
+    }
+    
+    .activity-time {
+        font-size: 13px;
+        color: var(--gray-400);
+        white-space: nowrap;
+    }
+    
+    /* Address Cards */
+    .address-cards {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+    
+    .address-card {
+        display: flex;
+        gap: 16px;
+        padding: 16px;
+        border: 1px solid var(--gray-200);
+        border-radius: 12px;
+    }
+    
+    .address-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    
+    .address-icon.home {
+        background: #FEF3C7;
+        color: #D97706;
+    }
+    
+    .address-icon.work {
+        background: #EDE9FE;
+        color: #7C3AED;
+    }
+    
+    .address-content { flex: 1; }
+    
+    .address-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 4px;
+    }
+    
+    .address-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--gray-900);
+    }
+    
+    .badge.default {
+        font-size: 11px;
+        padding: 2px 8px;
+        background: #DBEAFE;
+        color: #2563EB;
+        border-radius: 12px;
+    }
+    
+    .address-text {
+        font-size: 13px;
+        color: var(--gray-600);
+        margin: 0;
+        line-height: 1.5;
+    }
+    
+    .address-text.muted {
+        color: var(--gray-400);
+    }
+    
+    /* Orders Table */
+    .orders-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .orders-table th {
+        text-align: left;
+        padding: 12px 16px;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--gray-500);
+        border-bottom: 1px solid var(--gray-100);
+    }
+    
+    .orders-table td {
+        padding: 16px;
+        font-size: 14px;
+        border-bottom: 1px solid var(--gray-100);
+    }
+    
+    .order-number {
+        font-weight: 600;
+        color: var(--primary);
+    }
+    
+    .order-date { color: var(--gray-500); }
+    
+    .order-amount {
+        font-weight: 600;
+        color: var(--gray-900);
+    }
+    
+    .order-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+    
+    .order-badge.pending { background: #FEF3C7; color: #D97706; }
+    .order-badge.confirmed { background: #DBEAFE; color: #2563EB; }
+    .order-badge.shipped { background: #E0E7FF; color: #4F46E5; }
+    .order-badge.delivered { background: #D1FAE5; color: #059669; }
+    .order-badge.cancelled { background: #FEE2E2; color: #DC2626; }
+    
+    .view-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--gray-500);
+        text-decoration: none;
+        font-size: 13px;
+    }
+    
+    .view-link:hover { color: var(--primary); }
+    
+    .view-all {
+        text-align: center;
+        padding-top: 16px;
+        border-top: 1px solid var(--gray-100);
+        margin-top: 8px;
+    }
+    
+    .btn-view-all {
+        display: inline-block;
+        padding: 10px 24px;
+        background: var(--gray-50);
+        border: 1px solid var(--gray-200);
+        border-radius: 8px;
+        color: var(--gray-700);
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 500;
+    }
+    
+    .btn-view-all:hover {
+        background: var(--gray-100);
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 32px;
+        color: var(--gray-500);
+    }
+    
+    .empty-state i {
+        font-size: 48px;
+        color: var(--gray-300);
+        margin-bottom: 12px;
+    }
+    
+    /* Responsive */
+    @@media (max-width: 1024px) {
+        .member-detail-layout {
+            grid-template-columns: 1fr;
+        }
+        
+        .kpi-cards-row {
+            grid-template-columns: 1fr;
+        }
+        
+        .address-cards {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+@section Scripts {
+    <script>
+        function resetPassword(memberId, memberName) {
+            if (confirm(`${memberName} için şifre sıfırlama e-postası gönderilsin mi?`)) {
+                // TODO: Implement password reset API call
+                alert('Şifre sıfırlama e-postası gönderildi!');
+            }
+        }
+    </script>
+}

@@ -1,0 +1,494 @@
+@model List<UpexTech.Entity.AdminUser>
+@using UpexTech.Entity
+@{
+    ViewData["Title"] = "Yöneticiler & Roller";
+    var roles = ViewBag.Roles as List<AdminRole> ?? new List<AdminRole>();
+}
+
+<div class="page-header">
+    <div>
+        <h1>Yöneticiler & Roller</h1>
+        <p>Admin kullanıcılarını ve rollerini yönetin</p>
+    </div>
+</div>
+
+<!-- Tab Navigation -->
+<div class="card" style="margin-bottom: 24px;">
+    <ul class="nav nav-tabs" id="settingsTabs" role="tablist" style="border-bottom: 1px solid var(--gray-200); padding: 0 20px;">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="users-tab" data-bs-toggle="tab" data-bs-target="#users" type="button" role="tab" style="border: none; padding: 16px 24px; font-weight: 500;">
+                <i class="fas fa-users me-2"></i>Yöneticiler (@Model.Count)
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="roles-tab" data-bs-toggle="tab" data-bs-target="#roles" type="button" role="tab" style="border: none; padding: 16px 24px; font-weight: 500;">
+                <i class="fas fa-user-shield me-2"></i>Roller (@roles.Count)
+            </button>
+        </li>
+    </ul>
+</div>
+
+<div class="tab-content" id="settingsTabContent">
+    <!-- Yöneticiler Tab -->
+    <div class="tab-pane fade show active" id="users" role="tabpanel">
+        <div class="card">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-bottom: 1px solid var(--gray-200);">
+                <h3 style="margin: 0; font-size: 16px; font-weight: 600;">Yönetici Listesi</h3>
+                <button class="btn btn-primary" onclick="showAddAdminModal()">
+                    <i class="fas fa-plus me-2"></i>Yeni Yönetici Ekle
+                </button>
+            </div>
+            <div class="table-responsive">
+                <table class="table" style="margin: 0;">
+                    <thead>
+                        <tr>
+                            <th style="padding: 12px 24px;">Kullanıcı</th>
+                            <th>E-posta</th>
+                            <th>Rol</th>
+                            <th>Durum</th>
+                            <th>Son Giriş</th>
+                            <th style="text-align: right; padding-right: 24px;">İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var user in Model)
+                        {
+                            <tr>
+                                <td style="padding: 16px 24px;">
+                                    <div style="display: flex; align-items: center; gap: 12px;">
+                                        <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--primary-100); display: flex; align-items: center; justify-content: center; color: var(--primary-600); font-weight: 600;">
+                                            @(string.IsNullOrEmpty(user.FirstName) ? "" : user.FirstName[0].ToString())@(string.IsNullOrEmpty(user.LastName) ? "" : user.LastName[0].ToString())
+                                        </div>
+                                        <div>
+                                            <div style="font-weight: 500;">@user.FullName</div>
+                                            <div style="font-size: 12px; color: var(--gray-500);">@(user.Phone ?? "-")</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>@user.Email</td>
+                                <td>
+                                    <span class="badge" style="background: @(user.Role.IsSystemRole ? "var(--primary-100)" : "var(--gray-100)"); color: @(user.Role.IsSystemRole ? "var(--primary-700)" : "var(--gray-700)"); padding: 6px 12px; border-radius: 20px;">
+                                        @(user.Role.IsSystemRole ? "👑 " : "")@user.Role.Name
+                                    </span>
+                                </td>
+                                <td>
+                                    @if (user.IsActive)
+                                    {
+                                        <span class="badge" style="background: var(--success-100); color: var(--success-700); padding: 6px 12px; border-radius: 20px;">Aktif</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge" style="background: var(--gray-100); color: var(--gray-600); padding: 6px 12px; border-radius: 20px;">Pasif</span>
+                                    }
+                                </td>
+                                <td style="color: var(--gray-500); font-size: 13px;">
+                                    @(user.LastLoginAt?.ToString("dd.MM.yyyy HH:mm") ?? "Hiç giriş yapmadı")
+                                </td>
+                                <td style="text-align: right; padding-right: 24px;">
+                                    <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                                        <button class="btn btn-sm btn-outline-secondary" onclick="editAdmin(@user.Id)" title="Düzenle">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        @if (!user.Role.IsSystemRole || user.Email != "admin@upextech.com")
+                                        {
+                                            <button class="btn btn-sm btn-outline-danger" onclick="deleteAdmin(@user.Id, '@user.FullName')" title="Sil">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Roller Tab -->
+    <div class="tab-pane fade" id="roles" role="tabpanel">
+        <div class="card">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-bottom: 1px solid var(--gray-200);">
+                <h3 style="margin: 0; font-size: 16px; font-weight: 600;">Rol Listesi</h3>
+                <button class="btn btn-primary" onclick="showAddRoleModal()">
+                    <i class="fas fa-plus me-2"></i>Yeni Rol Ekle
+                </button>
+            </div>
+            <div class="table-responsive">
+                <table class="table" style="margin: 0;">
+                    <thead>
+                        <tr>
+                            <th style="padding: 12px 24px;">Rol Adı</th>
+                            <th>Açıklama</th>
+                            <th>Kullanıcı Sayısı</th>
+                            <th>Tür</th>
+                            <th style="text-align: right; padding-right: 24px;">İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var role in roles)
+                        {
+                            <tr>
+                                <td style="padding: 16px 24px;">
+                                    <strong>@(role.IsSystemRole ? "👑 " : "")@role.Name</strong>
+                                </td>
+                                <td style="color: var(--gray-600);">@(role.Description ?? "-")</td>
+                                <td>
+                                    <span class="badge" style="background: var(--gray-100); color: var(--gray-700); padding: 6px 12px; border-radius: 20px;">
+                                        @role.AdminUsers.Count kullanıcı
+                                    </span>
+                                </td>
+                                <td>
+                                    @if (role.IsSystemRole)
+                                    {
+                                        <span class="badge" style="background: var(--warning-100); color: var(--warning-700); padding: 6px 12px; border-radius: 20px;">Sistem Rolü</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge" style="background: var(--gray-100); color: var(--gray-600); padding: 6px 12px; border-radius: 20px;">Özel Rol</span>
+                                    }
+                                </td>
+                                <td style="text-align: right; padding-right: 24px;">
+                                    <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                                        <button class="btn btn-sm btn-outline-secondary" onclick="editRole(@role.Id)" title="Düzenle">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        @if (!role.IsSystemRole)
+                                        {
+                                            <button class="btn btn-sm btn-outline-danger" onclick="deleteRole(@role.Id, '@role.Name')" title="Sil">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Admin Modal -->
+<div class="modal fade" id="adminModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="adminModalTitle">Yeni Yönetici Ekle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="adminForm">
+                    <input type="hidden" id="adminId" name="id">
+                    <div class="mb-3">
+                        <label class="form-label">Ad</label>
+                        <input type="text" class="form-control" id="adminFirstName" name="firstName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Soyad</label>
+                        <input type="text" class="form-control" id="adminLastName" name="lastName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">E-posta</label>
+                        <input type="email" class="form-control" id="adminEmail" name="email" required>
+                    </div>
+                    <div class="mb-3" id="passwordField">
+                        <label class="form-label">Şifre</label>
+                        <input type="password" class="form-control" id="adminPassword" name="password">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Telefon</label>
+                        <input type="text" class="form-control" id="adminPhone" name="phone">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Rol</label>
+                        <select class="form-select" id="adminRole" name="roleId" required>
+                            @foreach (var role in roles)
+                            {
+                                <option value="@role.Id">@role.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3" id="activeField" style="display: none;">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="adminActive" name="isActive" checked>
+                            <label class="form-check-label" for="adminActive">Aktif</label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-primary" onclick="saveAdmin()">Kaydet</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Role Modal -->
+<div class="modal fade" id="roleModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="roleModalTitle">Yeni Rol Ekle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="roleForm">
+                    <input type="hidden" id="roleId" name="id">
+                    <div class="mb-3">
+                        <label class="form-label">Rol Adı</label>
+                        <input type="text" class="form-control" id="roleName" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Açıklama</label>
+                        <textarea class="form-control" id="roleDescription" name="description" rows="2"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">İzinler</label>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 16px; background: var(--gray-50); border-radius: 8px;">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input permission-check" id="perm_1" value="1">
+                                <label class="form-check-label" for="perm_1">📊 Kontrol Paneli</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input permission-check" id="perm_2" value="2">
+                                <label class="form-check-label" for="perm_2">🛒 Siparişler</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input permission-check" id="perm_4" value="4">
+                                <label class="form-check-label" for="perm_4">↩️ İade Talepleri</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input permission-check" id="perm_8" value="8">
+                                <label class="form-check-label" for="perm_8">📦 Ürünler</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input permission-check" id="perm_16" value="16">
+                                <label class="form-check-label" for="perm_16">📂 Kategoriler</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input permission-check" id="perm_32" value="32">
+                                <label class="form-check-label" for="perm_32">📱 Cihaz Modelleri</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input permission-check" id="perm_64" value="64">
+                                <label class="form-check-label" for="perm_64">📋 Toplu İşlemler</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input permission-check" id="perm_128" value="128">
+                                <label class="form-check-label" for="perm_128">💳 Cari Hesaplar</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input permission-check" id="perm_256" value="256">
+                                <label class="form-check-label" for="perm_256">👥 Müşteriler</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input permission-check" id="perm_512" value="512">
+                                <label class="form-check-label" for="perm_512">👤 Üyeler</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input permission-check" id="perm_1024" value="1024">
+                                <label class="form-check-label" for="perm_1024">🤝 Bayiler</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input permission-check" id="perm_2048" value="2048">
+                                <label class="form-check-label" for="perm_2048">💰 Fiyat Listesi</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input permission-check" id="perm_4096" value="4096">
+                                <label class="form-check-label" for="perm_4096">📈 Raporlar</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input permission-check" id="perm_8192" value="8192">
+                                <label class="form-check-label" for="perm_8192">🏦 Finans</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input permission-check" id="perm_16384" value="16384">
+                                <label class="form-check-label" for="perm_16384">🖼️ Banner Yönetimi</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input permission-check" id="perm_32768" value="32768">
+                                <label class="form-check-label" for="perm_32768">⚙️ Ayarlar</label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-primary" onclick="saveRole()">Kaydet</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    let isEditMode = false;
+
+    // Admin functions
+    function showAddAdminModal() {
+        isEditMode = false;
+        document.getElementById('adminModalTitle').textContent = 'Yeni Yönetici Ekle';
+        document.getElementById('adminForm').reset();
+        document.getElementById('adminId').value = '';
+        document.getElementById('passwordField').style.display = 'block';
+        document.getElementById('adminPassword').required = true;
+        document.getElementById('activeField').style.display = 'none';
+        new bootstrap.Modal(document.getElementById('adminModal')).show();
+    }
+
+    async function editAdmin(id) {
+        isEditMode = true;
+        const response = await fetch(`/Settings/GetAdmin?id=${id}`);
+        const result = await response.json();
+        
+        if (result.success) {
+            const data = result.data;
+            document.getElementById('adminModalTitle').textContent = 'Yöneticiyi Düzenle';
+            document.getElementById('adminId').value = data.id;
+            document.getElementById('adminFirstName').value = data.firstName;
+            document.getElementById('adminLastName').value = data.lastName;
+            document.getElementById('adminEmail').value = data.email;
+            document.getElementById('adminPhone').value = data.phone || '';
+            document.getElementById('adminRole').value = data.roleId;
+            document.getElementById('adminActive').checked = data.isActive;
+            document.getElementById('passwordField').style.display = 'none';
+            document.getElementById('adminPassword').required = false;
+            document.getElementById('activeField').style.display = 'block';
+            new bootstrap.Modal(document.getElementById('adminModal')).show();
+        } else {
+            alert(result.message);
+        }
+    }
+
+    async function saveAdmin() {
+        const id = document.getElementById('adminId').value;
+        const data = {
+            firstName: document.getElementById('adminFirstName').value,
+            lastName: document.getElementById('adminLastName').value,
+            email: document.getElementById('adminEmail').value,
+            phone: document.getElementById('adminPhone').value || null,
+            roleId: parseInt(document.getElementById('adminRole').value)
+        };
+
+        let url, body;
+        if (isEditMode) {
+            url = '/Settings/UpdateAdmin';
+            body = { ...data, id: parseInt(id), isActive: document.getElementById('adminActive').checked };
+        } else {
+            url = '/Settings/CreateAdmin';
+            body = { ...data, password: document.getElementById('adminPassword').value };
+        }
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            location.reload();
+        } else {
+            alert(result.message);
+        }
+    }
+
+    async function deleteAdmin(id, name) {
+        if (!confirm(`"${name}" yöneticisini silmek istediğinize emin misiniz?`)) return;
+        
+        const response = await fetch(`/Settings/DeleteAdmin?id=${id}`, { method: 'POST' });
+        const result = await response.json();
+        
+        if (result.success) {
+            location.reload();
+        } else {
+            alert(result.message);
+        }
+    }
+
+    // Role functions
+    function showAddRoleModal() {
+        isEditMode = false;
+        document.getElementById('roleModalTitle').textContent = 'Yeni Rol Ekle';
+        document.getElementById('roleForm').reset();
+        document.getElementById('roleId').value = '';
+        document.querySelectorAll('.permission-check').forEach(cb => cb.checked = false);
+        new bootstrap.Modal(document.getElementById('roleModal')).show();
+    }
+
+    async function editRole(id) {
+        isEditMode = true;
+        const response = await fetch(`/Settings/GetRole?id=${id}`);
+        const result = await response.json();
+        
+        if (result.success) {
+            const data = result.data;
+            document.getElementById('roleModalTitle').textContent = 'Rolü Düzenle';
+            document.getElementById('roleId').value = data.id;
+            document.getElementById('roleName').value = data.name;
+            document.getElementById('roleName').disabled = data.isSystemRole;
+            document.getElementById('roleDescription').value = data.description || '';
+            
+            document.querySelectorAll('.permission-check').forEach(cb => {
+                cb.checked = data.permissions.includes(parseInt(cb.value));
+            });
+            
+            new bootstrap.Modal(document.getElementById('roleModal')).show();
+        } else {
+            alert(result.message);
+        }
+    }
+
+    async function saveRole() {
+        const id = document.getElementById('roleId').value;
+        const permissions = [];
+        document.querySelectorAll('.permission-check:checked').forEach(cb => {
+            permissions.push(parseInt(cb.value));
+        });
+
+        const data = {
+            name: document.getElementById('roleName').value,
+            description: document.getElementById('roleDescription').value || null,
+            permissions: permissions
+        };
+
+        let url;
+        if (isEditMode) {
+            url = '/Settings/UpdateRole';
+            data.id = parseInt(id);
+        } else {
+            url = '/Settings/CreateRole';
+        }
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            location.reload();
+        } else {
+            alert(result.message);
+        }
+    }
+
+    async function deleteRole(id, name) {
+        if (!confirm(`"${name}" rolünü silmek istediğinize emin misiniz?`)) return;
+        
+        const response = await fetch(`/Settings/DeleteRole?id=${id}`, { method: 'POST' });
+        const result = await response.json();
+        
+        if (result.success) {
+            location.reload();
+        } else {
+            alert(result.message);
+        }
+    }
+</script>
+}

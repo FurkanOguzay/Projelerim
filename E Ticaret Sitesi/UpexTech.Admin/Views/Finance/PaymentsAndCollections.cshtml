@@ -1,0 +1,618 @@
+@using UpexTech.Business.DTOs
+@{
+    ViewData["Title"] = "Ödemeler & Tahsilatlar";
+    var summary = ViewBag.Summary as PaymentSummaryDto ?? new PaymentSummaryDto();
+    var payments = ViewBag.Payments as IEnumerable<PaymentListDto> ?? new List<PaymentListDto>();
+    var banks = ViewBag.Banks as IEnumerable<BankAccountDto> ?? new List<BankAccountDto>();
+}
+
+<div class="page-header payments-header">
+    <div class="page-header-left">
+        <h1>Ödemeler & Tahsilatlar</h1>
+        <p class="page-subtitle">Dijital ödeme hareketlerinizi takip edin</p>
+    </div>
+    <div class="page-header-right">
+        <button class="btn btn-outline" onclick="exportToExcel()">
+            <i class="fas fa-file-excel"></i>
+            Excel'e Aktar
+        </button>
+        <button class="btn btn-primary" onclick="openAddPaymentModal()">
+            <i class="fas fa-plus"></i>
+            Yeni Tahsilat Ekle
+        </button>
+    </div>
+</div>
+
+<!-- KPI Summary Cards -->
+<div class="payment-summary-cards">
+    <div class="payment-kpi-card incoming">
+        <div class="kpi-icon-wrap">
+            <i class="fas fa-arrow-down"></i>
+        </div>
+        <span class="kpi-badge green">Gelen</span>
+        <div class="kpi-content">
+            <p class="kpi-label">Toplam Tahsilat</p>
+            <h2 class="kpi-amount">₺@summary.TotalIncoming.ToString("N0")</h2>
+            <p class="kpi-count">@summary.IncomingCount işlem</p>
+        </div>
+    </div>
+    
+    <div class="payment-kpi-card outgoing">
+        <div class="kpi-icon-wrap orange">
+            <i class="fas fa-arrow-up"></i>
+        </div>
+        <span class="kpi-badge orange">Giden</span>
+        <div class="kpi-content">
+            <p class="kpi-label">Toplam Ödeme</p>
+            <h2 class="kpi-amount">₺@summary.TotalOutgoing.ToString("N0")</h2>
+            <p class="kpi-count">@summary.OutgoingCount işlem</p>
+        </div>
+    </div>
+    
+    <div class="payment-kpi-card net">
+        <div class="kpi-icon-wrap blue">
+            <i class="fas fa-scale-balanced"></i>
+        </div>
+        <span class="kpi-badge blue">Net</span>
+        <div class="kpi-content">
+            <p class="kpi-label">Net Akış</p>
+            <h2 class="kpi-amount @(summary.NetFlow >= 0 ? "positive" : "negative")">₺@summary.NetFlow.ToString("N0")</h2>
+            <p class="kpi-count">Gelen - Giden</p>
+        </div>
+    </div>
+</div>
+
+<!-- Filters Section -->
+<div class="filters-section">
+    <div class="filters-header">
+        <i class="fas fa-sliders-h"></i>
+        <span>Gelişmiş Filtreler</span>
+    </div>
+    <div class="filters-grid">
+        <div class="filter-group">
+            <label>Müşteri veya Açıklama Ara</label>
+            <div class="search-input">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchTerm" placeholder="Ara...">
+            </div>
+        </div>
+        <div class="filter-group">
+            <label>Kaynak</label>
+            <select id="channelFilter">
+                <option value="">Tümü</option>
+                <option value="B2C">B2C (Bireysel)</option>
+                <option value="B2B">B2B (Kurumsal)</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>Hesap Seçimi</label>
+            <select id="accountFilter">
+                <option value="">Tümü</option>
+                <option value="credit_card">Kredi Kartı</option>
+                <option value="bank_transfer">Banka Havalesi</option>
+                <option value="iyzico">Iyzico POS</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>İşleme Durumu</label>
+            <select id="statusFilter">
+                <option value="">Tümü</option>
+                <option value="Başarılı">Başarılı</option>
+                <option value="Beklemede">Beklemede</option>
+                <option value="Başarısız">Başarısız</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<!-- Payments Table -->
+<div class="card payments-table-card">
+    <table class="payments-table" id="paymentsTable">
+        <thead>
+            <tr>
+                <th>Tarih & Saat</th>
+                <th>Kanal</th>
+                <th>Cari / Üye</th>
+                <th>Açıklama / Belge</th>
+                <th>Hesap</th>
+                <th>Ödeme Yöntemi</th>
+                <th>Tutar</th>
+                <th>Durum</th>
+                <th>İşlemler</th>
+            </tr>
+        </thead>
+        <tbody id="paymentsTableBody">
+            @foreach (var payment in payments)
+            {
+                <tr>
+                    <td>
+                        <div class="date-cell">
+                            <span class="date">@payment.PaymentDate.ToString("dd.MM.yyyy")</span>
+                            <span class="time">@payment.PaymentDate.ToString("HH:mm")</span>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="channel-badge @payment.Channel.ToLower()">@payment.Channel</span>
+                    </td>
+                    <td>
+                        <div class="customer-cell">
+                            <span class="name">@(payment.CompanyName ?? payment.CustomerName)</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="description-cell">
+                            <span class="description">@payment.Description</span>
+                            @if (!string.IsNullOrEmpty(payment.ReferenceNumber))
+                            {
+                                <span class="reference">@payment.ReferenceNumber</span>
+                            }
+                        </div>
+                    </td>
+                    <td>@payment.AccountName</td>
+                    <td>
+                        <div class="payment-method-cell">
+                            <span>@payment.PaymentMethod</span>
+                            @if (payment.InstallmentCount.HasValue && payment.InstallmentCount > 1)
+                            {
+                                <span class="installment-badge">@payment.InstallmentCount Taksit</span>
+                            }
+                        </div>
+                    </td>
+                    <td>
+                        <span class="amount @(payment.IsIncoming ? "incoming" : "outgoing")">
+                            @(payment.IsIncoming ? "+" : "-")₺@payment.Amount.ToString("N0")
+                        </span>
+                    </td>
+                    <td>
+                        <span class="status-badge @payment.Status.ToLower().Replace("ı", "i").Replace("ş", "s").Replace("ü", "u")">@payment.Status</span>
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            @if (payment.OrderId.HasValue)
+                            {
+                                <button class="action-btn" onclick="viewInvoice(@payment.OrderId)" title="Fatura Görüntüle">
+                                    <i class="fas fa-file-invoice"></i>
+                                </button>
+                            }
+                            <button class="action-btn" onclick="viewPaymentDetail(@payment.Id)" title="Detaylar">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    
+    @if (!payments.Any())
+    {
+        <div class="empty-state">
+            <i class="fas fa-receipt"></i>
+            <p>Henüz ödeme kaydı bulunmuyor.</p>
+        </div>
+    }
+</div>
+
+<!-- Add Payment Modal -->
+<div class="modal-overlay" id="addPaymentModal" style="display: none;">
+    <div class="modal-container modal-sm">
+        <div class="modal-header">
+            <h2><i class="fas fa-plus"></i> Yeni Tahsilat Ekle</h2>
+            <button class="modal-close" onclick="closeAddPaymentModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form id="addPaymentForm" onsubmit="savePayment(event)">
+            <div class="modal-body">
+                <div class="payment-method-info">
+                    <div class="method-icon">
+                        <i class="fas fa-building-columns"></i>
+                    </div>
+                    <div class="method-text">
+                        <strong>Banka Havalesi / EFT</strong>
+                        <span>Sadece havale/EFT işlemleri manuel olarak eklenebilir</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="bankSelect">Hangi Bankaya Geldi? *</label>
+                    <select id="bankSelect" name="bankName" required>
+                        <option value="">Banka seçiniz...</option>
+                        @foreach (var bank in banks)
+                        {
+                            <option value="@bank.Name">@bank.Name</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="paymentAmount">Tutar (TL) *</label>
+                    <input type="number" id="paymentAmount" name="amount" placeholder="0.00" step="0.01" min="0.01" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="paymentDescription">Açıklama</label>
+                    <textarea id="paymentDescription" name="description" rows="3" placeholder="Ödeme ile ilgili açıklama..."></textarea>
+                </div>
+
+                <div class="info-note">
+                    <i class="fas fa-info-circle"></i>
+                    <div>
+                        <strong>Not:</strong> Kredi kartı ve POS ödemeleri otomatik olarak entegrasyondan gelir.
+                        Manuel tahsilat sadece banka havalesi/EFT için kullanılır.
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeAddPaymentModal()">İptal</button>
+                <button type="submit" class="btn btn-primary">Tahsilatı Kaydet</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Invoice Slide Panel -->
+<div class="slide-panel" id="invoicePanel">
+    <div class="slide-panel-header">
+        <div class="invoice-title">
+            <span>Fatura Detayı - </span>
+            <span id="invoiceNumber">#FAT-2025/001</span>
+            <span class="paid-badge" id="invoiceStatus">Ödendi</span>
+        </div>
+        <div class="panel-actions">
+            <button class="panel-btn" onclick="downloadInvoicePDF()" title="PDF İndir">
+                <i class="fas fa-download"></i>
+                PDF İndir
+            </button>
+            <button class="panel-btn" onclick="printInvoice()" title="Yazdır">
+                <i class="fas fa-print"></i>
+                Yazdır
+            </button>
+            <button class="panel-close" onclick="closeInvoicePanel()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+    <div class="slide-panel-body">
+        <div class="invoice-preview">
+            <div class="invoice-header-section">
+                <div class="company-info">
+                    <h3>UpexTech</h3>
+                    <p>Telefon ve Telefon Parçaları<br>İstanbul, Türkiye</p>
+                </div>
+                <div class="invoice-meta">
+                    <p><strong>Fatura No:</strong> <span id="invoiceNo"></span></p>
+                    <p><strong>Tarih:</strong> <span id="invoiceDate"></span></p>
+                    <p><strong>Saat:</strong> <span id="invoiceTime"></span></p>
+                </div>
+            </div>
+
+            <div class="customer-info-section">
+                <h4>Müşteri Bilgileri</h4>
+                <p id="customerName"></p>
+                <p id="orderReference"></p>
+            </div>
+
+            <table class="invoice-items-table">
+                <thead>
+                    <tr>
+                        <th>Ürün Adı</th>
+                        <th>Adet</th>
+                        <th>Birim Fiyat</th>
+                        <th>KDV (%)</th>
+                        <th>Toplam</th>
+                    </tr>
+                </thead>
+                <tbody id="invoiceItemsBody">
+                </tbody>
+            </table>
+
+            <div class="invoice-totals">
+                <div class="total-row">
+                    <span>Ara Toplam:</span>
+                    <span id="subtotal">₺0</span>
+                </div>
+                <div class="total-row">
+                    <span>KDV (<span id="taxRate">20</span>%):</span>
+                    <span id="taxAmount">₺0</span>
+                </div>
+                <div class="total-row grand-total">
+                    <span>Genel Toplam:</span>
+                    <span id="grandTotal">₺0</span>
+                </div>
+            </div>
+        </div>
+
+        <button class="btn btn-email" onclick="sendInvoiceByEmail()">
+            <i class="fas fa-envelope"></i>
+            E-posta Olarak Gönder
+        </button>
+    </div>
+</div>
+
+<!-- Overlay for slide panel -->
+<div class="slide-panel-overlay" id="slidePanelOverlay" onclick="closeInvoicePanel()"></div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+@section Scripts {
+    <script>
+        // Filter functionality
+        const searchInput = document.getElementById('searchTerm');
+        const channelFilter = document.getElementById('channelFilter');
+        const statusFilter = document.getElementById('statusFilter');
+        
+        let debounceTimer;
+        
+        searchInput.addEventListener('input', function() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(applyFilters, 300);
+        });
+        
+        channelFilter.addEventListener('change', applyFilters);
+        statusFilter.addEventListener('change', applyFilters);
+        
+        async function applyFilters() {
+            const params = new URLSearchParams({
+                searchTerm: searchInput.value,
+                channel: channelFilter.value,
+                status: statusFilter.value
+            });
+            
+            try {
+                const response = await fetch(`/Finance/GetPayments?${params}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    updatePaymentsTable(result.data);
+                }
+            } catch (error) {
+                console.error('Filter error:', error);
+            }
+        }
+        
+        function updatePaymentsTable(payments) {
+            const tbody = document.getElementById('paymentsTableBody');
+            
+            if (payments.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="9" class="empty-cell">
+                            <div class="empty-state">
+                                <i class="fas fa-search"></i>
+                                <p>Filtrelere uygun kayıt bulunamadı.</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = payments.map(p => `
+                <tr>
+                    <td>
+                        <div class="date-cell">
+                            <span class="date">${formatDate(p.paymentDate)}</span>
+                            <span class="time">${formatTime(p.paymentDate)}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="channel-badge ${p.channel.toLowerCase()}">${p.channel}</span>
+                    </td>
+                    <td>
+                        <div class="customer-cell">
+                            <span class="name">${p.companyName || p.customerName}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="description-cell">
+                            <span class="description">${p.description}</span>
+                            ${p.referenceNumber ? `<span class="reference">${p.referenceNumber}</span>` : ''}
+                        </div>
+                    </td>
+                    <td>${p.accountName}</td>
+                    <td>
+                        <div class="payment-method-cell">
+                            <span>${p.paymentMethod}</span>
+                            ${p.installmentCount && p.installmentCount > 1 ? `<span class="installment-badge">${p.installmentCount} Taksit</span>` : ''}
+                        </div>
+                    </td>
+                    <td>
+                        <span class="amount ${p.isIncoming ? 'incoming' : 'outgoing'}">
+                            ${p.isIncoming ? '+' : '-'}₺${formatNumber(p.amount)}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="status-badge ${p.status.toLowerCase().replace('ı', 'i').replace('ş', 's').replace('ü', 'u')}">${p.status}</span>
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            ${p.orderId ? `<button class="action-btn" onclick="viewInvoice(${p.orderId})" title="Fatura Görüntüle"><i class="fas fa-file-invoice"></i></button>` : ''}
+                            <button class="action-btn" onclick="viewPaymentDetail(${p.id})" title="Detaylar"><i class="fas fa-eye"></i></button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+        
+        // Modal functions
+        function openAddPaymentModal() {
+            document.getElementById('addPaymentModal').style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeAddPaymentModal() {
+            document.getElementById('addPaymentModal').style.display = 'none';
+            document.body.style.overflow = '';
+            document.getElementById('addPaymentForm').reset();
+        }
+        
+        async function savePayment(event) {
+            event.preventDefault();
+            
+            const formData = {
+                userId: 1, // TODO: Get from customer selection
+                bankName: document.getElementById('bankSelect').value,
+                amount: parseFloat(document.getElementById('paymentAmount').value),
+                description: document.getElementById('paymentDescription').value
+            };
+            
+            const submitBtn = event.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Kaydediliyor...';
+            submitBtn.disabled = true;
+            
+            try {
+                const response = await fetch('/Finance/CreateManualPayment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast('success', result.message);
+                    closeAddPaymentModal();
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showToast('error', result.message);
+                }
+            } catch (error) {
+                showToast('error', 'Bir hata oluştu.');
+            } finally {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        }
+        
+        // Invoice Panel functions
+        async function viewInvoice(orderId) {
+            try {
+                const response = await fetch(`/Finance/GetInvoiceDetail?orderId=${orderId}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    populateInvoicePanel(result.data);
+                    openInvoicePanel();
+                } else {
+                    showToast('error', result.message);
+                }
+            } catch (error) {
+                showToast('error', 'Fatura yüklenirken hata oluştu.');
+            }
+        }
+        
+        function populateInvoicePanel(invoice) {
+            document.getElementById('invoiceNumber').textContent = invoice.invoiceNumber;
+            document.getElementById('invoiceStatus').textContent = invoice.isPaid ? 'Ödendi' : 'Bekliyor';
+            document.getElementById('invoiceStatus').className = invoice.isPaid ? 'paid-badge' : 'pending-badge';
+            document.getElementById('invoiceNo').textContent = invoice.invoiceNumber;
+            document.getElementById('invoiceDate').textContent = formatDate(invoice.invoiceDate);
+            document.getElementById('invoiceTime').textContent = formatTime(invoice.invoiceDate);
+            document.getElementById('customerName').textContent = invoice.customerName;
+            document.getElementById('orderReference').textContent = invoice.orderNumber;
+            
+            const itemsBody = document.getElementById('invoiceItemsBody');
+            itemsBody.innerHTML = invoice.items.map(item => `
+                <tr>
+                    <td>${item.productName}</td>
+                    <td>${item.quantity}</td>
+                    <td>₺${formatNumber(item.unitPrice)}</td>
+                    <td>${item.taxRate}</td>
+                    <td>₺${formatNumber(item.total)}</td>
+                </tr>
+            `).join('');
+            
+            document.getElementById('subtotal').textContent = `₺${formatNumber(invoice.subTotal)}`;
+            document.getElementById('taxRate').textContent = invoice.taxRate;
+            document.getElementById('taxAmount').textContent = `₺${formatNumber(invoice.taxAmount)}`;
+            document.getElementById('grandTotal').textContent = `₺${formatNumber(invoice.grandTotal)}`;
+        }
+        
+        function openInvoicePanel() {
+            document.getElementById('invoicePanel').classList.add('show');
+            document.getElementById('slidePanelOverlay').classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeInvoicePanel() {
+            document.getElementById('invoicePanel').classList.remove('show');
+            document.getElementById('slidePanelOverlay').classList.remove('show');
+            document.body.style.overflow = '';
+        }
+        
+        function viewPaymentDetail(paymentId) {
+            showToast('info', `Ödeme #${paymentId} detayları yükleniyor...`);
+        }
+        
+        function exportToExcel() {
+            showToast('info', 'Excel dosyası hazırlanıyor...');
+        }
+        
+        function downloadInvoicePDF() {
+            showToast('info', 'PDF indiriliyor...');
+        }
+        
+        function printInvoice() {
+            window.print();
+        }
+        
+        function sendInvoiceByEmail() {
+            showToast('success', 'Fatura e-posta olarak gönderildi.');
+        }
+        
+        // Utility functions
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('tr-TR');
+        }
+        
+        function formatTime(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+        }
+        
+        function formatNumber(num) {
+            return num.toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+        }
+        
+        function showToast(type, message) {
+            const container = document.getElementById('toastContainer');
+            const iconMap = {
+                success: 'fa-check-circle',
+                error: 'fa-exclamation-circle',
+                info: 'fa-info-circle',
+                warning: 'fa-exclamation-triangle'
+            };
+            
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.innerHTML = `<i class="fas ${iconMap[type]}"></i><span>${message}</span>`;
+            
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 10);
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeAddPaymentModal();
+                closeInvoicePanel();
+            }
+        });
+        
+        // Modal overlay click
+        document.getElementById('addPaymentModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeAddPaymentModal();
+            }
+        });
+    </script>
+}

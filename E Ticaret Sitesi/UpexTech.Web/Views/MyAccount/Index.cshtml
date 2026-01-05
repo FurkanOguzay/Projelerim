@@ -1,0 +1,210 @@
+@model MyAccountViewModel
+@using System.Security.Claims
+@{
+    ViewData["Title"] = "Hesabım";
+    var activeMenu = ViewBag.ActiveMenu ?? "orders";
+    var userName = User.Identity?.Name ?? "Kullanıcı";
+    var userEmail = User.FindFirst(ClaimTypes.Email)?.Value ?? "";
+}
+
+<div class="container py-5">
+    <div class="row g-4">
+        <!-- Sol Menü (Side Navigation) -->
+        <div class="col-lg-3">
+            <aside class="bg-white rounded-4 shadow-sm p-4">
+                <nav class="d-flex flex-column gap-4">
+                    <!-- Siparişlerim -->
+                    <div>
+                        <h6 class="text-muted small mb-3">Siparişlerim</h6>
+                        <div class="d-flex flex-column gap-1">
+                            <a href="/MyAccount/Orders" 
+                               class="account-nav-link @(activeMenu == "orders" ? "active" : "")">
+                                <i data-lucide="package" style="width: 18px; height: 18px;"></i>
+                                <span>Tüm Siparişlerim</span>
+                            </a>
+                            <a href="/MyAccount/Reviews" 
+                               class="account-nav-link @(activeMenu == "reviews" ? "active" : "")">
+                                <i data-lucide="star" style="width: 18px; height: 18px;"></i>
+                                <span>Değerlendirmelerim</span>
+                            </a>
+                            <a href="/MyAccount/Messages" 
+                               class="account-nav-link @(activeMenu == "messages" ? "active" : "")">
+                                <i data-lucide="message-square" style="width: 18px; height: 18px;"></i>
+                                <span>Satıcı Mesajlarım</span>
+                            </a>
+                            <a href="/MyAccount/Reorder" 
+                               class="account-nav-link @(activeMenu == "reorder" ? "active" : "")">
+                                <i data-lucide="refresh-cw" style="width: 18px; height: 18px;"></i>
+                                <span>Tekrar Satın Al</span>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- Sana Özel -->
+                    <div>
+                        <h6 class="text-muted small mb-3">Sana Özel</h6>
+                        <div class="d-flex flex-column gap-1">
+                            <a href="/MyAccount/BrowsingHistory" 
+                               class="account-nav-link @(activeMenu == "browsed" ? "active" : "")">
+                                <i data-lucide="eye" style="width: 18px; height: 18px;"></i>
+                                <span>Önceden Gezdiklerim</span>
+                            </a>
+                            <a href="/MyAccount/Favorites" 
+                               class="account-nav-link @(activeMenu == "favorites" ? "active" : "")">
+                                <i data-lucide="file-text" style="width: 18px; height: 18px;"></i>
+                                <span>Tüm Listelerim</span>
+                            </a>
+                            <a href="/MyAccount/Reports" 
+                               class="account-nav-link @(activeMenu == "reports" ? "active" : "")">
+                                <i data-lucide="bar-chart-2" style="width: 18px; height: 18px;"></i>
+                                <span>Raporlarım</span>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- Hesabım & Yardım -->
+                    <div>
+                        <h6 class="text-muted small mb-3">Hesabım & Yardım</h6>
+                        <div class="d-flex flex-column gap-1">
+                            <a href="/MyAccount/Profile" 
+                               class="account-nav-link @(activeMenu == "profile" ? "active" : "")">
+                                <i data-lucide="user" style="width: 18px; height: 18px;"></i>
+                                <span>Kullanıcı Bilgilerim</span>
+                            </a>
+                            <a href="/MyAccount/Addresses" 
+                               class="account-nav-link @(activeMenu == "addresses" ? "active" : "")">
+                                <i data-lucide="map-pin" style="width: 18px; height: 18px;"></i>
+                                <span>Adres Bilgilerim</span>
+                            </a>
+                            <a href="/MyAccount/SavedCards" 
+                               class="account-nav-link @(activeMenu == "cards" ? "active" : "")">
+                                <i data-lucide="credit-card" style="width: 18px; height: 18px;"></i>
+                                <span>Kayıtlı Kartlarım</span>
+                            </a>
+                            <a href="/MyAccount/NotificationPreferences" 
+                               class="account-nav-link @(activeMenu == "notifications" ? "active" : "")">
+                                <i data-lucide="bell" style="width: 18px; height: 18px;"></i>
+                                <span>Duyuru Tercihlerim</span>
+                            </a>
+                            <a href="/MyAccount/ChangePassword" 
+                               class="account-nav-link @(activeMenu == "change-password" ? "active" : "")">
+                                <i data-lucide="lock" style="width: 18px; height: 18px;"></i>
+                                <span>Şifre Değişikliği</span>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- Çıkış -->
+                    <div class="border-top pt-3">
+                        <form asp-controller="Account" asp-action="Logout" method="post">
+                            <button type="submit" class="account-nav-link w-100 border-0 bg-transparent text-start text-danger">
+                                <i data-lucide="log-out" style="width: 18px; height: 18px;"></i>
+                                <span>Çıkış Yap</span>
+                            </button>
+                        </form>
+                    </div>
+                </nav>
+            </aside>
+        </div>
+
+        <!-- İçerik Alanı (Main Content) -->
+        <div class="col-lg-9">
+            <main class="bg-white rounded-4 shadow-sm p-5">
+                @if (TempData["Success"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i data-lucide="check-circle" style="width: 20px; height: 20px;" class="me-2"></i>@TempData["Success"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+                @if (TempData["Error"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i data-lucide="alert-circle" style="width: 20px; height: 20px;" class="me-2"></i>@TempData["Error"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+
+                @switch (Model.Section)
+                {
+                    case "Orders":
+                    case "PendingOrders":
+                    case "ShippedOrders":
+                    case "DeliveredOrders":
+                    case "CancelledOrders":
+                        @await Html.PartialAsync("_OrdersPartial", Model)
+                        break;
+                    case "Profile":
+                        @await Html.PartialAsync("_ProfilePartial", Model)
+                        break;
+                    case "Addresses":
+                        @await Html.PartialAsync("_AddressesPartial", Model)
+                        break;
+                    case "ChangePassword":
+                        @await Html.PartialAsync("_ChangePasswordPartial", Model)
+                        break;
+                    case "Favorites":
+                        @await Html.PartialAsync("_FavoritesPartial", Model)
+                        break;
+                    case "Reviews":
+                        @await Html.PartialAsync("_ReviewsPartial", Model)
+                        break;
+                    case "Messages":
+                        @await Html.PartialAsync("_MessagesPartial", Model)
+                        break;
+                    case "Reorder":
+                        @await Html.PartialAsync("_ReorderPartial", Model)
+                        break;
+                    case "BrowsingHistory":
+                        @await Html.PartialAsync("_BrowsingHistoryPartial", Model)
+                        break;
+                    case "SavedCards":
+                        @await Html.PartialAsync("_SavedCardsPartial", Model)
+                        break;
+                    case "NotificationPreferences":
+                        @await Html.PartialAsync("_NotificationPreferencesPartial", Model)
+                        break;
+                    case "Reports":
+                        @await Html.PartialAsync("_ReportsPartial", Model)
+                        break;
+                    default:
+                        @await Html.PartialAsync("_OrdersPartial", Model)
+                        break;
+                }
+            </main>
+        </div>
+    </div>
+</div>
+
+<style>
+    .account-nav-link {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 0.75rem;
+        color: #374151;
+        text-decoration: none;
+        border-radius: 8px;
+        transition: all 0.15s ease;
+        cursor: pointer;
+    }
+    
+    .account-nav-link:hover {
+        background-color: #f9fafb;
+        color: #2563eb;
+    }
+    
+    .account-nav-link.active {
+        background-color: #eff6ff;
+        color: #2563eb;
+    }
+</style>
+
+@section Scripts {
+<script>
+    // Initialize Lucide icons
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+</script>
+}

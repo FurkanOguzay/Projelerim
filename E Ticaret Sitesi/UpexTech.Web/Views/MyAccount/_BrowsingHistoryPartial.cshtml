@@ -1,0 +1,158 @@
+@model MyAccountViewModel
+
+<div class="mb-4">
+    <h4 class="fw-semibold mb-3">
+        <i data-lucide="eye" class="me-2 text-info" style="width: 24px; height: 24px;"></i>
+        Önceden Gezdiklerim
+    </h4>
+    <p class="text-muted">Son gezdiğiniz ürünleri buradan görebilir ve tekrar inceleyebilirsiniz.</p>
+</div>
+
+@if (Model.BrowsingHistory?.Any() == true)
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Ürün</th>
+                    <th>Görüntülenme</th>
+                    <th>Fiyat</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.BrowsingHistory.OrderByDescending(h => h.ViewedAt))
+                {
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="bg-light rounded p-1" style="width: 50px; height: 50px;">
+                                    <img src="@item.ProductImage" alt="@item.ProductName" 
+                                         class="w-100 h-100 rounded" style="object-fit: contain;"
+                                         onerror="this.style.display='none'">
+                                </div>
+                                <span class="fw-medium">@item.ProductName</span>
+                            </div>
+                        </td>
+                        <td class="text-muted">
+                            @{
+                                var diff = DateTime.Now - item.ViewedAt;
+                                if (diff.TotalHours < 1) { @($"{(int)diff.TotalMinutes} dk önce") }
+                                else if (diff.TotalHours < 24) { @($"{(int)diff.TotalHours} saat önce") }
+                                else { @item.ViewedAt.ToString("dd.MM.yyyy") }
+                            }
+                        </td>
+                        <td class="fw-bold text-primary">₺@item.Price.ToString("N2")</td>
+                        <td>
+                            <div class="d-flex gap-2">
+                                <a href="/Catalog/Details/@item.ProductId" class="btn btn-outline-primary btn-sm">İncele</a>
+                                <button type="button" class="btn btn-primary btn-sm add-to-cart-btn" 
+                                        data-product-id="@item.ProductId">
+                                    Sepete Ekle
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="text-end mt-3">
+        <button class="btn btn-outline-danger btn-sm" onclick="clearBrowsingHistory()">
+            <i data-lucide="trash-2" style="width: 14px; height: 14px;" class="me-1"></i>
+            Geçmişi Temizle
+        </button>
+    </div>
+}
+else
+{
+    <div class="text-center py-5">
+        <i data-lucide="eye" class="text-muted mb-3" style="width: 48px; height: 48px;"></i>
+        <h5 class="text-muted">Henüz gezdiğiniz ürün bulunmuyor</h5>
+        <p class="text-muted small">Siteyi gezerken incelediğiniz ürünler burada listelenecektir.</p>
+        <a href="/" class="btn btn-primary">Ürünleri Keşfet</a>
+    </div>
+}
+
+<!-- Toast bildirimi -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1050">
+    <div id="cartToast" class="toast align-items-center text-white bg-success border-0" role="alert">
+        <div class="d-flex">
+            <div class="toast-body">
+                Ürün sepete eklendi!
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.add-to-cart-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var productId = this.getAttribute('data-product-id');
+            var button = this;
+            
+            button.disabled = true;
+            button.innerHTML = 'Ekleniyor...';
+            
+            fetch('/Cart/Add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                },
+                body: 'productId=' + productId + '&quantity=1'
+            })
+            .then(response => response.json())
+            .then(data => {
+                button.disabled = false;
+                button.innerHTML = 'Sepete Ekle';
+                
+                if (data.success) {
+                    // Toast göster
+                    var toast = new bootstrap.Toast(document.getElementById('cartToast'));
+                    toast.show();
+                    
+                    // Sepet sayısını güncelle
+                    var cartBadge = document.querySelector('.cart-count');
+                    if (cartBadge) {
+                        cartBadge.textContent = data.cartCount;
+                    }
+                } else {
+                    alert(data.message || 'Bir hata oluştu.');
+                }
+            })
+            .catch(error => {
+                button.disabled = false;
+                button.innerHTML = 'Sepete Ekle';
+                alert('Bir hata oluştu.');
+            });
+        });
+    });
+});
+
+async function clearBrowsingHistory() {
+    if (!confirm('Tarama geçmişinizi silmek istediğinizden emin misiniz?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/MyAccount/ClearBrowsingHistory', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+            alert('Tarama geçmişi temizlendi!');
+            location.reload();
+        } else {
+            alert(data.message || 'Bir hata oluştu');
+        }
+    } catch (error) {
+        alert('Bir hata oluştu');
+    }
+}
+</script>

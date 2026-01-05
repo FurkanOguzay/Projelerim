@@ -1,0 +1,301 @@
+@model IEnumerable<UpexTech.Entity.PriceList>
+@using UpexTech.Entity
+@{
+    ViewData["Title"] = "Fiyat Listesi Yönetimi";
+    var priceListArray = Model?.ToList() ?? new List<PriceList>();
+}
+
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <div>
+        <h1 style="font-size: 24px; font-weight: 600; color: var(--gray-900);">Fiyat Listesi Yönetimi</h1>
+        <p style="color: var(--gray-600);">Bayi ve müşteri gruplarına özel fiyat listeleri oluşturun</p>
+    </div>
+    <div style="display: flex; gap: 12px;">
+        <button type="button" class="btn btn-outline" id="btnAddNew">
+            <i class="fas fa-plus"></i> Yeni Liste
+        </button>
+        <button type="button" class="btn btn-primary" id="btnSaveAll">
+            <i class="fas fa-save"></i> Kaydet
+        </button>
+    </div>
+</div>
+
+<div class="data-table-container" style="background: white; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+    <table class="data-table" style="width: 100%; border-collapse: collapse;" id="priceListTable">
+        <thead>
+            <tr style="background: var(--gray-50); border-bottom: 2px solid var(--gray-200);">
+                <th style="padding: 12px; text-align: left; width: 80px;">Sıra</th>
+                <th style="padding: 12px; text-align: left;">Liste Adı</th>
+                <th style="padding: 12px; text-align: left;">Taban Liste</th>
+                <th style="padding: 12px; text-align: left; width: 120px;">Çarpan</th>
+                <th style="padding: 12px; text-align: left; width: 150px;">Yuvarlama</th>
+                <th style="padding: 12px; text-align: center; width: 80px;">Aksiyon</th>
+            </tr>
+        </thead>
+        <tbody id="priceListBody">
+            @foreach (var pl in priceListArray)
+            {
+                <tr class="price-list-row" data-id="@pl.Id">
+                    <td style="padding: 12px;">
+                        <input type="number" class="form-control input-sm" value="@pl.DisplayOrder" 
+                               data-field="displayOrder" min="0" style="width: 60px;">
+                    </td>
+                    <td style="padding: 12px;">
+                        <input type="text" class="form-control" value="@pl.Name" 
+                               data-field="name" style="min-width: 150px;">
+                    </td>
+                    <td style="padding: 12px;">
+                        <select class="form-control" data-field="basePriceListId">
+                            <option value="">Satınalma Fiyatı</option>
+                            @foreach (var basePl in priceListArray.Where(x => x.Id != pl.Id))
+                            {
+                                if (pl.BasePriceListId == basePl.Id)
+                                {
+                                    <option value="@basePl.Id" selected>@basePl.Name</option>
+                                }
+                                else
+                                {
+                                    <option value="@basePl.Id">@basePl.Name</option>
+                                }
+                            }
+                        </select>
+                    </td>
+                    <td style="padding: 12px;">
+                        <input type="number" class="form-control input-sm" value="@pl.Factor.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)" 
+                               data-field="factor" step="0.01" min="0" style="width: 80px;">
+                    </td>
+                    <td style="padding: 12px;">
+                        <select class="form-control" data-field="rounding">
+                            @{ var roundingVal = (int)pl.Rounding; }
+                            @if (roundingVal == 0) { <option value="0" selected>Yok</option> } else { <option value="0">Yok</option> }
+                            @if (roundingVal == 1) { <option value="1" selected>.90 biten</option> } else { <option value="1">.90 biten</option> }
+                            @if (roundingVal == 2) { <option value="2" selected>.99 biten</option> } else { <option value="2">.99 biten</option> }
+                            @if (roundingVal == 3) { <option value="3" selected>5'e yuvarlama</option> } else { <option value="3">5'e yuvarlama</option> }
+                        </select>
+                    </td>
+                    <td style="padding: 12px; text-align: center;">
+                        <button type="button" class="btn btn-sm btn-danger btn-delete" data-id="@pl.Id" title="Sil">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    
+    @if (!priceListArray.Any())
+    {
+        <div style="text-align: center; padding: 48px; color: var(--gray-500);">
+            <i class="fas fa-list" style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;"></i>
+            <p>Henüz fiyat listesi yok. "Yeni Liste" butonuyla ekleyebilirsiniz.</p>
+        </div>
+    }
+    
+    <div style="margin-top: 24px; padding: 16px; background: var(--gray-50); border-radius: 8px;">
+        <h3 style="margin-bottom: 12px; font-size: 14px; color: var(--gray-700);">Formül Açıklaması</h3>
+        <p style="color: var(--gray-600); font-size: 13px; line-height: 1.6;">
+            <strong>Fiyat = Taban Fiyat × Çarpan</strong><br>
+            Örnek: Satınalma fiyatı 100 TL ise, çarpan 1.3 → Satış fiyatı 130 TL<br>
+            Yuvarlama: ".90 biten" seçilirse 130 TL → 129.90 TL olur.
+        </p>
+    </div>
+</div>
+
+<style>
+    .form-control {
+        padding: 8px 12px;
+        border: 1px solid var(--gray-300);
+        border-radius: 6px;
+        font-size: 14px;
+        width: 100%;
+    }
+    .form-control:focus {
+        border-color: var(--primary-500);
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+    }
+    .input-sm { width: auto; }
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 500;
+        cursor: pointer;
+        border: none;
+        font-size: 14px;
+    }
+    .btn-primary {
+        background: var(--primary-500);
+        color: white;
+    }
+    .btn-primary:hover { background: var(--primary-600); }
+    .btn-outline {
+        background: white;
+        color: var(--gray-700);
+        border: 1px solid var(--gray-300);
+    }
+    .btn-outline:hover { background: var(--gray-50); }
+    .btn-danger {
+        background: var(--danger-500);
+        color: white;
+        padding: 6px 10px;
+    }
+    .btn-danger:hover { background: var(--danger-600); }
+    .btn-sm { padding: 6px 10px; font-size: 12px; }
+    .price-list-row:hover { background: var(--gray-50); }
+    .price-list-row td { border-bottom: 1px solid var(--gray-100); }
+</style>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            let newIdCounter = -1;
+            
+            // Yeni Liste Ekle
+            document.getElementById('btnAddNew').addEventListener('click', function() {
+                const tbody = document.getElementById('priceListBody');
+                const rowCount = tbody.querySelectorAll('tr').length;
+                const newRow = document.createElement('tr');
+                newRow.className = 'price-list-row';
+                newRow.dataset.id = newIdCounter--;
+                newRow.innerHTML = `
+                    <td style="padding: 12px;">
+                        <input type="number" class="form-control input-sm" value="${rowCount + 1}" 
+                               data-field="displayOrder" min="0" style="width: 60px;">
+                    </td>
+                    <td style="padding: 12px;">
+                        <input type="text" class="form-control" value="Yeni Liste" 
+                               data-field="name" style="min-width: 150px;">
+                    </td>
+                    <td style="padding: 12px;">
+                        <select class="form-control" data-field="basePriceListId">
+                            <option value="">Satınalma Fiyatı</option>
+                        </select>
+                    </td>
+                    <td style="padding: 12px;">
+                        <input type="number" class="form-control input-sm" value="1.00" 
+                               data-field="factor" step="0.01" min="0" style="width: 80px;">
+                    </td>
+                    <td style="padding: 12px;">
+                        <select class="form-control" data-field="rounding">
+                            <option value="0">Yok</option>
+                            <option value="1">.90 biten</option>
+                            <option value="2">.99 biten</option>
+                            <option value="3">5'e yuvarlama</option>
+                        </select>
+                    </td>
+                    <td style="padding: 12px; text-align: center;">
+                        <button type="button" class="btn btn-sm btn-danger btn-delete-new" title="Sil">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(newRow);
+                
+                // Yeni satır için silme butonu
+                newRow.querySelector('.btn-delete-new').addEventListener('click', function() {
+                    newRow.remove();
+                });
+            });
+            
+            // Kaydet
+            document.getElementById('btnSaveAll').addEventListener('click', function() {
+                const rows = document.querySelectorAll('#priceListBody .price-list-row');
+                
+                if (rows.length === 0) {
+                    alert('Kaydedilecek liste bulunamadı. Önce yeni liste ekleyin.');
+                    return;
+                }
+                
+                const priceLists = [];
+                let hasError = false;
+                
+                rows.forEach(function(row, index) {
+                    const nameInput = row.querySelector('[data-field="name"]');
+                    const factorInput = row.querySelector('[data-field="factor"]');
+                    const roundingSelect = row.querySelector('[data-field="rounding"]');
+                    const displayOrderInput = row.querySelector('[data-field="displayOrder"]');
+                    const basePriceListSelect = row.querySelector('[data-field="basePriceListId"]');
+                    
+                    if (!nameInput || !factorInput || !roundingSelect || !displayOrderInput) {
+                        console.error('Satır ' + index + ' için gerekli alanlar bulunamadı:', row);
+                        hasError = true;
+                        return;
+                    }
+                    
+                    const basePriceListValue = basePriceListSelect ? basePriceListSelect.value : '';
+                    
+                    priceLists.push({
+                        id: parseInt(row.dataset.id) || 0,
+                        name: nameInput.value || 'İsimsiz Liste',
+                        basePriceListId: basePriceListValue ? parseInt(basePriceListValue) : null,
+                        factor: parseFloat((factorInput.value || '1').replace(',', '.')) || 1.0,
+                        rounding: parseInt(roundingSelect.value) || 0,
+                        displayOrder: parseInt(displayOrderInput.value) || (index + 1)
+                    });
+                });
+                
+                if (hasError) {
+                    alert('Bazı satırlarda eksik alanlar var. Lütfen kontrol edin.');
+                    return;
+                }
+                
+                console.log('Gönderilecek veri:', JSON.stringify(priceLists, null, 2));
+                
+                fetch('/PriceList/SaveAll', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(priceLists)
+                })
+                .then(function(response) {
+                    console.log('Response status:', response.status);
+                    if (!response.ok) {
+                        throw new Error('Sunucu hatası: ' + response.status);
+                    }
+                    return response.json();
+                })
+                .then(function(data) {
+                    console.log('Response data:', data);
+                    if (data.success) {
+                        alert('Fiyat listeleri başarıyla kaydedildi!');
+                        window.location.reload();
+                    } else {
+                        alert('Hata: ' + (data.message || 'Kayıt başarısız oldu.'));
+                    }
+                })
+                .catch(function(error) {
+                    console.error('Fetch error:', error);
+                    alert('Sunucu ile iletişim hatası: ' + error.message);
+                });
+            });
+            
+            // Mevcut satırlar için silme butonları
+            document.querySelectorAll('.btn-delete').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    const id = this.dataset.id;
+                    if (!confirm('Bu fiyat listesini silmek istediğinize emin misiniz?')) return;
+                    
+                    fetch('/PriceList/Delete', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        },
+                        body: 'id=' + id
+                    })
+                    .then(function(response) { return response.json(); })
+                    .then(function(data) {
+                        if (data.success) {
+                            window.location.reload();
+                        } else {
+                            alert('Silme hatası: ' + (data.message || 'İşlem başarısız'));
+                        }
+                    });
+                });
+            });
+        });
+    </script>
+}

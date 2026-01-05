@@ -1,0 +1,129 @@
+@{
+    ViewData["Title"] = "Toplu İşlemler";
+}
+
+<div class="page-header">
+    <h1>Toplu İşlemler</h1>
+    <p>Excel ile ürün ve stok verilerini toplu olarak içeri/dışarı aktarın</p>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success" style="background: var(--success-100); color: var(--success-700); padding: 16px 24px; border-radius: var(--radius-lg); margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
+        <i class="fas fa-check-circle"></i>
+        @TempData["SuccessMessage"]
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger" style="background: var(--danger-100); color: var(--danger-700); padding: 16px 24px; border-radius: var(--radius-lg); margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
+        <i class="fas fa-exclamation-circle"></i>
+        @TempData["ErrorMessage"]
+    </div>
+}
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 24px;">
+    <!-- Ürün İçeri Aktarma -->
+    <div class="bulk-card" style="background: var(--white); border-radius: var(--radius-lg); padding: 28px; box-shadow: var(--shadow-sm);">
+        <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px;">
+            <div style="width: 56px; height: 56px; background: linear-gradient(135deg, var(--success-100), var(--success-200)); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-file-import" style="font-size: 24px; color: var(--success-600);"></i>
+            </div>
+            <div>
+                <h3 style="margin: 0; color: var(--gray-900);">Ürün İçeri Aktarma</h3>
+                <p style="margin: 4px 0 0 0; color: var(--gray-500); font-size: 14px;">Excel dosyasından ürün yükleyin</p>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <a href="@Url.Action("DownloadProductTemplate")" style="display: inline-flex; align-items: center; gap: 8px; color: var(--primary-500); text-decoration: none; font-weight: 500;">
+                <i class="fas fa-download"></i>
+                Şablon İndir
+            </a>
+            <p style="color: var(--gray-500); font-size: 13px; margin-top: 8px;">Önce şablonu indirin, doldurarak yükleyin.</p>
+        </div>
+
+        <form asp-action="ImportProducts" method="post" enctype="multipart/form-data">
+            @Html.AntiForgeryToken()
+            <div style="border: 2px dashed var(--gray-200); border-radius: var(--radius-md); padding: 24px; text-align: center; margin-bottom: 16px;">
+                <input type="file" name="file" accept=".xlsx,.xls" id="productFile" style="display: none;" onchange="updateFileName(this, 'productFileName')">
+                <label for="productFile" style="cursor: pointer; color: var(--gray-500);">
+                    <i class="fas fa-cloud-upload-alt" style="font-size: 32px; margin-bottom: 8px; display: block; color: var(--gray-300);"></i>
+                    <span id="productFileName">Excel dosyası seçin (.xlsx)</span>
+                </label>
+            </div>
+            <button type="submit" class="btn-new" style="width: 100%;">
+                <i class="fas fa-upload"></i>
+                Ürünleri İçeri Aktar
+            </button>
+        </form>
+    </div>
+
+    <!-- Stok Güncelleme -->
+    <div class="bulk-card" style="background: var(--white); border-radius: var(--radius-lg); padding: 28px; box-shadow: var(--shadow-sm);">
+        <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px;">
+            <div style="width: 56px; height: 56px; background: linear-gradient(135deg, var(--orange-100), var(--orange-200)); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-boxes" style="font-size: 24px; color: var(--orange-600);"></i>
+            </div>
+            <div>
+                <h3 style="margin: 0; color: var(--gray-900);">Stok Güncelleme</h3>
+                <p style="margin: 4px 0 0 0; color: var(--gray-500); font-size: 14px;">Toplu stok güncelleme yapın</p>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <a href="@Url.Action("DownloadStockTemplate")" style="display: inline-flex; align-items: center; gap: 8px; color: var(--primary-500); text-decoration: none; font-weight: 500;">
+                <i class="fas fa-download"></i>
+                Şablon İndir
+            </a>
+            <p style="color: var(--gray-500); font-size: 13px; margin-top: 8px;">Ürün ID ve yeni stok miktarlarını girin.</p>
+        </div>
+
+        <form asp-action="ImportStock" method="post" enctype="multipart/form-data">
+            @Html.AntiForgeryToken()
+            <div style="border: 2px dashed var(--gray-200); border-radius: var(--radius-md); padding: 24px; text-align: center; margin-bottom: 16px;">
+                <input type="file" name="file" accept=".xlsx,.xls" id="stockFile" style="display: none;" onchange="updateFileName(this, 'stockFileName')">
+                <label for="stockFile" style="cursor: pointer; color: var(--gray-500);">
+                    <i class="fas fa-cloud-upload-alt" style="font-size: 32px; margin-bottom: 8px; display: block; color: var(--gray-300);"></i>
+                    <span id="stockFileName">Excel dosyası seçin (.xlsx)</span>
+                </label>
+            </div>
+            <button type="submit" class="btn-new" style="width: 100%; background: var(--orange-500);">
+                <i class="fas fa-sync-alt"></i>
+                Stokları Güncelle
+            </button>
+        </form>
+    </div>
+
+    <!-- Ürün Dışarı Aktarma -->
+    <div class="bulk-card" style="background: var(--white); border-radius: var(--radius-lg); padding: 28px; box-shadow: var(--shadow-sm);">
+        <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px;">
+            <div style="width: 56px; height: 56px; background: linear-gradient(135deg, var(--primary-100), var(--primary-200)); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-file-export" style="font-size: 24px; color: var(--primary-600);"></i>
+            </div>
+            <div>
+                <h3 style="margin: 0; color: var(--gray-900);">Ürün Dışarı Aktarma</h3>
+                <p style="margin: 4px 0 0 0; color: var(--gray-500); font-size: 14px;">Tüm ürünleri Excel'e aktarın</p>
+            </div>
+        </div>
+
+        <p style="color: var(--gray-600); font-size: 14px; margin-bottom: 20px;">
+            Sistemdeki tüm ürünleri, stok bilgileri ve fiyatlarıyla birlikte Excel dosyası olarak indirin.
+        </p>
+
+        <a href="@Url.Action("ExportProducts")" class="btn-new" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none;">
+            <i class="fas fa-download"></i>
+            Ürünleri İndir (Excel)
+        </a>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function updateFileName(input, labelId) {
+            var fileName = input.files[0] ? input.files[0].name : 'Excel dosyası seçin (.xlsx)';
+            document.getElementById(labelId).textContent = fileName;
+        }
+    </script>
+}

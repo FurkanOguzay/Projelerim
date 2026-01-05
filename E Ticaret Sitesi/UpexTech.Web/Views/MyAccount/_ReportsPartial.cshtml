@@ -1,0 +1,982 @@
+@model MyAccountViewModel
+@using UpexTech.Entity
+@using UpexTech.Web.Models
+@{
+    var reports = Model.ReportsData ?? new ReportsViewModel();
+    var isB2B = reports.UserRole == UserRole.B2B;
+    
+    // Örnek veriler (Backend'den gelecek)
+    if (!reports.MonthlyTrend.Any())
+    {
+        reports.MonthlyTrend = new List<MonthlySpendingData>
+        {
+            new() { Month = "Tem", Amount = 35000 },
+            new() { Month = "Ağu", Amount = 42000 },
+            new() { Month = "Eyl", Amount = 38000 },
+            new() { Month = "Eki", Amount = 55000 },
+            new() { Month = "Kas", Amount = 48000 },
+            new() { Month = "Ara", Amount = 42000 }
+        };
+    }
+    
+    if (!reports.CategoryDistribution.Any())
+    {
+        reports.CategoryDistribution = new List<CategorySpendingData>
+        {
+            new() { CategoryName = "Aksesuar", Amount = 45, Color = "#3B82F6" },
+            new() { CategoryName = "Kılıf", Amount = 30, Color = "#10B981" },
+            new() { CategoryName = "Şarj", Amount = 25, Color = "#8B5CF6" }
+        };
+    }
+    
+    if (!reports.RecentTransactions.Any())
+    {
+        decimal runningBal = reports.Balance;
+        reports.RecentTransactions = new List<TransactionLineItem>
+        {
+            new() { Date = DateTime.Now.AddDays(-1), TransactionNo = "TRX-2024-001", Description = "Sipariş #1234", Debit = 12500, Credit = 0, RunningBalance = runningBal },
+            new() { Date = DateTime.Now.AddDays(-2), TransactionNo = "TRX-2024-002", Description = "Havale Ödemesi", Debit = 0, Credit = 10000, RunningBalance = runningBal + 10000 },
+            new() { Date = DateTime.Now.AddDays(-3), TransactionNo = "TRX-2024-003", Description = "Sipariş #1235", Debit = 8900, Credit = 0, RunningBalance = runningBal + 10000 + 8900 },
+            new() { Date = DateTime.Now.AddDays(-4), TransactionNo = "TRX-2024-004", Description = "İade #456", Debit = 0, Credit = 1250, RunningBalance = runningBal + 10000 + 8900 + 1250 },
+            new() { Date = DateTime.Now.AddDays(-5), TransactionNo = "TRX-2024-005", Description = "Sipariş #1236", Debit = 15600, Credit = 0, RunningBalance = runningBal + 10000 + 8900 + 1250 + 15600 }
+        };
+    }
+}
+
+@if (isB2B)
+{
+    <div class="bayi-reports-container">
+        <!-- Sayfa Başlığı -->
+        <div class="reports-header">
+            <h2>Bayi Raporlarım</h2>
+            <p>Finansal durum ve satın alma raporlarınızı görüntüleyin</p>
+        </div>
+        
+        <!-- 4 KPI Kartları -->
+        <div class="kpi-cards-grid">
+            <!-- Güncel Cari Bakiye -->
+            <div class="kpi-card red">
+                <div class="kpi-icon">
+                    <i data-lucide="dollar-sign"></i>
+                </div>
+                <div class="kpi-trend">
+                    <i data-lucide="trending-down"></i>
+                </div>
+                <div class="kpi-content">
+                    <span class="kpi-label">Güncel Cari Bakiye</span>
+                    <span class="kpi-value">@(reports.Balance < 0 ? "" : "-")@Math.Abs(reports.Balance).ToString("N0") TL</span>
+                    <span class="kpi-sublabel">Borç durumu</span>
+                </div>
+            </div>
+            
+            <!-- Bu Ayki Toplam Alım -->
+            <div class="kpi-card blue">
+                <div class="kpi-icon">
+                    <i data-lucide="shopping-cart"></i>
+                </div>
+                <div class="kpi-trend">
+                    <i data-lucide="trending-up"></i>
+                </div>
+                <div class="kpi-content">
+                    <span class="kpi-label">Bu Ayki Toplam Alım</span>
+                    <span class="kpi-value">@reports.ThisMonthPurchase.ToString("N0") TL</span>
+                    <span class="kpi-sublabel">@DateTime.Now.ToString("MMMM yyyy")</span>
+                </div>
+            </div>
+            
+            <!-- Bekleyen İadeler -->
+            <div class="kpi-card yellow">
+                <div class="kpi-icon">
+                    <i data-lucide="rotate-ccw"></i>
+                </div>
+                <div class="kpi-trend">
+                    <i data-lucide="trending-up"></i>
+                </div>
+                <div class="kpi-content">
+                    <span class="kpi-label">Bekleyen İadeler</span>
+                    <span class="kpi-value">@reports.PendingReturns.ToString("N0") TL</span>
+                    <span class="kpi-sublabel">@reports.PendingReturnCount adet işlem</span>
+                </div>
+            </div>
+            
+            <!-- Bayi İskonto Oranı -->
+            <div class="kpi-card green">
+                <div class="kpi-icon">
+                    <i data-lucide="percent"></i>
+                </div>
+                <div class="kpi-trend">
+                    <i data-lucide="trending-up"></i>
+                </div>
+                <div class="kpi-content">
+                    <span class="kpi-label">Bayi İskonto Oranı</span>
+                    <span class="kpi-value">%@reports.DiscountRate.ToString("N1")</span>
+                    <span class="kpi-sublabel">@reports.DealerTier bayi</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Grafikler Bölümü -->
+        <div class="charts-grid">
+            <!-- Son 6 Aylık Harcama Trendi - Bar Chart -->
+            <div class="chart-card">
+                <h3>Son 6 Aylık Harcama Trendi</h3>
+                <div class="bar-chart-container">
+                    <canvas id="monthlyTrendChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Kategori Dağılımı - Donut Chart -->
+            <div class="chart-card">
+                <h3>Kategori Dağılımı</h3>
+                <div class="donut-chart-container">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Cari Hesap Hareketleri -->
+        <div class="transactions-card">
+            <div class="transactions-header">
+                <h3>Cari Hesap Hareketleri</h3>
+                <button class="btn-export" id="exportExcelBtn">
+                    <i data-lucide="download"></i>
+                    Excel'e Aktar
+                </button>
+            </div>
+            
+            <div class="transactions-table-wrapper">
+                <table class="transactions-table">
+                    <thead>
+                        <tr>
+                            <th>Tarih</th>
+                            <th>İşlem No</th>
+                            <th>Açıklama</th>
+                            <th class="text-right">Borç</th>
+                            <th class="text-right">Alacak</th>
+                            <th class="text-right">Bakiye</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var tx in reports.RecentTransactions)
+                        {
+                            <tr>
+                                <td>@tx.Date.ToString("dd.MM.yyyy")</td>
+                                <td><span class="tx-no">@tx.TransactionNo</span></td>
+                                <td>@tx.Description</td>
+                                <td class="text-right debit">@(tx.Debit > 0 ? "₺" + tx.Debit.ToString("N0") : "-")</td>
+                                <td class="text-right credit">@(tx.Credit > 0 ? "₺" + tx.Credit.ToString("N0") : "-")</td>
+                                <td class="text-right balance @(tx.RunningBalance < 0 ? "negative" : "")">
+                                    @(tx.RunningBalance < 0 ? "-" : "")₺@Math.Abs(tx.RunningBalance).ToString("N0")
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Özet -->
+            <div class="transactions-summary">
+                <div class="summary-row">
+                    <span>Toplam Borç:</span>
+                    <span class="debit">₺@reports.TotalDebit.ToString("N0")</span>
+                </div>
+                <div class="summary-row">
+                    <span>Toplam Alacak:</span>
+                    <span class="credit">₺@reports.TotalCredit.ToString("N0")</span>
+                </div>
+                <div class="summary-row total">
+                    <span>Net Bakiye:</span>
+                    <span class="@(reports.Balance < 0 ? "negative" : "positive")">
+                        @(reports.Balance < 0 ? "-" : "")₺@Math.Abs(reports.Balance).ToString("N0")
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <style>
+        .bayi-reports-container {
+            padding: 0;
+        }
+        
+        .reports-header {
+            margin-bottom: 24px;
+        }
+        
+        .reports-header h2 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1f2937;
+            margin: 0 0 4px;
+        }
+        
+        .reports-header p {
+            font-size: 14px;
+            color: #6b7280;
+            margin: 0;
+        }
+        
+        /* KPI Cards */
+        .kpi-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .kpi-card {
+            position: relative;
+            padding: 20px;
+            border-radius: 16px;
+            color: white;
+            overflow: hidden;
+        }
+        
+        .kpi-card.red { background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%); }
+        .kpi-card.blue { background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); }
+        .kpi-card.yellow { background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); }
+        .kpi-card.green { background: linear-gradient(135deg, #10B981 0%, #059669 100%); }
+        
+        .kpi-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+        }
+        
+        .kpi-icon i { width: 20px; height: 20px; }
+        
+        .kpi-trend {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            opacity: 0.7;
+        }
+        
+        .kpi-trend i { width: 20px; height: 20px; }
+        
+        .kpi-content {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .kpi-label {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-bottom: 4px;
+        }
+        
+        .kpi-value {
+            font-size: 26px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        
+        .kpi-sublabel {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+        
+        /* Charts */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+        
+        .chart-card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .chart-card h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0 0 20px;
+        }
+        
+        .bar-chart-container {
+            height: 250px;
+        }
+        
+        .donut-chart-container {
+            height: 250px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Transactions */
+        .transactions-card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .transactions-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .transactions-header h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0;
+        }
+        
+        .btn-export {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: #10B981;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .btn-export:hover { background: #059669; }
+        .btn-export i { width: 16px; height: 16px; }
+        
+        .transactions-table-wrapper {
+            overflow-x: auto;
+        }
+        
+        .transactions-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .transactions-table th {
+            text-align: left;
+            padding: 12px 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #6b7280;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .transactions-table td {
+            padding: 14px 16px;
+            font-size: 14px;
+            color: #374151;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .transactions-table tr:hover td {
+            background: #f9fafb;
+        }
+        
+        .text-right { text-align: right !important; }
+        
+        .tx-no {
+            font-family: monospace;
+            background: #f3f4f6;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #3B82F6;
+        }
+        
+        .debit { color: #DC2626; font-weight: 500; }
+        .credit { color: #10B981; font-weight: 500; }
+        .balance { font-weight: 600; }
+        .balance.negative { color: #DC2626; }
+        
+        .transactions-summary {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #e5e7eb;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+        }
+        
+        .summary-row {
+            display: flex;
+            gap: 40px;
+            font-size: 14px;
+        }
+        
+        .summary-row span:first-child {
+            color: #6b7280;
+        }
+        
+        .summary-row.total {
+            font-size: 18px;
+            font-weight: 600;
+            margin-top: 8px;
+            padding-top: 12px;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .summary-row .positive { color: #10B981; }
+        .summary-row .negative { color: #DC2626; }
+        
+        @@media (max-width: 1024px) {
+            .kpi-cards-grid { grid-template-columns: repeat(2, 1fr); }
+            .charts-grid { grid-template-columns: 1fr; }
+        }
+        
+        @@media (max-width: 640px) {
+            .kpi-cards-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+    
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Lucide icons
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+            
+            // Monthly Trend Bar Chart
+            const monthlyCtx = document.getElementById('monthlyTrendChart');
+            if (monthlyCtx) {
+                new Chart(monthlyCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: [@Html.Raw(string.Join(",", reports.MonthlyTrend.Select(m => $"'{m.Month}'")))],
+                        datasets: [{
+                            data: [@string.Join(",", reports.MonthlyTrend.Select(m => m.Amount.ToString("F0")))],
+                            backgroundColor: '#3B82F6',
+                            borderRadius: 6,
+                            barThickness: 40
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return (value / 1000) + 'k';
+                                    }
+                                },
+                                grid: { color: '#f3f4f6' }
+                            },
+                            x: {
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // Category Donut Chart
+            const categoryCtx = document.getElementById('categoryChart');
+            if (categoryCtx) {
+                new Chart(categoryCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: [@Html.Raw(string.Join(",", reports.CategoryDistribution.Select(c => $"'{c.CategoryName}'")))],
+                        datasets: [{
+                            data: [@string.Join(",", reports.CategoryDistribution.Select(c => c.Amount.ToString("F0")))],
+                            backgroundColor: [@Html.Raw(string.Join(",", reports.CategoryDistribution.Select(c => $"'{c.Color}'")))],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '65%',
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    padding: 20,
+                                    usePointStyle: true
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // Excel Export
+            const exportBtn = document.getElementById('exportExcelBtn');
+            if (exportBtn) {
+                exportBtn.addEventListener('click', async function() {
+                    this.disabled = true;
+                    this.innerHTML = '<span class="spinner-border spinner-border-sm"></span> İndiriliyor...';
+                    
+                    try {
+                        const response = await fetch('/api/reports/statement');
+                        if (response.ok) {
+                            const blob = await response.blob();
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `cari_hesap_${new Date().toISOString().split('T')[0]}.xls`;
+                            a.click();
+                            window.URL.revokeObjectURL(url);
+                        }
+                    } catch (error) {
+                        console.error('Export error:', error);
+                    } finally {
+                        this.disabled = false;
+                        this.innerHTML = '<i data-lucide="download"></i> Excel\'e Aktar';
+                        if (typeof lucide !== 'undefined') lucide.createIcons();
+                    }
+                });
+            }
+        });
+    </script>
+}
+else
+{
+    <!-- B2C Müşteri Raporları -->
+    <div class="b2c-reports-container">
+        <!-- Sayfa Başlığı -->
+        <div class="reports-header">
+            <h2>Alışveriş Raporlarım</h2>
+            <p>Siparişleriniz, puanlarınız ve kuponlarınız hakkında bilgi</p>
+        </div>
+        
+        <!-- 3 Özet Kartı -->
+        <div class="b2c-summary-cards">
+            <!-- Toplam Siparişlerim -->
+            <div class="summary-card blue">
+                <div class="card-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                        <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                    </svg>
+                </div>
+                <div class="card-content">
+                    <span class="card-label">Toplam Siparişlerim</span>
+                    <span class="card-value">@reports.TotalOrderCount</span>
+                    <span class="card-sublabel">@reports.ActiveOrderCount sipariş aktif</span>
+                </div>
+            </div>
+            
+            <!-- Cüzdanım / Puanlarım -->
+            <div class="summary-card purple">
+                <div class="card-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="5" width="20" height="14" rx="2"></rect>
+                        <line x1="2" y1="10" x2="22" y2="10"></line>
+                    </svg>
+                </div>
+                <div class="card-content">
+                    <span class="card-label">Cüzdanım / Puanlarım</span>
+                    <span class="card-value">@reports.TotalPoints.ToString("N0")</span>
+                    <span class="card-sublabel">Puan kazandınız</span>
+                </div>
+            </div>
+            
+            <!-- Kuponlarım -->
+            <div class="summary-card green">
+                <div class="card-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6"></path>
+                        <path d="M12 2v10"></path>
+                        <rect x="2" y="6" width="20" height="6" rx="2"></rect>
+                        <path d="M12 12L12 2"></path>
+                    </svg>
+                </div>
+                <div class="card-content">
+                    <span class="card-label">Kuponlarım</span>
+                    <span class="card-value">@reports.ActiveCouponCount</span>
+                    <span class="card-sublabel">Aktif kupon</span>
+                </div>
+            </div>
+        </div>
+        
+        @if (reports.LatestOrderInfo != null)
+        {
+            var order = reports.LatestOrderInfo;
+            var currentStep = order.Status switch
+            {
+                OrderStatus.Pending => 0,
+                OrderStatus.Confirmed => 1,
+                OrderStatus.Shipped => 2,
+                OrderStatus.Delivered => 3,
+                _ => 0
+            };
+            
+            <!-- Son Siparişinizin Durumu -->
+            <div class="order-status-card">
+                <h3>Son Siparişinizin Durumu</h3>
+                
+                <div class="order-info-row">
+                    <span class="order-number">Sipariş No: #@order.OrderNumber</span>
+                    <span class="order-date">@order.OrderDate.ToString("dd MMMM yyyy")</span>
+                </div>
+                
+                <!-- Timeline -->
+                <div class="order-timeline">
+                    <!-- Hazırlanıyor -->
+                    <div class="timeline-step @(currentStep >= 0 ? "completed" : "") @(currentStep == 0 ? "active" : "")">
+                        <div class="step-circle">
+                            @if (currentStep > 0)
+                            {
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                            }
+                            else if (currentStep == 0)
+                            {
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12 6 12 12 16 14"></polyline>
+                                </svg>
+                            }
+                        </div>
+                        <span class="step-label">Hazırlanıyor</span>
+                    </div>
+                    
+                    <div class="timeline-line @(currentStep >= 1 ? "completed" : "")"></div>
+                    
+                    <!-- Kargoda -->
+                    <div class="timeline-step @(currentStep >= 1 ? "completed" : "") @(currentStep == 1 ? "active" : "")">
+                        <div class="step-circle">
+                            @if (currentStep > 1)
+                            {
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                            }
+                            else if (currentStep == 1)
+                            {
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="1" y="3" width="15" height="13"></rect>
+                                    <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+                                    <circle cx="5.5" cy="18.5" r="2.5"></circle>
+                                    <circle cx="18.5" cy="18.5" r="2.5"></circle>
+                                </svg>
+                            }
+                        </div>
+                        <span class="step-label">Kargoda</span>
+                    </div>
+                    
+                    <div class="timeline-line @(currentStep >= 2 ? "completed" : "")"></div>
+                    
+                    <!-- Teslimat -->
+                    <div class="timeline-step @(currentStep >= 2 ? "completed" : "") @(currentStep == 2 ? "active" : "")">
+                        <div class="step-circle">
+                            @if (currentStep > 2)
+                            {
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                            }
+                            else if (currentStep == 2)
+                            {
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12 6 12 12 16 14"></polyline>
+                                </svg>
+                            }
+                        </div>
+                        <span class="step-label">Teslimat</span>
+                    </div>
+                    
+                    <div class="timeline-line @(currentStep >= 3 ? "completed" : "")"></div>
+                    
+                    <!-- Teslim Edildi -->
+                    <div class="timeline-step @(currentStep >= 3 ? "completed" : "")">
+                        <div class="step-circle inactive">
+                            @if (currentStep >= 3)
+                            {
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                            }
+                        </div>
+                        <span class="step-label @(currentStep < 3 ? "inactive-label" : "")">Teslim Edildi</span>
+                    </div>
+                </div>
+                
+                @if (order.EstimatedDeliveryDate.HasValue)
+                {
+                    <div class="estimated-delivery">
+                        <strong>Tahmini Teslimat:</strong> @order.EstimatedDeliveryDate.Value.ToString("dd MMMM yyyy")@(order.EstimatedDeliveryTime != null ? ", Saat " + order.EstimatedDeliveryTime : "")
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="no-order-card">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                    <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                </svg>
+                <p>Henüz sipariş bulunmuyor</p>
+            </div>
+        }
+    </div>
+    
+    <style>
+        .b2c-reports-container {
+            padding: 0;
+        }
+        
+        .b2c-reports-container .reports-header {
+            margin-bottom: 24px;
+        }
+        
+        .b2c-reports-container .reports-header h2 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1f2937;
+            margin: 0 0 4px;
+        }
+        
+        .b2c-reports-container .reports-header p {
+            font-size: 14px;
+            color: #6b7280;
+            margin: 0;
+        }
+        
+        /* Özet Kartları */
+        .b2c-summary-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .summary-card {
+            padding: 24px;
+            border-radius: 16px;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .summary-card.blue {
+            background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+        }
+        
+        .summary-card.purple {
+            background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+        }
+        
+        .summary-card.green {
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+        }
+        
+        .summary-card .card-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .summary-card .card-content {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .summary-card .card-label {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 4px;
+        }
+        
+        .summary-card .card-value {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        
+        .summary-card .card-sublabel {
+            font-size: 13px;
+            opacity: 0.85;
+        }
+        
+        /* Sipariş Durumu Kartı */
+        .order-status-card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .order-status-card h3 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0 0 20px;
+        }
+        
+        .order-info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+        
+        .order-number {
+            font-size: 16px;
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .order-date {
+            font-size: 14px;
+            color: #3B82F6;
+            font-weight: 500;
+        }
+        
+        /* Timeline */
+        .order-timeline {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            padding: 0 20px;
+            margin-bottom: 24px;
+        }
+        
+        .timeline-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+        }
+        
+        .step-circle {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #e5e7eb;
+            color: #9ca3af;
+            transition: all 0.3s ease;
+        }
+        
+        .timeline-step.completed .step-circle {
+            background: #10B981;
+            color: white;
+        }
+        
+        .timeline-step.active .step-circle {
+            background: #3B82F6;
+            color: white;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+        }
+        
+        .step-circle.inactive {
+            background: #e5e7eb;
+            color: #9ca3af;
+        }
+        
+        .timeline-step.completed .step-circle.inactive {
+            background: #10B981;
+            color: white;
+        }
+        
+        .step-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #10B981;
+        }
+        
+        .step-label.inactive-label {
+            color: #9ca3af;
+        }
+        
+        .timeline-line {
+            flex: 1;
+            height: 4px;
+            background: #e5e7eb;
+            margin-top: 22px;
+            border-radius: 2px;
+            min-width: 40px;
+        }
+        
+        .timeline-line.completed {
+            background: #10B981;
+        }
+        
+        /* Tahmini Teslimat */
+        .estimated-delivery {
+            background: #EFF6FF;
+            padding: 14px 20px;
+            border-radius: 10px;
+            font-size: 14px;
+            color: #1e40af;
+        }
+        
+        .estimated-delivery strong {
+            color: #1e3a8a;
+        }
+        
+        /* Sipariş Yok */
+        .no-order-card {
+            background: #f9fafb;
+            border-radius: 16px;
+            padding: 48px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .no-order-card p {
+            font-size: 16px;
+            color: #6b7280;
+            margin: 0;
+        }
+        
+        @@media (max-width: 768px) {
+            .b2c-summary-cards {
+                grid-template-columns: 1fr;
+            }
+            
+            .order-timeline {
+                padding: 0;
+            }
+            
+            .timeline-line {
+                min-width: 20px;
+            }
+            
+            .step-circle {
+                width: 40px;
+                height: 40px;
+            }
+            
+            .step-label {
+                font-size: 11px;
+            }
+        }
+    </style>
+}

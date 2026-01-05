@@ -1,0 +1,15 @@
+[
+  {
+    "Name": "Anasayfa+Admin",
+    "Projects": [
+      {
+        "Path": "UpexTech.Web\\UpexTech.Web.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "UpexTech.Admin\\UpexTech.Admin.csproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]
